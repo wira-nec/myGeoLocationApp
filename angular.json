@@ -92,7 +92,12 @@
           }
         },
         "deploy": {
-          "builder": "angular-cli-ghpages:deploy"
+          "builder": "angular-cli-ghpages:deploy",
+          "options": {
+            "baseHref": "https://willemvanraaij.github.io/myGeoLocationApp",
+            "name": "willemvanraaij",
+            "email": "willem.van.raaij@capgemini.com"
+          }
         }
       }
     }
