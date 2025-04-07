@@ -1,6 +1,6 @@
 {
-  "name": "my-geo-location-app",
-  "version": "0.0.0",
+  "name": "myGeoLocationApp",
+  "version": "0.0.1",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
