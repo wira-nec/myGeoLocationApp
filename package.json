@@ -1,7 +1,6 @@
 {
   "name": "myGeoLocationApp",
   "version": "0.0.1",
-  "homepage": "https://willemvanraaij.github.io/myGeoLocationApp/",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
