@@ -1,10 +1,16 @@
-import { ChangeDetectorRef, Component } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  inject,
+} from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { RouterOutlet } from '@angular/router';
 import { Subscription, take } from 'rxjs';
 import { GeolocationService } from '../services/geoLocationService';
 import { MapComponent } from './map/map.component';
 import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-root',
@@ -18,12 +24,22 @@ export class AppComponent {
   currentPositionUrl: SafeResourceUrl | null = null;
   watchSubscription: Subscription | null = null;
   error: GeolocationPositionError | null = null;
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     readonly geolocation$: GeolocationService,
     private readonly domSanitizer: DomSanitizer,
     private readonly changeDetectorRef: ChangeDetectorRef
   ) {}
+
+  ngOnInit() {
+    this.geolocation$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (position) => {
+        this.currentPositionUrl = this.getUrl(position);
+        this.changeDetectorRef.markForCheck();
+      },
+    });
+  }
 
   getCurrentPosition() {
     this.geolocation$.pipe(take(1)).subscribe({
