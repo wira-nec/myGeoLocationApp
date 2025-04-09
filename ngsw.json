@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1744114191678,
+  "timestamp": 1744197361136,
   "index": "/myGeoLocationApp/index.html",
   "assetGroups": [
     {
@@ -11,12 +11,23 @@
         "ignoreVary": true
       },
       "urls": [
+        "/myGeoLocationApp/chunk-5BSJA4IP.js",
+        "/myGeoLocationApp/chunk-6KN6277F.js",
+        "/myGeoLocationApp/chunk-BHPQZ4GL.js",
+        "/myGeoLocationApp/chunk-DL52RVTA.js",
+        "/myGeoLocationApp/chunk-ENHEBBEX.js",
+        "/myGeoLocationApp/chunk-FDERIQAA.js",
+        "/myGeoLocationApp/chunk-FGDSLMXF.js",
+        "/myGeoLocationApp/chunk-HN6ZZ2AO.js",
+        "/myGeoLocationApp/chunk-LKMAWW2N.js",
+        "/myGeoLocationApp/chunk-NEHUFPFK.js",
+        "/myGeoLocationApp/chunk-X2I2P6MS.js",
         "/myGeoLocationApp/favicon.ico",
         "/myGeoLocationApp/index.html",
-        "/myGeoLocationApp/main-6L6KMZE4.js",
+        "/myGeoLocationApp/main-N2MSQYFK.js",
         "/myGeoLocationApp/manifest.webmanifest",
         "/myGeoLocationApp/polyfills-FFHMD2TL.js",
-        "/myGeoLocationApp/styles-5INURTSO.css"
+        "/myGeoLocationApp/styles-RNDKNCAU.css"
       ],
       "patterns": []
     },
@@ -28,6 +39,7 @@
         "ignoreVary": true
       },
       "urls": [
+        "/myGeoLocationApp/assets/position_marker.png",
         "/myGeoLocationApp/icons/icon-128x128.png",
         "/myGeoLocationApp/icons/icon-144x144.png",
         "/myGeoLocationApp/icons/icon-152x152.png",
@@ -42,6 +54,18 @@
   ],
   "dataGroups": [],
   "hashTable": {
+    "/myGeoLocationApp/assets/position_marker.png": "d037573af2e756305b831b4d62c094aa38cddece",
+    "/myGeoLocationApp/chunk-5BSJA4IP.js": "baab35b53d589fee3829c2dd1143723a8d845923",
+    "/myGeoLocationApp/chunk-6KN6277F.js": "d78cfae912bed1bf3c3f571582f018698eb54b47",
+    "/myGeoLocationApp/chunk-BHPQZ4GL.js": "a2d047ab5109d74a46a2c34e98f3b7b37f37ad5d",
+    "/myGeoLocationApp/chunk-DL52RVTA.js": "5b8a4ea8c1e48fdbcbd0410d25266b8a2f8e2714",
+    "/myGeoLocationApp/chunk-ENHEBBEX.js": "e5e9e68dc5fa92d53c5bc3e6304143f0b61eaa90",
+    "/myGeoLocationApp/chunk-FDERIQAA.js": "15d85ae44d58f9569a95e3112d9ea18d82c7a34d",
+    "/myGeoLocationApp/chunk-FGDSLMXF.js": "2ed6adc364df063d86aae1762b4a4a0a48f272c5",
+    "/myGeoLocationApp/chunk-HN6ZZ2AO.js": "6201fa666fe3f78a4a6f73df37f5a5ba11622d8b",
+    "/myGeoLocationApp/chunk-LKMAWW2N.js": "45ae1d2cc1790828ca6bcd9b0110959dab3e873e",
+    "/myGeoLocationApp/chunk-NEHUFPFK.js": "ecd335e29abb675e6659555529d9c05fe2da3bcf",
+    "/myGeoLocationApp/chunk-X2I2P6MS.js": "258f1ad3e8f223f201580a11a8d1d91a6e00b233",
     "/myGeoLocationApp/favicon.ico": "9c39f434fe1261f68c5e3eefdf734630d99c5670",
     "/myGeoLocationApp/icons/icon-128x128.png": "f912963bdc6d5a38d8f1dd0afbaab2ce8d657acb",
     "/myGeoLocationApp/icons/icon-144x144.png": "b155fd5f2fd5d2ea7760721063003c4cd95fd783",
@@ -51,11 +75,11 @@
     "/myGeoLocationApp/icons/icon-512x512.png": "1de182f76f7329dfa8f9fcdd1fdcdd695bea6a99",
     "/myGeoLocationApp/icons/icon-72x72.png": "aa88a6096bd973be7f6d7a5489bfa6bc2463f8c4",
     "/myGeoLocationApp/icons/icon-96x96.png": "7fb8f59c30ce2ff12c700321a0b39e14b3dc8f95",
-    "/myGeoLocationApp/index.html": "bbc474e7c274a40f703ff79bba94dba264cc3d72",
-    "/myGeoLocationApp/main-6L6KMZE4.js": "056404fc574929d70318c4781470950e77bbd463",
+    "/myGeoLocationApp/index.html": "434945c3904eda7de72ec662054d46401515897e",
+    "/myGeoLocationApp/main-N2MSQYFK.js": "07ce1ce6bbfc2a2f127616621929f24b1cfa2400",
     "/myGeoLocationApp/manifest.webmanifest": "104955563b660ae2c6ec21a79043f9f15567f0fe",
     "/myGeoLocationApp/polyfills-FFHMD2TL.js": "f49b49a155bc7d192db62a4c15d0a612b460a667",
-    "/myGeoLocationApp/styles-5INURTSO.css": "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+    "/myGeoLocationApp/styles-RNDKNCAU.css": "8993ec11dcc5025e209e6284eefb30d4d6bd7f8d"
   },
   "navigationUrls": [
     {
