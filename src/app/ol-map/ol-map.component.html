@@ -1,0 +1,13 @@
+<main>
+  <div class="map-container">
+    <app-ol-map [map]="map"></app-ol-map>
+  </div>
+</main>
+<textarea rows="10" class="log-messages">{{ logMessage }}</textarea>
+<footer>
+  <app-scaleline [map]="map"></app-scaleline>
+  <app-mouse-position
+    [map]="map"
+    positionTemplate="{x}, {y} m"
+  ></app-mouse-position>
+</footer>

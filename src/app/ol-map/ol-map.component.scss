@@ -1,0 +1,22 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+main {
+  display: flex;
+  flex-grow: 1;
+  min-height: 400px;
+  min-width: 400px;
+}
+.map-container {
+  flex-grow: 1;
+}
+.log-messages {
+  flex-grow: 1;
+}
+footer {
+  display: flex;
+  background-color: var(--header-color);
+  padding: 1em;
+  justify-content: space-between;
+}

@@ -8,7 +8,12 @@
         Track my position
       </label>
       <label class="switch">
-        <input id="switcher" type="checkbox" (click)="toggleWatch()" />
+        <input
+          id="switcher"
+          type="checkbox"
+          checked="[toggle]"
+          (click)="toggleWatch()"
+        />
         <span class="slider round"></span>
       </label>
     </div>
@@ -19,7 +24,7 @@
       ></app-map>
     </div>
   </div>
-  <div class="current-position">
+  <div class="current-position" *ngIf="!toggle">
     <button class="primary-button" (click)="getCurrentPosition()">
       Get my position!
     </button>

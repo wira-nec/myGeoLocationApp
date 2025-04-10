@@ -8,7 +8,8 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { RouterOutlet } from '@angular/router';
 import { Subscription, take } from 'rxjs';
 import { GeolocationService } from '../services/geoLocationService';
-import { MapComponent } from './map/map.component';
+//import { MapComponent } from './map/map.component';
+import { MapComponent } from './ol-map/ol-map.component';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -19,7 +20,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   styleUrl: './app.component.scss',
 })
 export class AppComponent {
-  toggle = false;
+  toggle = true;
   position: GeolocationPosition | null = null;
   currentPositionUrl: SafeResourceUrl | null = null;
   watchSubscription: Subscription | null = null;
@@ -61,6 +62,7 @@ export class AppComponent {
   private getUrl(position: GeolocationPosition): SafeResourceUrl {
     const longitude = position.coords.longitude;
     const latitude = position.coords.latitude;
+    this.position = position;
 
     return this.domSanitizer.bypassSecurityTrustResourceUrl(
       `//www.openstreetmap.org/export/embed.html?bbox=${longitude - 0.005},${
