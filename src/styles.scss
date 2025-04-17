@@ -1,6 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
 @import url("https://fonts.googleapis.com/css?family=Roboto");
 body {
+  background: aliceblue;
   font-family: "Roboto";
   color: var(--text-color);
   margin: 0;
@@ -8,3 +9,6 @@ body {
   --sidebar-color: #fae6be;
   --text-color: black;
 }
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }

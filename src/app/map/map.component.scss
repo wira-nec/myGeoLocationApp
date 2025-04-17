@@ -4,6 +4,9 @@
   overflow: hidden;
   background-color: rgba(236, 234, 234, 0.438);
   border: 1px solid rgb(124, 124, 124);
+  & .ol-viewport {
+    border-radius: 50%;
+  }
 }
 
 .marker {

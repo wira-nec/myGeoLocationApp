@@ -1,0 +1,68 @@
+::ng-deep .mat-mdc-menu-content {
+  padding: 0px 10px !important;
+}
+::ng-deep .mat-mdc-menu-item {
+  padding: 0px !important;
+}
+::ng-deep .mat-mdc-text-field-wrapper,
+button[mat-icon-button] {
+  background-color: transparent !important;
+}
+
+::ng-deep .mat-mdc-menu-trigger {
+  background-color: transparent !important;
+  border-style: none !important;
+}
+::ng-deep .mdc-line-ripple {
+  display: none !important;
+}
+::ng-deep .mat-mdc-form-field-icon-suffix > button {
+  border-style: none !important;
+  margin-left: 10px I !important;
+}
+
+::ng-deep .mdc-tooltip__surface {
+  color: white !important;
+  background: grey !important;
+  background-color: grey !important;
+}
+
+::ng-deep.mat-mdc-menu-panel {
+  min-width: fit-content !important;
+}
+
+header {
+  display: flex;
+  background: #020024;
+  background: linear-gradient(
+    90deg,
+    rgba(2, 0, 36, 1) 0%,
+    rgba(9, 9, 121, 1) 35%,
+    rgba(0, 212, 255, 1) 100%
+  );
+  margin: 0;
+  padding: 5px 40px;
+  color: whitesmoke;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+
+  .menu {
+    height: 60px;
+  }
+
+  .brand {
+    flex: 1;
+    display: flex;
+    align-items: center;
+
+    h5 {
+      font-family: "Lobster", cursive;
+      font-size: 20px;
+      margin: 0;
+      letter-spacing: 1px;
+    }
+  }
+
+  .logout-button {
+    padding: 5px;
+  }
+}

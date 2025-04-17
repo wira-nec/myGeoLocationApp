@@ -3,7 +3,7 @@ import { catchError } from 'rxjs/operators';
 import { GeolocationService } from './geoLocationService';
 
 describe('Geolocation token', () => {
-  let service: any;
+  let service: unknown;
 
   beforeEach(() => {
     TestBed.configureTestingModule({

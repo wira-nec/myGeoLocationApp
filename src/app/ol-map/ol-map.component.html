@@ -3,11 +3,13 @@
     <app-ol-map [map]="map"></app-ol-map>
   </div>
 </main>
-<textarea rows="10" class="log-messages">{{ logMessage }}</textarea>
-<footer>
-  <app-scaleline [map]="map"></app-scaleline>
-  <app-mouse-position
-    [map]="map"
-    positionTemplate="{x}, {y} m"
-  ></app-mouse-position>
-</footer>
+<div *ngIf="extendedView" class="extended-view">
+  <textarea rows="10" class="log-messages">{{ logMessage }}</textarea>
+  <footer>
+    <app-scale-line [map]="map"></app-scale-line>
+    <app-mouse-position
+      [map]="map"
+      positionTemplate="{x}, {y} m"
+    ></app-mouse-position>
+  </footer>
+</div>

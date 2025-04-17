@@ -1,20 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ScalelineComponent } from './scaleline.component';
+import { ScaleLineComponent } from './scaleLine.component';
 
 describe('ScalelineComponent', () => {
-  let component: ScalelineComponent;
-  let fixture: ComponentFixture<ScalelineComponent>;
+  let component: ScaleLineComponent;
+  let fixture: ComponentFixture<ScaleLineComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ScalelineComponent ]
-    })
-    .compileComponents();
+      declarations: [ScaleLineComponent],
+    }).compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(ScalelineComponent);
+    fixture = TestBed.createComponent(ScaleLineComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

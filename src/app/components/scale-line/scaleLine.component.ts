@@ -9,12 +9,12 @@ import Map from 'ol/Map';
 import ControlScaleLine from 'ol/control/ScaleLine';
 
 @Component({
-  selector: 'app-scaleline',
+  selector: 'app-scale-line',
   template: ``,
   styles: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ScalelineComponent implements OnInit {
+export class ScaleLineComponent implements OnInit {
   @Input() map: Map | null = null;
   control: ControlScaleLine | null = null;
 

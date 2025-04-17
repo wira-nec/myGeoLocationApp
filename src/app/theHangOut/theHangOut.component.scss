@@ -1,0 +1,34 @@
+.main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: 40px 2px;
+
+  h3 {
+    font-size: 15px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+  }
+
+  .alert {
+    background: #f14343;
+    color: white;
+    padding: 15px;
+    border-radius: 5px;
+    p {
+      margin: 0;
+    }
+  }
+
+  .location {
+    background: green;
+    margin-top: 20px;
+  }
+}
+
+agm-map {
+  height: 400px;
+  width: 600px;
+}

@@ -1,0 +1,24 @@
+<app-header></app-header>
+<div class="content">
+  <h2>
+    {{!!userId ? `Welcome ${username} to "Hangout"` :`Welcome to "Hangout" make yourself known by logging in`}}
+  </h2>
+  <div *ngIf="!!error">
+    Sorry, position is not available: {{ error.message }}
+  </div>
+  <div *ngIf="!username; else elseBlock">
+    This is the place to be and hangout with your friends
+  </div>
+  <ng-template #elseBlock>
+    <div *ngIf="!!userPosition && !!userPosition.userName">
+      <app-map
+        [coordinatesChange]="userPosition"
+        [userId]="userId"
+        [extendedView]="false"
+      ></app-map>
+      <button class="primary-button" (click)="navigateToHangout()">
+        Enter the "Hangout"
+      </button>
+    </div>
+  </ng-template>
+</div>

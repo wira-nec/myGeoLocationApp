@@ -1,0 +1,15 @@
+<app-header></app-header>
+<div class="main">
+  <div *ngIf="userPosition$ | async as userPos">
+    <app-map [coordinatesChange]="userPos" [userId]="userId"></app-map>
+  </div>
+
+  <h4>Location Alerts</h4>
+  <div class="alert" [hidden]="!showAlert">
+    <p>This user has left</p>
+  </div>
+
+  <div class="location alert" [hidden]="!showLocationUpdate">
+    <p>{{ message }}</p>
+  </div>
+</div>

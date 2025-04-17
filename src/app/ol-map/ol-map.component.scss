@@ -20,3 +20,8 @@ footer {
   padding: 1em;
   justify-content: space-between;
 }
+.extended-view {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}

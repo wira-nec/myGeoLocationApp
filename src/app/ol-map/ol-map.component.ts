@@ -1,6 +1,15 @@
-import { Component, DestroyRef, inject, Input } from '@angular/core';
+import {
+  AfterViewChecked,
+  AfterViewInit,
+  Component,
+  DestroyRef,
+  inject,
+  Input,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import { MousePositionComponent } from '../components/mouse-position/mouse-position.component';
-import { ScalelineComponent } from '../components/scaleline/scaleline.component';
+import { ScaleLineComponent } from '../components/scale-line/scaleLine.component';
 import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
@@ -11,60 +20,66 @@ import { Vector } from 'ol/source';
 import { fromLonLat } from 'ol/proj';
 import { CommonModule } from '@angular/common';
 import { OlMapComponent } from '../components/map/map.component';
-import { GeoPosition } from '../view-models/geoPosition';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
-import { MapDataService } from '../../services/mapDataService';
-import { MapInput } from '../models/mapInput';
 import Style from 'ol/style/Style';
 import Icon from 'ol/style/Icon';
+import Text from 'ol/style/Text.js';
 import { Attribution, defaults as defaultControls } from 'ol/control';
-import { Point } from 'ol/geom';
+import { Geometry, Point } from 'ol/geom';
 import { ObjectEvent } from 'ol/Object';
-import { GeolocationService } from '../../services/geoLocationService';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { UserPositionServiceService } from '../../services/user-position-service.service';
+import { GeoPosition } from '../view-models/geoPosition';
+import Fill from 'ol/style/Fill';
+import Stroke from 'ol/style/Stroke';
 
 @Component({
   selector: 'app-map',
   imports: [
     CommonModule,
     MousePositionComponent,
-    ScalelineComponent,
+    ScaleLineComponent,
     OlMapComponent,
   ],
   templateUrl: './ol-map.component.html',
   styleUrl: './ol-map.component.scss',
 })
-export class MapComponent {
+export class MapComponent
+  implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy
+{
+  @Input({ required: false }) extendedView = true;
+  @Input() userId!: string;
   @Input()
-  set coordinatesChange(coords: GeolocationCoordinates | null) {
-    const input = new MapInput();
-    if (this.userPos && coords?.latitude && coords?.longitude) {
-      input.userPos = {
-        ...this.userPos,
-        lat: coords.latitude,
-        lng: coords.longitude,
-      };
-      this.logMessage = this.logMessage.concat(
-        `coordinates changes ${input.userPos.lat}/${input.userPos.lng}\n`
-      );
-      this.mapDataService.addNewMapInput(input);
+  set coordinatesChange(userPosition: GeoPosition) {
+    const userPos = this.userPositions.getUserPosition(userPosition.id);
+    if (userPos) {
+      if (userPosition.coords.latitude && userPosition.coords.longitude) {
+        this.userPositions.setUserCoordinatesAndOrZoom(
+          userPos.id,
+          userPosition.coords,
+          this.zoomLevelSingleMarker
+        );
+        this.logMessage = this.logMessage.concat(
+          `coordinates changes for user "${userPos.userName}" to ${userPosition.coords.latitude}/${userPosition.coords.longitude}\n`
+        );
+      }
     }
   }
 
   map: Map | null = null;
-  logMessage: string = '';
+  logMessage = '';
 
-  private zoomLevelSingleMarker: number = 14;
-  private userMarker: Feature = new Feature();
-  private userPos: GeoPosition | null = null;
+  private canvasStyleIsSet = false;
+  private zoomLevelSingleMarker = 14;
+  private userMarkers: Record<string, Feature> = {};
   private unsubscribe$ = new Subject();
   private zoomInput = new Subject<ObjectEvent>();
   private destroyRef = inject(DestroyRef);
-
-  constructor(
-    private readonly mapDataService: MapDataService,
-    readonly geolocation$: GeolocationService
-  ) {
+  private markersVectorLayer = new VectorLayer<
+    Vector<Feature<Geometry>>,
+    Feature<Geometry>
+  >();
+  constructor(private readonly userPositions: UserPositionServiceService) {
     this.zoomInput
       .pipe(takeUntilDestroyed(this.destroyRef))
       .pipe(debounceTime(300))
@@ -73,36 +88,37 @@ export class MapComponent {
       });
   }
 
-  ngOnInit() {
-    this.geolocation$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (position) => {
-        if (!this.map) {
-          this.initializeMap();
-        }
-        if (!this.userPos) {
-          const input = new MapInput();
-          input.userPos = {
-            id: 1,
-            info: 'wira',
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            center: [0, 0],
-            zoom: this.zoomLevelSingleMarker,
-          };
-          this.mapDataService.addNewMapInput(input);
-        }
-      },
-    });
+  ngOnInit(): void {
+    if (!this.map) {
+      this.initializeMap();
+    }
   }
 
   ngAfterViewInit(): void {
-    this.mapDataService.mapInput$
+    this.userPositions.userPositions$
       .pipe(takeUntil(this.unsubscribe$))
-      .subscribe((value: MapInput | null) => {
-        if (value) {
-          this.setupMap(value);
+      .subscribe((userPositions) => {
+        if (userPositions) {
+          this.setupMap([userPositions]);
         }
       });
+    this.userPositions.removedUserPosition$
+      .pipe(takeUntil(this.unsubscribe$))
+      .subscribe((removedUserPosition) => {
+        if (removedUserPosition) {
+          this.updateMap(removedUserPosition);
+        }
+      });
+  }
+
+  ngAfterViewChecked(): void {
+    if (!this.extendedView && !this.canvasStyleIsSet) {
+      const canvas = this.map?.getViewport().querySelector('canvas');
+      if (canvas) {
+        canvas.style.borderRadius = '50%';
+        this.canvasStyleIsSet = true;
+      }
+    }
   }
 
   ngOnDestroy() {
@@ -110,32 +126,28 @@ export class MapComponent {
     this.unsubscribe$.complete();
   }
 
-  private setupMap(input: MapInput) {
-    this.userPos = input.userPos;
-
+  private onViewChanged = () => {
     const view = this.map?.getView();
-    if (this.userPos && this.userPos.lat && this.userPos.lng) {
-      view?.setCenter(fromLonLat([this.userPos.lng, this.userPos.lat]));
+    this.zoomLevelSingleMarker = view?.getZoom() || 13;
+    console.log('zoom', view);
+  };
+
+  private onCenterChanged = (e: ObjectEvent) => {
+    const input = this.userPositions.getUserPosition(this.userId);
+    if (input && input.id === this.userId) {
+      input.center = (e.target as View).getCenter();
     }
-    view?.setZoom(this.zoomLevelSingleMarker);
+  };
 
-    this.userPos && this.updateUserMarker(this.userPos);
+  private refreshVectorLayer() {
+    const vectorLayerSource = this.markersVectorLayer.getSource();
+    if (vectorLayerSource) {
+      vectorLayerSource?.clear(true);
+      vectorLayerSource?.addFeatures(Object.values(this.userMarkers));
+    }
   }
 
-  private updateUserMarker(userPos: GeoPosition) {
-    this.userPos = userPos;
-    this.userMarker.setGeometry(undefined);
-    if (!userPos) return;
-    this.userMarker.setGeometry(
-      new Point(fromLonLat([userPos.lng, userPos.lat]))
-    );
-    console.log([userPos.lng, userPos.lat]);
-    this.styleUser(this.userMarker);
-    // Add next line to keep chard at place and marker moving.
-    // this.map?.getView().setCenter(this.userPos.center);
-  }
-
-  private styleUser = (feature: Feature) => {
+  private styleUser = (feature: Feature, userName: string) => {
     if (!feature) return;
 
     feature.setStyle(
@@ -147,49 +159,69 @@ export class MapComponent {
           opacity: 0.7,
           scale: 0.5,
         }),
+        text: new Text({
+          text: userName,
+          font: 'bold 12px Calibri,sans-serif',
+          offsetY: -40,
+          fill: new Fill({
+            color: 'blue',
+          }),
+          stroke: new Stroke({
+            color: 'white',
+            width: 2,
+          }),
+        }),
       })
     );
   };
 
-  private onViewChanged = () => {
+  private setupMap(userPositions: GeoPosition[]) {
     const view = this.map?.getView();
-    this.zoomLevelSingleMarker = view?.getZoom() || 13;
-    console.log('zoom', view);
-  };
+    view?.setZoom(this.zoomLevelSingleMarker);
+    userPositions.forEach((userPosition) => {
+      if (!Object.keys(this.userMarkers).includes(userPosition.id)) {
+        this.userMarkers[userPosition.id] = new Feature<Geometry>();
+      }
+      const coords = [
+        userPosition.coords.longitude,
+        userPosition.coords.latitude,
+      ];
+      this.userMarkers[userPosition.id].setGeometry(
+        new Point(fromLonLat(coords))
+      );
+      this.styleUser(this.userMarkers[userPosition.id], userPosition.userName);
+      if (
+        userPosition.id === this.userId &&
+        userPosition.coords.latitude &&
+        userPosition.coords.longitude
+      ) {
+        view?.setCenter(fromLonLat(coords));
+      }
+    });
+    this.refreshVectorLayer();
+  }
 
-  private onCenterCanged = (e: ObjectEvent) => {
-    console.log('onCenter', this.userPos);
-    const input = new MapInput();
-    if (!this.userPos) {
-      console.log('warning something wrong with intialization userPos');
-      input.userPos = {
-        id: 1,
-        info: 'wira',
-        lat: 0,
-        lng: 0,
-        center: (e.target as View).getCenter(),
-        zoom: this.zoomLevelSingleMarker,
-      };
-    } else {
-      input.userPos = {
-        ...this.userPos,
-        center: (e.target as View).getCenter(),
-      };
+  private updateMap(userPosition: GeoPosition) {
+    if (Object.keys(this.userMarkers).includes(userPosition.id)) {
+      delete this.userMarkers[userPosition.id];
     }
-    this.mapDataService.addNewMapInput(input);
-  };
+    this.refreshVectorLayer();
+  }
 
   private initializeMap = () => {
-    this.userMarker = new Feature();
+    this.userMarkers[this.userId] = new Feature<Geometry>();
     //
     // Create a map with an OpenStreetMap-layer,
     // a marker layer and a view
-    var attribution = new Attribution({
+    const attribution = new Attribution({
       // Attach the attribution information
       // to an element outside of the map
       target: 'attribution',
     });
 
+    this.markersVectorLayer = new VectorLayer({
+      source: new Vector({ features: Object.values(this.userMarkers) }),
+    });
     this.map = new Map({
       controls: defaultControls({ attribution: false }).extend([attribution]),
       target: 'map',
@@ -201,12 +233,10 @@ export class MapComponent {
         new TileLayer({
           source: new OSM(),
         }),
-        new VectorLayer({
-          source: new Vector({ features: [this.userMarker] }),
-        }),
+        this.markersVectorLayer,
       ],
     });
     this.map.getView().on('change:resolution', (e) => this.zoomInput.next(e));
-    this.map.getView().once('change:center', (e) => this.onCenterCanged(e));
+    this.map.getView().once('change:center', (e) => this.onCenterChanged(e));
   };
 }

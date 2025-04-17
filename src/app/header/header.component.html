@@ -1,0 +1,51 @@
+<header>
+  <div class="brand">
+    <h5>The Hangout</h5>
+  </div>
+  <div class="menu">
+    <button
+      [matTooltip]="isLoggedIn ? 'Logout menu' : 'Login menu'"
+      matTooltipPosition="left"
+      matTooltipClass="tooltip"
+      mat-icon-button
+      [matMenuTriggerFor]="menu"
+      aria-label="Account icon-button with a menu"
+    >
+      <img src="/assets/icons8-login-50.png" alt="avatar" />
+    </button>
+    <mat-menu #menu="matMenu">
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events -->
+      <form
+        *ngIf="!isLoggedIn"
+        mat-menu-item
+        class="login-form"
+        (click)="$event.stopPropagation()"
+      >
+        <mat-form-field class="full-width">
+          <input
+            type="text"
+            name="userName"
+            matInput
+            placeholder="Please enter username"
+            [(ngModel)]="userName"
+          />
+          <button
+            matTooltip="Submit username"
+            matTooltipPosition="above"
+            matSuffix
+            mat-icon-button
+            aria-label="Submit"
+            (click)="usernameChangeWithEvent()"
+          >
+            <mat-icon matIconSuffix>recommend</mat-icon>
+          </button>
+        </mat-form-field>
+      </form>
+      <button *ngIf="isLoggedIn" mat-menu-item (click)="logout()">
+        Logout
+      </button>
+    </mat-menu>
+
+    <mat-menu #login="matMenu"> </mat-menu>
+  </div>
+</header>
