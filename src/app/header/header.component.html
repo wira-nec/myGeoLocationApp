@@ -11,7 +11,7 @@
       [matMenuTriggerFor]="menu"
       aria-label="Account icon-button with a menu"
     >
-      <img src="/assets/icons8-login-50.png" alt="avatar" />
+      <img src="assets/icons8-login-50.png" alt="avatar" />
     </button>
     <mat-menu #menu="matMenu">
       <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events -->
@@ -41,7 +41,12 @@
           </button>
         </mat-form-field>
       </form>
-      <button *ngIf="isLoggedIn" mat-menu-item (click)="logout()">
+      <button
+        *ngIf="isLoggedIn"
+        mat-menu-item
+        (click)="logout()"
+        class="logout-button"
+      >
         Logout
       </button>
     </mat-menu>
