@@ -5,12 +5,13 @@ import { CommonModule } from '@angular/common';
 import { MapComponent } from '../ol-map/ol-map.component';
 import { GeoPosition } from '../view-models/geoPosition';
 import { AuthService } from '../../services/auth.service';
-import { UserPositionServiceService } from '../../services/user-position-service.service';
+import { UserPositionService } from '../../services/user-position.service';
 import { Router } from '@angular/router';
 import { first } from 'rxjs';
 
 @Component({
   selector: 'app-home',
+  standalone: true,
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'],
   imports: [HeaderComponent, CommonModule, MapComponent],
@@ -23,7 +24,7 @@ export class HomeComponent implements OnInit {
     private router: Router,
     private readonly changeDetectorRef: ChangeDetectorRef,
     private authService: AuthService,
-    private readonly userPositions$: UserPositionServiceService,
+    private readonly userPositions$: UserPositionService,
     readonly geolocation$: GeolocationService
   ) {}
 

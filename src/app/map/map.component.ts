@@ -5,6 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'app-map',
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.scss'],

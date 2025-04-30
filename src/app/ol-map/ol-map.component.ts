@@ -28,13 +28,14 @@ import { Attribution, defaults as defaultControls } from 'ol/control';
 import { Geometry, Point } from 'ol/geom';
 import { ObjectEvent } from 'ol/Object';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { UserPositionServiceService } from '../../services/user-position-service.service';
+import { UserPositionService } from '../../services/user-position.service';
 import { GeoPosition } from '../view-models/geoPosition';
 import Fill from 'ol/style/Fill';
 import Stroke from 'ol/style/Stroke';
 
 @Component({
   selector: 'app-map',
+  standalone: true,
   imports: [
     CommonModule,
     MousePositionComponent,
@@ -51,10 +52,10 @@ export class MapComponent
   @Input() userId!: string;
   @Input()
   set coordinatesChange(userPosition: GeoPosition) {
-    const userPos = this.userPositions.getUserPosition(userPosition.id);
+    const userPos = this.userPositionService.getUserPosition(userPosition.id);
     if (userPos) {
       if (userPosition.coords.latitude && userPosition.coords.longitude) {
-        this.userPositions.setUserCoordinatesAndOrZoom(
+        this.userPositionService.setUserCoordinatesAndOrZoom(
           userPos.id,
           userPosition.coords,
           this.zoomLevelSingleMarker
@@ -70,7 +71,7 @@ export class MapComponent
   logMessage = '';
 
   private canvasStyleIsSet = false;
-  private zoomLevelSingleMarker = 14;
+  private zoomLevelSingleMarker = 13;
   private userMarkers: Record<string, Feature> = {};
   private unsubscribe$ = new Subject();
   private zoomInput = new Subject<ObjectEvent>();
@@ -79,7 +80,8 @@ export class MapComponent
     Vector<Feature<Geometry>>,
     Feature<Geometry>
   >();
-  constructor(private readonly userPositions: UserPositionServiceService) {
+
+  constructor(private readonly userPositionService: UserPositionService) {
     this.zoomInput
       .pipe(takeUntilDestroyed(this.destroyRef))
       .pipe(debounceTime(300))
@@ -95,14 +97,14 @@ export class MapComponent
   }
 
   ngAfterViewInit(): void {
-    this.userPositions.userPositions$
+    this.userPositionService.userPositions$
       .pipe(takeUntil(this.unsubscribe$))
       .subscribe((userPositions) => {
         if (userPositions) {
           this.setupMap([userPositions]);
         }
       });
-    this.userPositions.removedUserPosition$
+    this.userPositionService.removedUserPosition$
       .pipe(takeUntil(this.unsubscribe$))
       .subscribe((removedUserPosition) => {
         if (removedUserPosition) {
@@ -129,11 +131,10 @@ export class MapComponent
   private onViewChanged = () => {
     const view = this.map?.getView();
     this.zoomLevelSingleMarker = view?.getZoom() || 13;
-    console.log('zoom', view);
   };
 
   private onCenterChanged = (e: ObjectEvent) => {
-    const input = this.userPositions.getUserPosition(this.userId);
+    const input = this.userPositionService.getUserPosition(this.userId);
     if (input && input.id === this.userId) {
       input.center = (e.target as View).getCenter();
     }
@@ -142,8 +143,8 @@ export class MapComponent
   private refreshVectorLayer() {
     const vectorLayerSource = this.markersVectorLayer.getSource();
     if (vectorLayerSource) {
-      vectorLayerSource?.clear(true);
-      vectorLayerSource?.addFeatures(Object.values(this.userMarkers));
+      vectorLayerSource.clear(true);
+      vectorLayerSource.addFeatures(Object.values(this.userMarkers));
     }
   }
 

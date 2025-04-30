@@ -11,7 +11,7 @@ import { MapComponent } from '../ol-map/ol-map.component';
 import { CommonModule } from '@angular/common';
 import { GeolocationService } from '../../services/geoLocationService';
 import { GeoPosition } from '../view-models/geoPosition';
-import { UserPositionServiceService } from '../../services/user-position-service.service';
+import { UserPositionService } from '../../services/user-position.service';
 import { Observable } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -20,6 +20,7 @@ import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-hangout',
+  standalone: true,
   templateUrl: './theHangOut.component.html',
   styleUrls: ['./theHangOut.component.scss'],
   imports: [HeaderComponent, MapComponent, CommonModule],
@@ -32,7 +33,7 @@ export class TheHangOutComponent
     private readonly route: ActivatedRoute,
     private readonly pusher: PusherService,
     private readonly changeDetectorRef: ChangeDetectorRef,
-    private readonly userPositions: UserPositionServiceService,
+    private readonly userPositions: UserPositionService,
     private readonly authService: AuthService,
     private readonly router: Router,
     readonly geolocation$: GeolocationService

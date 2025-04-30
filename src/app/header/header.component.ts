@@ -11,6 +11,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-header',
+  standalone: true,
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss'],
   imports: [
@@ -49,7 +50,9 @@ export class HeaderComponent implements OnInit {
     }
   }
 
-  logout() {
+  logout(event: MouseEvent) {
     this.authService$.setUserName(null);
+    event.stopPropagation();
+    setTimeout(() => this.trigger?.closeMenu(), 60);
   }
 }

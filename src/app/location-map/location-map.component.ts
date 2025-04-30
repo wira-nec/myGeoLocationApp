@@ -15,6 +15,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-location-map',
+  standalone: true,
   imports: [MapComponent, CommonModule],
   templateUrl: './location-map.component.html',
   styleUrl: './location-map.component.scss',

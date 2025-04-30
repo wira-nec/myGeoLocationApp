@@ -1,0 +1,15 @@
+<app-popover-container>
+  <table>
+    <thead>
+      <tr>
+        <th>Location information</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of this.details | keyvalue">
+        <td>{{ item.key }}</td>
+        <td [innerHTML]="getValueOrImage(item)"></td>
+      </tr>
+    </tbody>
+  </table>
+</app-popover-container>
