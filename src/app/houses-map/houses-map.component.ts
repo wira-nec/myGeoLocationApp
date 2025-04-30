@@ -24,6 +24,8 @@ import { Attribution, defaults as defaultControls } from 'ol/control';
 import TileLayer from 'ol/layer/Tile';
 import { fromLonLat } from 'ol/proj';
 import { PopupHouseCardComponent } from '../popup-house-card/popup-house-card.component';
+import CircleStyle from 'ol/style/Circle';
+import { StyleLike } from 'ol/style/Style';
 
 @Component({
   selector: 'app-houses-map',
@@ -146,6 +148,8 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   private onViewChanged = () => {
     const view = this.map?.getView();
     this.zoomLevelSingleMarker = view?.getZoom() || 13;
+    this.updateUserMarkerStyle();
+    console.log('zoom', this.zoomLevelSingleMarker);
   };
 
   private getAddress(data: StoreData): string {
@@ -160,33 +164,65 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
     }
   }
 
-  private styleUser = (feature: Feature, userName: string) => {
+  private styleUser = (feature: Feature, labelText: string) => {
     if (!feature) return;
 
-    feature.setStyle(
-      new Style({
-        image: new Icon({
-          src: 'assets/icons8-house-30.png',
-          size: [60, 60],
-          anchor: [0.5, 1],
-          opacity: 0.7,
-          scale: 0.5,
-        }),
-        text: new Text({
-          text: userName,
-          font: 'bold 12px Calibri,sans-serif',
-          offsetY: -40,
-          fill: new Fill({
-            color: 'blue',
-          }),
-          stroke: new Stroke({
-            color: 'white',
-            width: 2,
-          }),
-        }),
-      })
-    );
+    feature.setStyle(this.getHouseStyle(labelText));
   };
+
+  private getHouseStyle(labelText: string): StyleLike | undefined {
+    return new Style({
+      image: new Icon({
+        src: 'assets/icons8-house-30.png',
+        size: [60, 60],
+        anchor: [0, 0],
+        opacity: 0.7,
+        scale: 0.5,
+      }),
+      text: new Text({
+        text: labelText,
+        font: 'bold 12px Calibri,sans-serif',
+        offsetY: -5,
+        fill: new Fill({
+          color: 'blue',
+        }),
+        stroke: new Stroke({
+          color: 'white',
+          width: 2,
+        }),
+      }),
+    });
+  }
+
+  getDotStyle: StyleLike | undefined = new Style({
+    image: new CircleStyle({
+      radius: 4,
+      fill: new Fill({ color: 'black' }),
+      stroke: new Stroke({
+        color: 'white',
+        width: 2,
+      }),
+    }),
+  });
+
+  private updateUserMarkerStyle() {
+    Object.keys(this.userMarkers).forEach((key) => {
+      if (this.zoomLevelSingleMarker > 15.5) {
+        const userPos = this.userPositionService.getUserPosition(key);
+        let labelText = '';
+        if (userPos?.details) {
+          labelText = this.getAddress(userPos.details);
+        } else {
+          labelText = userPos?.userName || 'Unknown';
+        }
+        this.userMarkers[key].setStyle(this.getHouseStyle(labelText));
+      } else {
+        this.userMarkers[key].setStyle(this.getDotStyle);
+      }
+      this.userMarkers[key].changed();
+    });
+    this.refreshVectorLayer();
+  }
 
   private setupMap(userPositions: GeoPosition[]) {
     const view = this.map?.getView();

@@ -16,7 +16,7 @@ import { LoadPictureService } from '../../services/load-picture.service';
 import { StoreData } from '../../services/data-store.service';
 import Overlay from 'ol/Overlay';
 import { getUid } from 'ol/util';
-import { CommonModule, KeyValue } from '@angular/common';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-popup-house-card',
@@ -106,9 +106,17 @@ export class PopupHouseCardComponent implements OnInit {
 
   extraInformation(details: StoreData) {
     if (details) {
-      return Object.entries(details).filter(
-        (entry) => !this.fixedDetailKeys.includes(entry[0])
-      );
+      return Object.entries(details)
+        .filter((entry) => !this.fixedDetailKeys.includes(entry[0]))
+        .map((info) => {
+          if (this.isUrlItem(info[1])) {
+            return [
+              info[0],
+              `<a href="${info[1]}" target="_blank">${info[1]}</a>`,
+            ];
+          }
+          return info;
+        });
     }
     return [];
   }

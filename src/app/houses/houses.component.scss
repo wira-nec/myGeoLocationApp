@@ -11,23 +11,10 @@
   align-items: center;
   padding: 30px 0;
 
-  .import-button {
-    width: auto;
-    background-color: #2190e4;
-    border: none;
-    color: white;
-    padding: 10px 10px;
-    text-align: center;
-    font-size: 16px;
-    margin: 20px 2px;
-    transition: 0.3s;
-    display: inline-block;
-    text-decoration: none;
-    cursor: pointer;
-    border-radius: 4px;
-
-    &:hover {
-      background-color: #1d85d4;
-    }
+  .import-icon {
+    color: #2190e4;
+    position: fixed;
+    bottom: 60px;
+    right: 30px;
   }
 }
