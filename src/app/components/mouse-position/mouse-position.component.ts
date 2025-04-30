@@ -12,6 +12,7 @@ import { Coordinate } from 'ol/coordinate';
 
 @Component({
   selector: 'app-mouse-position',
+  standalone: true,
   template: ``,
   styles: [
     `

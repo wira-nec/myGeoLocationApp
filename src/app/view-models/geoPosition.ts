@@ -1,4 +1,5 @@
 import { Coordinate } from 'ol/coordinate';
+import { StoreData } from '../../services/data-store.service';
 
 export interface GeoPosition {
   id: string;
@@ -7,4 +8,5 @@ export interface GeoPosition {
   center?: Coordinate;
   zoom: number;
   coords: GeolocationCoordinates;
+  details?: StoreData;
 }

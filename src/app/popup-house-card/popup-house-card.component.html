@@ -1,0 +1,32 @@
+<mat-card *ngIf="details" class="house-card" appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>{{ address(details) }}</mat-card-title>
+  </mat-card-header>
+  <mat-divider></mat-divider>
+  <mat-card-content>
+    <mat-grid-list cols="4">
+      <mat-grid-tile colspan="2" rowspan="2">
+        <table>
+          <thead>
+            <tr>
+              <th>Extra information</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of extraInformation(details)">
+              <td>{{ item[0] }}</td>
+              <td>{{ item[1] }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </mat-grid-tile>
+      <mat-grid-tile colspan="2" rowspan="2">
+        <img
+          mat-card-image
+          [src]="picture(details)"
+          alt="Photo of house not found"
+        />
+      </mat-grid-tile>
+    </mat-grid-list>
+  </mat-card-content>
+</mat-card>

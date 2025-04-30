@@ -10,6 +10,7 @@ import ControlScaleLine from 'ol/control/ScaleLine';
 
 @Component({
   selector: 'app-scale-line',
+  standalone: true,
   template: ``,
   styles: [],
   changeDetection: ChangeDetectionStrategy.OnPush,

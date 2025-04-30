@@ -1,0 +1,17 @@
+<div class="content">
+  <span>Select excel sheet with your information about houses</span>
+  <div class="import-button">
+    <input
+      #fileInput
+      type="file"
+      (change)="onFileChange($event)"
+      accept=".xlsx, .xls"
+      (click)="fileInput.value = ''"
+    />
+  </div>
+
+  <span>Select all images you have used in your excel sheet</span
+  ><app-upload-multiple-files />
+
+  <app-houses-map></app-houses-map>
+</div>

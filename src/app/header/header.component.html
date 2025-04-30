@@ -14,13 +14,22 @@
       <img src="assets/icons8-login-50.png" alt="avatar" />
     </button>
     <mat-menu #menu="matMenu">
+      <ng-container *ngIf="isLoggedIn; then loggedIn; else loggedOut">
+      </ng-container>
+
+      <ng-template #loggedIn>
+        <button mat-menu-item (click)="logout($event)" class="logout-button">
+          Logout
+        </button>
+      </ng-template>
+      <ng-template #loggedOut>
+        <button mat-menu-item [matMenuTriggerFor]="login">login</button>
+      </ng-template>
+    </mat-menu>
+
+    <mat-menu #login="matMenu">
       <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events -->
-      <form
-        *ngIf="!isLoggedIn"
-        mat-menu-item
-        class="login-form"
-        (click)="$event.stopPropagation()"
-      >
+      <form mat-menu-item class="login-form" (click)="$event.stopPropagation()">
         <mat-form-field class="full-width">
           <input
             type="text"
@@ -41,16 +50,6 @@
           </button>
         </mat-form-field>
       </form>
-      <button
-        *ngIf="isLoggedIn"
-        mat-menu-item
-        (click)="logout()"
-        class="logout-button"
-      >
-        Logout
-      </button>
     </mat-menu>
-
-    <mat-menu #login="matMenu"> </mat-menu>
   </div>
 </header>

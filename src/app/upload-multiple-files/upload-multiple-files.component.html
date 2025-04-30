@@ -1,0 +1,10 @@
+<div class="upload-button">
+  <input
+    #fileInput
+    type="file"
+    (change)="uploadFiles($event)"
+    accept="image/jpg"
+    (click)="fileInput.value = ''"
+    multiple
+  />
+</div>
