@@ -1,8 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { MatBottomSheetRef } from '@angular/material/bottom-sheet';
 import { UploadMultipleFilesComponent } from '../../upload-multiple-files/upload-multiple-files.component';
 import { DataStoreService } from '../../../services/data-store.service';
 import * as XLSX from 'xlsx';
+import { LoadPictureService } from '../../../services/load-picture.service';
 
 @Component({
   selector: 'app-bottom-file-selection-sheet',
@@ -10,18 +11,46 @@ import * as XLSX from 'xlsx';
   templateUrl: './bottom-file-selection-sheet.component.html',
   styleUrl: './bottom-file-selection-sheet.component.scss',
 })
-export class BottomFileSelectionSheetComponent {
+export class BottomFileSelectionSheetComponent implements OnInit {
   excelData!: never[];
   private _bottomSheetRef =
     inject<MatBottomSheetRef<BottomFileSelectionSheetComponent>>(
       MatBottomSheetRef
     );
 
-  constructor(private dataStore: DataStoreService) {}
+  constructor(
+    private readonly loadPictureService: LoadPictureService,
+    private readonly dataStoreService: DataStoreService
+  ) {}
 
-  openLink(event: MouseEvent): void {
+  ngOnInit(): void {
+    this.loadPictureService.pictureStore$.subscribe({
+      next: (pictures) => {
+        this.isUserPositionLoaded = !!Object.keys(pictures).length;
+        if (this.isDataStoreLoaded) {
+          this.closeLink();
+        }
+      },
+    });
+    this.dataStoreService.dataStore$.subscribe({
+      next: (data) => {
+        this.isDataStoreLoaded = !!data.length;
+        if (this.isUserPositionLoaded) {
+          this.closeLink();
+        }
+      },
+    });
+  }
+
+  private isDataStoreLoaded = false;
+  private isUserPositionLoaded = false;
+
+  closeLink(): void {
     this._bottomSheetRef.dismiss();
-    event.preventDefault();
+    if (this.isDataStoreLoaded && this.isUserPositionLoaded) {
+      this.loadPictureService.pictureStore$.unsubscribe();
+      this.dataStoreService.dataStore$.unsubscribe();
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,7 +63,7 @@ export class BottomFileSelectionSheetComponent {
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         this.excelData = XLSX.utils.sheet_to_json(worksheet, { raw: true });
-        this.dataStore.store(this.excelData);
+        this.dataStoreService.store(this.excelData);
       }
     };
     reader.readAsArrayBuffer(file);

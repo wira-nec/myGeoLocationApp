@@ -4,6 +4,7 @@ import {
   AfterViewInit,
   inject,
   DestroyRef,
+  ViewContainerRef,
 } from '@angular/core';
 import Map from 'ol/Map';
 import { OlMapComponent } from '../components/map/map.component';
@@ -26,6 +27,7 @@ import { fromLonLat } from 'ol/proj';
 import { PopupHouseCardComponent } from '../popup-house-card/popup-house-card.component';
 import CircleStyle from 'ol/style/Circle';
 import { StyleLike } from 'ol/style/Style';
+import { FilesImportControlComponent } from '../files-import-control/files-import-control.component';
 
 @Component({
   selector: 'app-houses-map',
@@ -33,6 +35,7 @@ import { StyleLike } from 'ol/style/Style';
   imports: [PopupHouseCardComponent, OlMapComponent],
   templateUrl: './houses-map.component.html',
   styleUrl: './houses-map.component.scss',
+  providers: [FilesImportControlComponent],
 })
 export class HousesMapComponent implements OnInit, AfterViewInit {
   map: Map | null = null;
@@ -49,6 +52,8 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private geocoder!: any;
   private destroyRef = inject(DestroyRef);
+  private filesImportComponent = inject(FilesImportControlComponent);
+  private viewContainer = inject(ViewContainerRef);
 
   constructor(
     private readonly userPositionService: UserPositionService,
@@ -108,6 +113,12 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
+    const ref = this.viewContainer.createComponent(
+      FilesImportControlComponent
+    ).instance;
+    this.map?.addControl(ref.getFilesImportControl());
+    ref.openBottomSheet();
+
     this.textInput = document.querySelector('.gcd-txt-input');
     this.sendTextInput = document.querySelector('.gcd-txt-search');
     this.userPositionService.userPositions$
@@ -194,7 +205,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
     });
   }
 
-  getDotStyle: StyleLike | undefined = new Style({
+  private getDotStyle: StyleLike | undefined = new Style({
     image: new CircleStyle({
       radius: 4,
       fill: new Fill({ color: 'black' }),
@@ -286,6 +297,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
         this.markersVectorLayer,
       ],
     });
+
     this.map.getView().on('change:resolution', (e) => this.zoomInput.next(e));
   };
 }

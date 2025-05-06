@@ -1,29 +1,51 @@
-<mat-card *ngIf="details" class="house-card" appearance="raised">
+<mat-card
+  *ngIf="details && fontSize$ | async as fontSize"
+  class="house-card"
+  appearance="raised"
+  [ngClass]="{
+    small: fontSize === 1,
+    medium: fontSize === 2,
+    big: fontSize === 3
+  }"
+>
   <mat-card-header>
-    <mat-card-title>{{ address(details) }}</mat-card-title>
+    <div class="table">
+      <div class="row">
+        <mat-card-title class="cell">{{ address(details) }}</mat-card-title>
+        <button
+          class="cell"
+          [style.flex]="1"
+          mat-icon-button
+          aria-label="close icon"
+          (click)="closePopup()"
+        >
+          <mat-icon [style.float]="'right'" [style.color]="'red'"
+            >cancel</mat-icon
+          >
+        </button>
+      </div>
+    </div>
   </mat-card-header>
   <mat-divider></mat-divider>
   <mat-card-content class="card-content">
     <div class="content-container">
       <div class="info-table">
-        <table>
-          <thead>
-            <th colspan="2">Extra information</th>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of extraInformation(details)">
-              <td>{{ item[0] }}:</td>
-              <td><div [innerHTML]="item[1]"></div></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="picture-image">
-        <img
-          mat-card-image
-          [src]="picture(details)"
-          alt="Photo of house not found"
-        />
+        <div class="table" [style.flex]="2">
+          <div class="row heading">
+            <div class="cell" [style.flex]="2">Extra information</div>
+          </div>
+          <div class="row" *ngFor="let item of extraInformation(details)">
+            <div class="cell">{{ item[0] }}:</div>
+            <div class="cell" [innerHTML]="item[1]"></div>
+          </div>
+        </div>
+        <div class="picture-image">
+          <img
+            mat-card-image
+            [src]="picture(details)"
+            alt="Photo of house not found"
+          />
+        </div>
       </div>
     </div>
   </mat-card-content>

@@ -9,6 +9,7 @@ import {
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatGridListModule } from '@angular/material/grid-list';
+import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import Map from 'ol/Map';
 import { UserPositionService } from '../../services/user-position.service';
@@ -16,7 +17,9 @@ import { LoadPictureService } from '../../services/load-picture.service';
 import { StoreData } from '../../services/data-store.service';
 import Overlay from 'ol/Overlay';
 import { getUid } from 'ol/util';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgClass } from '@angular/common';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'app-popup-house-card',
@@ -26,8 +29,10 @@ import { CommonModule } from '@angular/common';
     MatButtonModule,
     MatListModule,
     MatGridListModule,
+    MatIconModule,
     CommonModule,
   ],
+  hostDirectives: [NgClass],
   templateUrl: './popup-house-card.component.html',
   styleUrl: './popup-house-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,8 +44,11 @@ export class PopupHouseCardComponent implements OnInit {
     private ref: ElementRef,
     private userPositionService: UserPositionService,
     private pictureService: LoadPictureService,
-    private changeDetectorRef: ChangeDetectorRef
+    private changeDetectorRef: ChangeDetectorRef,
+    private responsive: BreakpointObserver
   ) {}
+
+  fontSize$ = new BehaviorSubject(3);
 
   details!: StoreData;
   private overlay!: Overlay;
@@ -57,10 +65,37 @@ export class PopupHouseCardComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.fontSize$.subscribe((font) => console.log('FontSize:', font));
     this.overlay = new Overlay({
       element: this.ref.nativeElement,
       autoPan: true,
     });
+    this.responsive
+      .observe([Breakpoints.Handset, Breakpoints.Tablet, Breakpoints.Web])
+      .subscribe((result) => {
+        const breakpoints = result.breakpoints;
+        console.log('breakpoints:', breakpoints);
+
+        if (
+          breakpoints[Breakpoints.TabletPortrait] ||
+          breakpoints[Breakpoints.HandsetLandscape]
+        ) {
+          this.fontSize$.next(2);
+          console.log('FontSize next:', 2);
+        } else if (
+          breakpoints[Breakpoints.HandsetPortrait] ||
+          breakpoints[Breakpoints.HandsetLandscape]
+        ) {
+          this.fontSize$.next(1);
+          console.log('FontSize next:', 1);
+        } else if (
+          breakpoints[Breakpoints.WebLandscape] ||
+          breakpoints[Breakpoints.WebPortrait]
+        ) {
+          this.fontSize$.next(3);
+          console.log('FontSize next:', 3);
+        }
+      });
     if (this.map) {
       this.map.on('click', (event) => {
         this.changeDetectorRef.markForCheck();
@@ -89,6 +124,10 @@ export class PopupHouseCardComponent implements OnInit {
     }
   }
 
+  closePopup() {
+    this.overlay.setPosition(undefined);
+  }
+
   address(details: StoreData) {
     if (details) {
       return `${details['postcode']}, ${details['city']}, ${details['housenumber']}`;
@@ -98,7 +137,7 @@ export class PopupHouseCardComponent implements OnInit {
 
   picture(details: StoreData) {
     if (details) {
-      const pictureName = details['picture'].replace(/^.*[\\/]/, '');
+      const pictureName = details['picture'].replace(/^.*[\\\/]/, '');
       return this.pictureService.getPicture(pictureName);
     }
     return '';
