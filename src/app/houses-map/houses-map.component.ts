@@ -29,6 +29,7 @@ import { StyleLike } from 'ol/style/Style';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { ImportFilesControl } from '../mapControls/importFilesControl/importFilesControl';
 import { BottomFileSelectionSheetComponent } from '../houses/bottom-file-selection-sheet/bottom-file-selection-sheet.component';
+import { FontSizeService } from '../../services/font-size.service';
 
 @Component({
   selector: 'app-houses-map',
@@ -56,10 +57,12 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   private readonly fileImportControl = new ImportFilesControl({
     callback: this._bottomSheet,
   });
+  private fontSize!: number;
 
   constructor(
     private readonly userPositionService: UserPositionService,
-    private readonly dataStoreService: DataStoreService
+    private readonly dataStoreService: DataStoreService,
+    private readonly fontSizeService: FontSizeService
   ) {
     this.zoomInput
       .pipe(takeUntilDestroyed())
@@ -67,6 +70,9 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
       .subscribe(() => {
         this.onViewChanged();
       });
+    this.fontSizeService.fontSize$.subscribe((size) => {
+      this.fontSize = size;
+    });
   }
 
   ngOnInit(): void {
@@ -181,8 +187,8 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   private getHouseStyle(labelText: string): StyleLike | undefined {
     return new Style({
       image: new Icon({
-        src: 'assets/icons8-house-30.png',
-        size: [60, 60],
+        src: 'assets/icons8-house-48.png',
+        size: [50, 50],
         anchor: [0, 0],
         opacity: 0.7,
         scale: 0.5,
@@ -202,16 +208,18 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
     });
   }
 
-  private getDotStyle: StyleLike | undefined = new Style({
-    image: new CircleStyle({
-      radius: 4,
-      fill: new Fill({ color: 'black' }),
-      stroke: new Stroke({
-        color: 'white',
-        width: 2,
+  private getDotStyle(radius: number): StyleLike | undefined {
+    return new Style({
+      image: new CircleStyle({
+        radius: radius,
+        fill: new Fill({ color: 'black' }),
+        stroke: new Stroke({
+          color: 'white',
+          width: 2,
+        }),
       }),
-    }),
-  });
+    });
+  }
 
   private updateUserMarkerStyle() {
     Object.keys(this.userMarkers).forEach((key) => {
@@ -225,7 +233,9 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
         }
         this.userMarkers[key].setStyle(this.getHouseStyle(labelText));
       } else {
-        this.userMarkers[key].setStyle(this.getDotStyle);
+        this.userMarkers[key].setStyle(
+          this.getDotStyle(this.fontSize === 3 ? 4 : 8)
+        );
       }
       this.userMarkers[key].changed();
     });

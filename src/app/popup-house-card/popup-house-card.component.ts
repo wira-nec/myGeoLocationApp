@@ -18,8 +18,7 @@ import { StoreData } from '../../services/data-store.service';
 import Overlay from 'ol/Overlay';
 import { getUid } from 'ol/util';
 import { CommonModule, NgClass } from '@angular/common';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { BehaviorSubject } from 'rxjs';
+import { FontSizeService } from '../../services/font-size.service';
 
 @Component({
   selector: 'app-popup-house-card',
@@ -45,10 +44,8 @@ export class PopupHouseCardComponent implements OnInit {
     private userPositionService: UserPositionService,
     private pictureService: LoadPictureService,
     private changeDetectorRef: ChangeDetectorRef,
-    private responsive: BreakpointObserver
+    readonly fontSizeService: FontSizeService
   ) {}
-
-  fontSize$ = new BehaviorSubject(3);
 
   details!: StoreData;
   private overlay!: Overlay;
@@ -65,37 +62,10 @@ export class PopupHouseCardComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.fontSize$.subscribe((font) => console.log('FontSize:', font));
     this.overlay = new Overlay({
       element: this.ref.nativeElement,
       autoPan: true,
     });
-    this.responsive
-      .observe([Breakpoints.Handset, Breakpoints.Tablet, Breakpoints.Web])
-      .subscribe((result) => {
-        const breakpoints = result.breakpoints;
-        console.log('breakpoints:', breakpoints);
-
-        if (
-          breakpoints[Breakpoints.TabletPortrait] ||
-          breakpoints[Breakpoints.HandsetLandscape]
-        ) {
-          this.fontSize$.next(2);
-          console.log('FontSize next:', 2);
-        } else if (
-          breakpoints[Breakpoints.HandsetPortrait] ||
-          breakpoints[Breakpoints.HandsetLandscape]
-        ) {
-          this.fontSize$.next(1);
-          console.log('FontSize next:', 1);
-        } else if (
-          breakpoints[Breakpoints.WebLandscape] ||
-          breakpoints[Breakpoints.WebPortrait]
-        ) {
-          this.fontSize$.next(3);
-          console.log('FontSize next:', 3);
-        }
-      });
     if (this.map) {
       this.map.on('click', (event) => {
         this.changeDetectorRef.markForCheck();

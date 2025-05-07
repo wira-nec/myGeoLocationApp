@@ -1,5 +1,5 @@
 <mat-card
-  *ngIf="details && fontSize$ | async as fontSize"
+  *ngIf="details && fontSizeService.fontSize$ | async as fontSize"
   class="house-card"
   appearance="raised"
   [ngClass]="{
