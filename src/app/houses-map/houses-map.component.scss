@@ -11,3 +11,10 @@
   align-items: center;
   flex: 1 1 auto;
 }
+::ng-deep .import-files {
+  top: 65px;
+  left: 0.5em;
+}
+::ng-deep .ol-touch .import-files {
+  top: 80px;
+}
