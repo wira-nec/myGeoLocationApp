@@ -73,21 +73,27 @@ export class PopupHouseCardComponent implements OnInit {
           this.map.removeOverlay(this.overlay);
           const pixel = this.map.getEventPixel(event.originalEvent);
           if (pixel) {
-            this.map.forEachFeatureAtPixel(pixel, (feature) => {
-              const uid = getUid(feature);
-              const userId = this.userPositionService.getUserIdByUid(uid);
-              if (userId) {
-                const selectedUserPos =
-                  this.userPositionService.getUserPosition(userId);
-                if (selectedUserPos?.details) {
-                  this.details = selectedUserPos.details;
-                  if (this.overlay && this.map) {
-                    this.overlay.setPosition(event.coordinate);
-                    this.map.addOverlay(this.overlay);
+            this.map.forEachFeatureAtPixel(
+              pixel,
+              (feature) => {
+                const uid = getUid(feature);
+                const userId = this.userPositionService.getUserIdByUid(uid);
+                if (userId) {
+                  const selectedUserPos =
+                    this.userPositionService.getUserPosition(userId);
+                  if (selectedUserPos?.details) {
+                    this.details = selectedUserPos.details;
+                    if (this.overlay && this.map) {
+                      this.overlay.setPosition(event.coordinate);
+                      this.map.addOverlay(this.overlay);
+                    }
                   }
                 }
+              },
+              {
+                hitTolerance: this.fontSizeService.fontSize$.value < 3 ? 10 : 5,
               }
-            });
+            );
           }
         }
       });
@@ -106,7 +112,7 @@ export class PopupHouseCardComponent implements OnInit {
   }
 
   picture(details: StoreData) {
-    if (details) {
+    if (details && details['picture']) {
       const pictureName = details['picture'].replace(/^.*[\\\/]/, '');
       return this.pictureService.getPicture(pictureName);
     }

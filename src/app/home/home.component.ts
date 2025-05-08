@@ -66,7 +66,7 @@ export class HomeComponent implements OnInit {
           center: [0, 0],
           zoom: 14,
         } as GeoPosition;
-        this.userPositions$.addUserPosition(this.userPosition);
+        this.userPositions$.addUserPosition([this.userPosition]);
         this.changeDetectorRef.markForCheck();
       },
       error: (err) => {

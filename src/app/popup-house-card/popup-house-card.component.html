@@ -39,7 +39,7 @@
             <div class="cell" [innerHTML]="item[1]"></div>
           </div>
         </div>
-        <div class="picture-image">
+        <div class="picture-image" *ngIf="!!details['picture']">
           <img
             mat-card-image
             [src]="picture(details)"

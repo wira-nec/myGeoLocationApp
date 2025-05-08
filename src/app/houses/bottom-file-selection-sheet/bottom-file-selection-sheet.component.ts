@@ -4,12 +4,21 @@ import { UploadMultipleFilesComponent } from '../../upload-multiple-files/upload
 import { DataStoreService } from '../../../services/data-store.service';
 import * as XLSX from 'xlsx';
 import { LoadPictureService } from '../../../services/load-picture.service';
+import { ImportProgressBarComponent } from '../../import-progress-bar/import-progress-bar.component';
+import { ProgressService } from '../../../services/progress.service';
+import { CommonModule } from '@angular/common';
+import { UserPositionService } from '../../../services/user-position.service';
 
 @Component({
   selector: 'app-bottom-file-selection-sheet',
-  imports: [UploadMultipleFilesComponent],
+  imports: [
+    UploadMultipleFilesComponent,
+    ImportProgressBarComponent,
+    CommonModule,
+  ],
   templateUrl: './bottom-file-selection-sheet.component.html',
   styleUrl: './bottom-file-selection-sheet.component.scss',
+  providers: [ProgressService],
 })
 export class BottomFileSelectionSheetComponent implements OnInit {
   excelData!: never[];
@@ -18,16 +27,26 @@ export class BottomFileSelectionSheetComponent implements OnInit {
       MatBottomSheetRef
     );
 
+  private isDataStoreLoaded = false;
+  private isUserPositionLoaded = false;
+  private importsNotFinished = true;
+
   constructor(
     private readonly loadPictureService: LoadPictureService,
-    private readonly dataStoreService: DataStoreService
-  ) {}
+    private readonly dataStoreService: DataStoreService,
+    private readonly userPositionService: UserPositionService,
+    readonly progressService: ProgressService
+  ) {
+    this.importsNotFinished =
+      Object.keys(loadPictureService.pictureStore$.value).length === 0 ||
+      dataStoreService.getDataStoreSize() === 0;
+  }
 
   ngOnInit(): void {
     this.loadPictureService.pictureStore$.subscribe({
       next: (pictures) => {
         this.isUserPositionLoaded = !!Object.keys(pictures).length;
-        if (this.isDataStoreLoaded) {
+        if (this.isDataStoreLoaded && this.importsNotFinished) {
           this.closeLink();
         }
       },
@@ -35,22 +54,21 @@ export class BottomFileSelectionSheetComponent implements OnInit {
     this.dataStoreService.dataStore$.subscribe({
       next: (data) => {
         this.isDataStoreLoaded = !!data.length;
-        if (this.isUserPositionLoaded) {
+        if (data.length) {
+          this.progressService.reset(data.length);
+        }
+        if (this.isUserPositionLoaded && this.importsNotFinished) {
           this.closeLink();
         }
       },
     });
+    this.userPositionService.userPositions$.subscribe((userPositions) => {
+      this.progressService.incrementProgress(userPositions.length);
+    });
   }
-
-  private isDataStoreLoaded = false;
-  private isUserPositionLoaded = false;
 
   closeLink(): void {
     this._bottomSheetRef.dismiss();
-    if (this.isDataStoreLoaded && this.isUserPositionLoaded) {
-      this.loadPictureService.pictureStore$.unsubscribe();
-      this.dataStoreService.dataStore$.unsubscribe();
-    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -66,6 +84,7 @@ export class BottomFileSelectionSheetComponent implements OnInit {
         this.dataStoreService.store(this.excelData);
       }
     };
+
     reader.readAsArrayBuffer(file);
   }
 }

@@ -29,7 +29,6 @@ import { StyleLike } from 'ol/style/Style';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { ImportFilesControl } from '../mapControls/importFilesControl/importFilesControl';
 import { BottomFileSelectionSheetComponent } from '../houses/bottom-file-selection-sheet/bottom-file-selection-sheet.component';
-import { FontSizeService } from '../../services/font-size.service';
 
 @Component({
   selector: 'app-houses-map',
@@ -57,12 +56,10 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   private readonly fileImportControl = new ImportFilesControl({
     callback: this._bottomSheet,
   });
-  private fontSize!: number;
 
   constructor(
     private readonly userPositionService: UserPositionService,
-    private readonly dataStoreService: DataStoreService,
-    private readonly fontSizeService: FontSizeService
+    private readonly dataStoreService: DataStoreService
   ) {
     this.zoomInput
       .pipe(takeUntilDestroyed())
@@ -70,14 +67,11 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
       .subscribe(() => {
         this.onViewChanged();
       });
-    this.fontSizeService.fontSize$.subscribe((size) => {
-      this.fontSize = size;
-    });
   }
 
   ngOnInit(): void {
     if (!this.map) {
-      this.initializeMap();
+      const map = this.initializeMap();
       this.geocoder = new olGeocoder('nominatim', {
         provider: 'photon',
         placeholder: 'Search for ...',
@@ -85,9 +79,9 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
         limit: 1,
         keepOpen: true,
         target: document.body,
+        preventDefault: true,
       });
-      (this.map as unknown as Map).addControl(this.geocoder);
-      this.geocoder.getLayer().setVisible(false);
+      map.addControl(this.geocoder);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       this.geocoder.on('addresschosen', (evt: any) => {
         const originalDetails = evt.address.original.details;
@@ -97,25 +91,38 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
           city: originalDetails.city,
         });
         console.log('street map found', originalDetails);
-        this.userPositionService.addUserPosition({
-          coords: {
-            altitude: 0,
-            longitude: evt.place.lon,
-            accuracy: 0,
-            altitudeAccuracy: null,
-            heading: null,
-            latitude: evt.place.lat,
-            speed: null,
-            toJSON: function () {
-              throw new Error('Function not implemented.');
+        //        this.geoPositionCollection.push({
+        this.userPositionService.addUserPosition([
+          {
+            coords: {
+              altitude: 0,
+              longitude: evt.place.lon,
+              accuracy: 0,
+              altitudeAccuracy: null,
+              heading: null,
+              latitude: evt.place.lat,
+              speed: null,
+              toJSON: function () {
+                throw new Error('Function not implemented.');
+              },
             },
+            id: uuidv4(),
+            userName: storeData ? storeData['firstName'] : 'Unknown',
+            info: JSON.stringify(originalDetails),
+            zoom: 0,
+            details: storeData,
           },
-          id: uuidv4(),
-          userName: storeData ? storeData['firstName'] : 'Unknown',
-          info: JSON.stringify(originalDetails),
-          zoom: 0,
-          details: storeData,
-        });
+        ]);
+        if (
+          this.userPositionService.getNumberOfUsers() >=
+          this.dataStoreService.getDataStoreSize()
+        ) {
+          //this.userPositionService.addUserPosition(this.geoPositionCollection);
+          map.getView().animate({
+            center: fromLonLat([evt.place.lon, evt.place.lat]),
+            zoom: this.zoomLevelSingleMarker,
+          });
+        }
       });
     }
   }
@@ -127,8 +134,8 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
     this.userPositionService.userPositions$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((userPositions) => {
-        if (userPositions && userPositions.id.length) {
-          this.setupMap([userPositions]);
+        if (userPositions.length) {
+          this.setupMap(userPositions);
         }
       });
     this.userPositionService.removedUserPosition$
@@ -139,7 +146,6 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
         }
       });
     this.dataStoreService.dataStore$.subscribe((data) => {
-      this.userMarkers = {};
       data.forEach((data) => {
         if (this.textInput && this.sendTextInput) {
           this.textInput.value = this.getAddress(data);
@@ -180,14 +186,17 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
 
   private styleUser = (feature: Feature, labelText: string) => {
     if (!feature) return;
-
-    feature.setStyle(this.getHouseStyle(labelText));
+    if (this.zoomLevelSingleMarker > 15.5) {
+      feature.setStyle(this.getHouseStyle(labelText));
+    } else {
+      feature.setStyle(this.getDotStyle(4));
+    }
   };
 
   private getHouseStyle(labelText: string): StyleLike | undefined {
     return new Style({
       image: new Icon({
-        src: 'assets/icons8-house-48.png',
+        src: 'assets/icons8-house-30.png',
         size: [50, 50],
         anchor: [0, 0],
         opacity: 0.7,
@@ -223,20 +232,14 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
 
   private updateUserMarkerStyle() {
     Object.keys(this.userMarkers).forEach((key) => {
-      if (this.zoomLevelSingleMarker > 15.5) {
-        const userPos = this.userPositionService.getUserPosition(key);
-        let labelText = '';
-        if (userPos?.details) {
-          labelText = this.getAddress(userPos.details);
-        } else {
-          labelText = userPos?.userName || 'Unknown';
-        }
-        this.userMarkers[key].setStyle(this.getHouseStyle(labelText));
+      const userPos = this.userPositionService.getUserPosition(key);
+      let labelText = '';
+      if (userPos?.details) {
+        labelText = this.getAddress(userPos.details);
       } else {
-        this.userMarkers[key].setStyle(
-          this.getDotStyle(this.fontSize === 3 ? 4 : 8)
-        );
+        labelText = userPos?.userName || 'Unknown';
       }
+      this.styleUser(this.userMarkers[key], labelText);
       this.userMarkers[key].changed();
     });
     this.refreshVectorLayer();
@@ -309,5 +312,6 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
     });
 
     this.map.getView().on('change:resolution', (e) => this.zoomInput.next(e));
+    return this.map;
   };
 }

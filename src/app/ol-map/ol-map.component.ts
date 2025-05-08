@@ -101,7 +101,7 @@ export class MapComponent
       .pipe(takeUntil(this.unsubscribe$))
       .subscribe((userPositions) => {
         if (userPositions) {
-          this.setupMap([userPositions]);
+          this.setupMap(userPositions);
         }
       });
     this.userPositionService.removedUserPosition$

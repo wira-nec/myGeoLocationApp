@@ -15,9 +15,19 @@ export class DataStoreService {
     this.dataStore = [];
   }
 
+  public getDataStoreSize() {
+    return this.dataStore.length;
+  }
+
   public store(info: StoreData[]) {
-    this.dataStore = info;
-    this.dataStore$.next(info);
+    const newInfo = info.filter((newData) =>
+      this.dataStore.every(
+        (storedData) =>
+          !Object.keys(storedData).every((k) => newData[k] === storedData[k])
+      )
+    );
+    this.dataStore = this.dataStore.concat(newInfo);
+    this.dataStore$.next(newInfo);
   }
 
   public get(filter: StoreData): StoreData | undefined {
@@ -28,7 +38,11 @@ export class DataStoreService {
         filterKeys.every((filterKey) => dataKeys.includes(filterKey)) &&
         filterKeys.every(
           (key) =>
-            (filter[key] + '').toLowerCase() === (data[key] + '').toLowerCase()
+            (filter[key] + '').toLowerCase() ===
+              (data[key] + '').toLowerCase() ||
+            (key === 'housenumber' &&
+              filter[key].includes('-') &&
+              filter[key].split('-').at(-1) === data[key])
         )
       );
     });

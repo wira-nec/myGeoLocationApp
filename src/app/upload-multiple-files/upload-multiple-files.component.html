@@ -7,4 +7,9 @@
     (click)="fileInput.value = ''"
     multiple
   />
+  <app-import-progress-bar
+    *ngIf="progressService.progress$ | async as progress"
+    [bufferSize]="progressService.bufferSize"
+    [progress]="progress"
+  />
 </div>

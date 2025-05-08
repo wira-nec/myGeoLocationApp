@@ -9,25 +9,6 @@ interface IdMapper {
   uid: string;
 }
 
-const initialGeoPosition: GeoPosition = {
-  id: '',
-  userName: '',
-  info: '',
-  zoom: 0,
-  coords: {
-    accuracy: 0,
-    altitude: null,
-    altitudeAccuracy: null,
-    heading: null,
-    latitude: 0,
-    longitude: 0,
-    speed: null,
-    toJSON: function () {
-      throw new Error('Function not implemented.');
-    },
-  },
-};
-
 @Injectable({
   providedIn: 'root',
 })
@@ -35,7 +16,11 @@ export class UserPositionService {
   private userPositions: GeoPosition[] = [];
   private mapIdToUuid: IdMapper[] = [];
   removedUserPosition$ = new BehaviorSubject<GeoPosition | null>(null);
-  userPositions$ = new BehaviorSubject<GeoPosition>(initialGeoPosition);
+  userPositions$ = new BehaviorSubject<GeoPosition[]>([]);
+
+  public getNumberOfUsers() {
+    return this.userPositions.length;
+  }
 
   public setUserIdUid(id: string, olUid: string) {
     const idMap = this.mapIdToUuid.find((map) => map.id === id);
@@ -60,12 +45,11 @@ export class UserPositionService {
     );
   }
 
-  public addUserPosition(geoPosition: GeoPosition) {
-    const userPos = {
-      ...geoPosition,
-    };
-    this.userPositions.push(userPos);
-    this.userPositions$.next(userPos);
+  public addUserPosition(geoPosition: GeoPosition[]) {
+    geoPosition.forEach((geoPos) => {
+      this.userPositions.push(geoPos);
+    });
+    this.userPositions$.next(geoPosition);
   }
 
   public setUserCoordinatesAndOrZoom(
@@ -82,7 +66,7 @@ export class UserPositionService {
       if (zoom) {
         userPos.zoom = zoom;
       }
-      this.userPositions$.next(userPos);
+      this.userPositions$.next([userPos]);
     }
   }
 

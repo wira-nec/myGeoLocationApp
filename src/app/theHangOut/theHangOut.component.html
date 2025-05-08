@@ -1,7 +1,7 @@
 <app-header></app-header>
 <div class="main">
   <div *ngIf="userPosition$ | async as userPos">
-    <app-map [coordinatesChange]="userPos" [userId]="userId"></app-map>
+    <app-map [coordinatesChange]="userPos[0]" [userId]="userId"></app-map>
   </div>
 
   <h4>Location Alerts</h4>

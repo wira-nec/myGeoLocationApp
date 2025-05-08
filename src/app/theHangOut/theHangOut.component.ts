@@ -39,7 +39,7 @@ export class TheHangOutComponent
     readonly geolocation$: GeolocationService
   ) {}
 
-  userPosition$: Observable<GeoPosition> | undefined;
+  userPosition$!: Observable<GeoPosition[]>;
   username = '';
   userId = '';
   message = '';
@@ -76,7 +76,7 @@ export class TheHangOutComponent
             this.logout();
           }
         });
-        this.userPositions.userPositions$.next(thisUserPos);
+        this.userPositions.userPositions$.next([thisUserPos]);
         const channel = this.pusher.init();
         // Start looking for other users
         channel.bind(
@@ -107,7 +107,7 @@ export class TheHangOutComponent
                 center: [0, 0],
                 zoom: 14,
               } as GeoPosition;
-              this.userPositions.addUserPosition(userPos);
+              this.userPositions.addUserPosition([userPos]);
               // Found a new user, so ping this user position
               const myPosition = this.userPositions.getUserPosition(
                 this.userId
@@ -120,7 +120,7 @@ export class TheHangOutComponent
                 );
               }, 1000);
             }
-            this.userPositions.userPositions$.next(userPos);
+            this.userPositions.userPositions$.next([userPos]);
             this.showLocationUpdate = true;
             this.message = `User "${userPos.userName}" says '${pingData.info}'`;
             this.changeDetectorRef.markForCheck();

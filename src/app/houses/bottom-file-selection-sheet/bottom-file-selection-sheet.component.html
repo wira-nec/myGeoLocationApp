@@ -8,6 +8,11 @@
       accept=".xlsx, .xls"
       (click)="fileInput.value = ''"
     />
+    <app-import-progress-bar
+      *ngIf="progressService.progress$ | async as progress"
+      [bufferSize]="progressService.bufferSize"
+      [progress]="progress"
+    />
   </div>
 
   <div class="content">
