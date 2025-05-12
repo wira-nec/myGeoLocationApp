@@ -6,20 +6,7 @@
   flex-direction: column;
   flex: 1 1 100%;
 }
-.content-container {
-  display: flex;
-  flex-direction: row;
-}
-.picture-image {
-  flex: 1;
-  padding: 10px 0px;
-}
-img {
-  max-width: 100%;
-  height: auto;
-  object-fit: cover;
-  flex: initial;
-}
+
 .small {
   font-size: 10px;
   max-width: 300px;
@@ -42,93 +29,8 @@ img {
   }
 }
 
-.info-table {
-  display: flex;
-  flex: 1;
-}
-
-.table {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow-wrap: anywhere;
-}
-
-.row {
-  display: flex;
-  border-bottom: grey;
-  border-style: solid;
-  border-width: 0px 0px 1px 0px;
-}
-
-.heading {
-  font-weight: bold;
-  border-bottom: black;
-  border-style: solid;
-  border-width: 0px 0px 2px 0px;
-}
-
-.cell {
-  display: flex;
-  flex: 1 1 100%;
-  justify-content: start;
-  align-items: center;
-  text-wrap: balance;
-}
-
-.cellLeft {
-  display: flex;
-  flex: 1 1 100%;
-  justify-content: start;
-  text-align: left;
-  text-wrap: nowrap;
-}
-
-.cellRight {
-  display: flex;
-  flex: 1 1 100%;
-  justify-content: end;
-  text-align: right;
-  text-wrap: balance;
-}
-
-button {
-  flex: 1 1 0%;
-  padding: 0px;
-  height: 20px;
-}
-
 .columnsContainer {
   display: flex;
   flex-direction: row;
   flex: 1 1 50%;
-}
-
-.leftColumn {
-  float: left;
-  width: 100%;
-}
-
-.rightColumn {
-  float: left;
-  width: 50%;
-  padding-left: 20px;
-  columns: 5em 2;
-}
-
-.rowWrap {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-}
-
-$columns: (
-  1: 5em 1,
-  2: 5em 2,
-);
-
-@each $columnWidth, $width in $columns {
-  .rightColumn_#{$columnWidth} {
-    columns: $width !important;
-  }
 }

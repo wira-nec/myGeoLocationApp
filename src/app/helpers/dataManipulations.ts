@@ -1,5 +1,12 @@
 import { StoreData } from '../../services/data-store.service';
 
+export const FIXED_DETAIL_COLUMNS = [
+  'postcode',
+  'city',
+  'housenumber',
+  'userPositionInfo',
+];
+
 export const LONGITUDE = 'longitude';
 export const LATITUDE = 'latitude';
 export const INFO = 'info';

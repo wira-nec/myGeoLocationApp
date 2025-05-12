@@ -1,0 +1,57 @@
+::ng-deep app-excel-content {
+  display: flex;
+  width: auto;
+  min-width: 300px;
+  max-width: 300px;
+}
+
+.leftColumn {
+  display: flex;
+  float: left;
+  flex: 1 1 100%;
+}
+
+.info-table {
+  width: 100%;
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.row {
+  display: flex;
+  border-bottom: grey;
+  border-style: solid;
+  border-width: 0px 0px 1px 0px;
+}
+
+.heading {
+  font-weight: bold;
+  border-bottom: black;
+  border-style: solid;
+  border-width: 0px 0px 2px 0px;
+}
+
+.cell {
+  display: flex;
+  flex: 1 1 100%;
+  justify-content: start;
+  align-items: center;
+  text-wrap: balance;
+}
+
+.cellLeft {
+  display: flex;
+  flex: 1 1 100%;
+  text-wrap: nowrap;
+}
+
+.cellRight {
+  display: flex;
+  flex: 1 1 100%;
+  text-wrap: balance;
+}

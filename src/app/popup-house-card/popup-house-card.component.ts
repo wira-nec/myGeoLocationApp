@@ -13,18 +13,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import Map from 'ol/Map';
 import { UserPositionService } from '../../services/user-position.service';
-import { LoadPictureService } from '../../services/load-picture.service';
 import { StoreData } from '../../services/data-store.service';
 import Overlay from 'ol/Overlay';
 import { getUid } from 'ol/util';
 import { CommonModule, NgClass } from '@angular/common';
 import { FontSizeService } from '../../services/font-size.service';
-import {
-  blobsFilter,
-  getBlobs,
-  getImageNames,
-  imagesFilter,
-} from '../helpers/dataManipulations';
+import { CardHeaderComponent } from './cardHeader/card-header.component';
+import { ExcelContentComponent } from './excel-content/excel-content.component';
+import { PicturesContentComponent } from './pictures-content/pictures-content.component';
+import { MapBrowserEvent } from 'ol';
 
 @Component({
   selector: 'app-popup-house-card',
@@ -36,6 +33,9 @@ import {
     MatGridListModule,
     MatIconModule,
     CommonModule,
+    CardHeaderComponent,
+    ExcelContentComponent,
+    PicturesContentComponent,
   ],
   hostDirectives: [NgClass],
   templateUrl: './popup-house-card.component.html',
@@ -48,27 +48,43 @@ export class PopupHouseCardComponent implements OnInit {
   constructor(
     private ref: ElementRef,
     private userPositionService: UserPositionService,
-    private pictureService: LoadPictureService,
-    private changeDetectorRef: ChangeDetectorRef,
+    public changeDetectorRef: ChangeDetectorRef,
     readonly fontSizeService: FontSizeService
   ) {}
 
   details!: StoreData;
-  private overlay!: Overlay;
-  private fixedDetailKeys = [
-    'postcode',
-    'city',
-    'housenumber',
-    'userPositionInfo',
-  ];
+  overlay!: Overlay;
 
-  isUrlItem(item: string) {
-    try {
-      new URL(item);
-      return true;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_) {
-      return false;
+  private showPopUp(
+    event: MapBrowserEvent<KeyboardEvent | WheelEvent | PointerEvent>
+  ) {
+    this.changeDetectorRef.markForCheck();
+    if (this.overlay && this.map) {
+      this.map.removeOverlay(this.overlay);
+      const pixel = this.map.getEventPixel(event.originalEvent);
+      if (pixel) {
+        this.map.forEachFeatureAtPixel(
+          pixel,
+          (feature) => {
+            const uid = getUid(feature);
+            const userId = this.userPositionService.getUserIdByUid(uid);
+            if (userId) {
+              const selectedUserPos =
+                this.userPositionService.getUserPosition(userId);
+              if (selectedUserPos?.details) {
+                this.details = selectedUserPos.details;
+                if (this.overlay && this.map) {
+                  this.overlay.setPosition(event.coordinate);
+                  this.map.addOverlay(this.overlay);
+                }
+              }
+            }
+          },
+          {
+            hitTolerance: this.fontSizeService.fontSize$.value < 3 ? 10 : 5,
+          }
+        );
+      }
     }
   }
 
@@ -84,82 +100,7 @@ export class PopupHouseCardComponent implements OnInit {
       margin: 100,
     });
     if (this.map) {
-      this.map.on('click', (event) => {
-        this.changeDetectorRef.markForCheck();
-        if (this.overlay && this.map) {
-          this.map.removeOverlay(this.overlay);
-          const pixel = this.map.getEventPixel(event.originalEvent);
-          if (pixel) {
-            this.map.forEachFeatureAtPixel(
-              pixel,
-              (feature) => {
-                const uid = getUid(feature);
-                const userId = this.userPositionService.getUserIdByUid(uid);
-                if (userId) {
-                  const selectedUserPos =
-                    this.userPositionService.getUserPosition(userId);
-                  if (selectedUserPos?.details) {
-                    this.details = selectedUserPos.details;
-                    if (this.overlay && this.map) {
-                      this.overlay.setPosition(event.coordinate);
-                      this.map.addOverlay(this.overlay);
-                    }
-                  }
-                }
-              },
-              {
-                hitTolerance: this.fontSizeService.fontSize$.value < 3 ? 10 : 5,
-              }
-            );
-          }
-        }
-      });
+      this.map.on('click', (e) => this.showPopUp(e));
     }
-  }
-
-  closePopup() {
-    this.overlay.setPosition(undefined);
-  }
-
-  address(details: StoreData) {
-    if (details) {
-      return `${details['postcode']}, ${details['city']}, ${details['housenumber']}`;
-    }
-    return '';
-  }
-
-  pictures(details: StoreData) {
-    if (details) {
-      const blobs = getBlobs(details);
-      getImageNames(details).map((imageName) =>
-        blobs.push(
-          this.pictureService.getPicture(imageName.replace(/^.*[\\\/]/, ''))
-        )
-      );
-      return blobs;
-    }
-    return [];
-  }
-
-  extraInformation(details: StoreData) {
-    if (details) {
-      return Object.entries(details)
-        .filter(
-          (entry) =>
-            !this.fixedDetailKeys.includes(entry[0]) &&
-            !imagesFilter(entry[1]) &&
-            !blobsFilter(entry[1])
-        )
-        .map((info) => {
-          if (this.isUrlItem(info[1])) {
-            return [
-              info[0],
-              `<a href="${info[1]}" target="_blank">${info[1]}</a>`,
-            ];
-          }
-          return info;
-        });
-    }
-    return [];
   }
 }

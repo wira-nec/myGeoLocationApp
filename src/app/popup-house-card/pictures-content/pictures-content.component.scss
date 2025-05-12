@@ -1,0 +1,39 @@
+::ng-deep app-pictures-content {
+  display: flex;
+  flex: 1;
+}
+
+.rightColumn {
+  float: left;
+  padding-left: 20px;
+  columns: 5em 2;
+}
+
+.rowWrap {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.picture-image {
+  flex: 1;
+  padding: 10px 0px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  object-fit: cover;
+  flex: initial;
+}
+
+$columns: (
+  1: 5em 1,
+  2: 5em 2,
+);
+
+@each $columnWidth, $width in $columns {
+  .rightColumn_#{$columnWidth} {
+    columns: $width !important;
+  }
+}

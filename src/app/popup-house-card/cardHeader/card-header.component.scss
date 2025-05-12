@@ -1,0 +1,24 @@
+.header {
+  padding: 6px 0px 6px 16px !important;
+}
+
+.close-icon {
+  color: red;
+  float: right;
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.row {
+  display: flex;
+}
+
+button {
+  border-style: hidden;
+  background-color: transparent;
+}

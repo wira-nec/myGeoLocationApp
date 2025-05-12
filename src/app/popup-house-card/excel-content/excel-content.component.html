@@ -1,0 +1,13 @@
+<div class="leftColumn">
+  <div class="info-table">
+    <div class="table" [style.flex]="2">
+      <div class="row heading">
+        <div class="cell" [style.flex]="2">Extra informatie</div>
+      </div>
+      <div class="row" *ngFor="let item of extraInformation(details)">
+        <div class="cellLeft">{{ item[0] }}:</div>
+        <div class="cellRight" [innerHTML]="item[1]"></div>
+      </div>
+    </div>
+  </div>
+</div>

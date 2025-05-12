@@ -8,60 +8,12 @@
     big: fontSize === 3
   }"
 >
-  <mat-card-header>
-    <div class="table">
-      <div class="row">
-        <mat-card-title class="cell">{{ address(details) }}</mat-card-title>
-        <button
-          class="cell"
-          [style.flex]="1"
-          mat-icon-button
-          aria-label="close icon"
-          (click)="closePopup()"
-        >
-          <mat-icon [style.float]="'right'" [style.color]="'red'"
-            >cancel</mat-icon
-          >
-        </button>
-      </div>
-    </div>
-  </mat-card-header>
+  <app-card-header [details]="details" [overlay]="overlay" />
   <mat-divider></mat-divider>
   <mat-card-content class="card-content">
     <div class="columnsContainer">
-      <div class="leftColumn">
-        <div class="info-table">
-          <div class="table" [style.flex]="2">
-            <div class="row heading">
-              <div class="cell" [style.flex]="2">Extra informatie</div>
-            </div>
-            <div class="row" *ngFor="let item of extraInformation(details)">
-              <div class="cellLeft">{{ item[0] }}:</div>
-              <div class="cellRight" [innerHTML]="item[1]"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div
-        [hidden]="pictures(details).length === 0"
-        class="rightColumn"
-        [ngClass]="{
-          rightColumn_1: pictures(details).length < 3,
-          rightColumn_2: pictures(details).length === 3
-        }"
-      >
-        <div class="rowWrap">
-          <div class="cell" *ngFor="let item of pictures(details)">
-            <div class="picture-image">
-              <img
-                mat-card-image
-                [src]="item"
-                [alt]="`Picture ${item} not found`"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <app-excel-content [details]="details" />
+      <app-pictures-content [details]="details" />
     </div>
   </mat-card-content>
 </mat-card>
