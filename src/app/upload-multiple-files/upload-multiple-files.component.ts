@@ -25,7 +25,7 @@ export class UploadMultipleFilesComponent {
     const files = Array.from(e.target.files as FileList);
     this.progressService.reset(100 / files.length);
     files.forEach((file: File) => {
-      this.pictureService.storePicture(file, file.name);
+      this.pictureService.loadPicture(file, file.name);
       this.progressService.incrementProgress();
     });
   }

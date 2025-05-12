@@ -31,6 +31,22 @@ export class UserPositionService {
     }
   }
 
+  public getUserByAddress(
+    city: string,
+    postcode: string,
+    houseNumber: string
+  ): GeoPosition | undefined {
+    return this.userPositions.find((userPos) => {
+      const userInfo = JSON.parse(userPos.info);
+      const userHouseNumber = userInfo.housenumber.split('-').at(-1) as string;
+      return (
+        userInfo.city.toLowerCase() === city.toLowerCase() &&
+        userInfo.postcode.toLowerCase() === postcode.toLowerCase() &&
+        userHouseNumber.toLowerCase() === houseNumber.toLowerCase()
+      );
+    });
+  }
+
   public getUserIdByUid(uid: string): string | undefined {
     return this.mapIdToUuid.find((map) => map.uid === uid)?.id;
   }
@@ -76,6 +92,10 @@ export class UserPositionService {
       return userPos;
     }
     return undefined;
+  }
+
+  public getUserPositions(): GeoPosition[] {
+    return this.userPositions;
   }
 
   public getUserForPosition(coordinates: Coordinate): GeoPosition | undefined {

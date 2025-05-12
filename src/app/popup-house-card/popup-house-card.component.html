@@ -28,23 +28,38 @@
   </mat-card-header>
   <mat-divider></mat-divider>
   <mat-card-content class="card-content">
-    <div class="content-container">
-      <div class="info-table">
-        <div class="table" [style.flex]="2">
-          <div class="row heading">
-            <div class="cell" [style.flex]="2">Extra information</div>
-          </div>
-          <div class="row" *ngFor="let item of extraInformation(details)">
-            <div class="cell">{{ item[0] }}:</div>
-            <div class="cell" [innerHTML]="item[1]"></div>
+    <div class="columnsContainer">
+      <div class="leftColumn">
+        <div class="info-table">
+          <div class="table" [style.flex]="2">
+            <div class="row heading">
+              <div class="cell" [style.flex]="2">Extra informatie</div>
+            </div>
+            <div class="row" *ngFor="let item of extraInformation(details)">
+              <div class="cellLeft">{{ item[0] }}:</div>
+              <div class="cellRight" [innerHTML]="item[1]"></div>
+            </div>
           </div>
         </div>
-        <div class="picture-image" *ngIf="!!details['picture']">
-          <img
-            mat-card-image
-            [src]="picture(details)"
-            alt="Photo of house not found"
-          />
+      </div>
+      <div
+        [hidden]="pictures(details).length === 0"
+        class="rightColumn"
+        [ngClass]="{
+          rightColumn_1: pictures(details).length < 3,
+          rightColumn_2: pictures(details).length === 3
+        }"
+      >
+        <div class="rowWrap">
+          <div class="cell" *ngFor="let item of pictures(details)">
+            <div class="picture-image">
+              <img
+                mat-card-image
+                [src]="item"
+                [alt]="`Picture ${item} not found`"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

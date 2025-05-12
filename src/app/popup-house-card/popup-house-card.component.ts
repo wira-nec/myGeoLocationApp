@@ -19,6 +19,12 @@ import Overlay from 'ol/Overlay';
 import { getUid } from 'ol/util';
 import { CommonModule, NgClass } from '@angular/common';
 import { FontSizeService } from '../../services/font-size.service';
+import {
+  blobsFilter,
+  getBlobs,
+  getImageNames,
+  imagesFilter,
+} from '../helpers/dataManipulations';
 
 @Component({
   selector: 'app-popup-house-card',
@@ -49,7 +55,12 @@ export class PopupHouseCardComponent implements OnInit {
 
   details!: StoreData;
   private overlay!: Overlay;
-  private fixedDetailKeys = ['postcode', 'city', 'housenumber', 'picture'];
+  private fixedDetailKeys = [
+    'postcode',
+    'city',
+    'housenumber',
+    'userPositionInfo',
+  ];
 
   isUrlItem(item: string) {
     try {
@@ -65,6 +76,12 @@ export class PopupHouseCardComponent implements OnInit {
     this.overlay = new Overlay({
       element: this.ref.nativeElement,
       autoPan: true,
+    });
+    this.overlay.panIntoView({
+      animation: {
+        duration: 1000,
+      },
+      margin: 100,
     });
     if (this.map) {
       this.map.on('click', (event) => {
@@ -111,18 +128,28 @@ export class PopupHouseCardComponent implements OnInit {
     return '';
   }
 
-  picture(details: StoreData) {
-    if (details && details['picture']) {
-      const pictureName = details['picture'].replace(/^.*[\\\/]/, '');
-      return this.pictureService.getPicture(pictureName);
+  pictures(details: StoreData) {
+    if (details) {
+      const blobs = getBlobs(details);
+      getImageNames(details).map((imageName) =>
+        blobs.push(
+          this.pictureService.getPicture(imageName.replace(/^.*[\\\/]/, ''))
+        )
+      );
+      return blobs;
     }
-    return '';
+    return [];
   }
 
   extraInformation(details: StoreData) {
     if (details) {
       return Object.entries(details)
-        .filter((entry) => !this.fixedDetailKeys.includes(entry[0]))
+        .filter(
+          (entry) =>
+            !this.fixedDetailKeys.includes(entry[0]) &&
+            !imagesFilter(entry[1]) &&
+            !blobsFilter(entry[1])
+        )
         .map((info) => {
           if (this.isUrlItem(info[1])) {
             return [

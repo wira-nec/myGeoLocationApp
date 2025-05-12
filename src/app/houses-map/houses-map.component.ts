@@ -29,6 +29,17 @@ import { StyleLike } from 'ol/style/Style';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { ImportFilesControl } from '../mapControls/importFilesControl/importFilesControl';
 import { BottomFileSelectionSheetComponent } from '../houses/bottom-file-selection-sheet/bottom-file-selection-sheet.component';
+import { ExportControl } from '../mapControls/exportControl/export-control';
+import { ExcelService } from '../../services/excel.service';
+import { LoadPictureService } from '../../services/load-picture.service';
+import {
+  COORDINATE_KEYS,
+  imagesFilter,
+  INFO,
+  LATITUDE,
+  LONGITUDE,
+} from '../helpers/dataManipulations';
+import { JsonCreatorService } from '../../services/json-creator.service';
 
 @Component({
   selector: 'app-houses-map',
@@ -56,10 +67,14 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   private readonly fileImportControl = new ImportFilesControl({
     callback: this._bottomSheet,
   });
+  private readonly exportFileControl!: ExportControl;
 
   constructor(
     private readonly userPositionService: UserPositionService,
-    private readonly dataStoreService: DataStoreService
+    private readonly dataStoreService: DataStoreService,
+    private readonly excelService: ExcelService,
+    private readonly pictureStore: LoadPictureService,
+    private readonly jsonCreatorService: JsonCreatorService
   ) {
     this.zoomInput
       .pipe(takeUntilDestroyed())
@@ -67,6 +82,50 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
       .subscribe(() => {
         this.onViewChanged();
       });
+    this.exportFileControl = new ExportControl({
+      callback: () => {
+        if (dataStoreService.getDataStoreSize() > 0) {
+          const dataStore = dataStoreService.getStore();
+          const sheet = dataStore.map((data) => {
+            const userPos = userPositionService.getUserByAddress(
+              data['city'],
+              data['postcode'],
+              data['housenumber'].toString()
+            );
+            if (userPos) {
+              /*
+              const imageNames = getImageNames(data);
+              const images = {};
+              imageNames.forEach((imageName) => {
+                const imageColumn = Object.entries(data).find(
+                  ([, value]) => value === imageName
+                );
+                if (imageColumn) {
+                  Object.assign(images, {
+                    [imageColumn[0]]: pictureStore.getPicture(imageName),
+                  });
+                }
+              });
+              */
+              return {
+                ...data,
+                longitude: userPos.coords.longitude.toString(),
+                latitude: userPos.coords.latitude.toString(),
+                userPositionInfo: userPos.info,
+                // ...images,
+              };
+            } else {
+              return data;
+            }
+          });
+          excelService.generateExcel(sheet, 'exportedMap.xls');
+          jsonCreatorService.savaJsonFile(
+            jsonCreatorService.createJson(this.pictureStore.getPicturesStore()),
+            'exportedMap.json'
+          );
+        }
+      },
+    });
   }
 
   ngOnInit(): void {
@@ -91,33 +150,16 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
           city: originalDetails.city,
         });
         console.log('street map found', originalDetails);
-        //        this.geoPositionCollection.push({
-        this.userPositionService.addUserPosition([
-          {
-            coords: {
-              altitude: 0,
-              longitude: evt.place.lon,
-              accuracy: 0,
-              altitudeAccuracy: null,
-              heading: null,
-              latitude: evt.place.lat,
-              speed: null,
-              toJSON: function () {
-                throw new Error('Function not implemented.');
-              },
-            },
-            id: uuidv4(),
-            userName: storeData ? storeData['firstName'] : 'Unknown',
-            info: JSON.stringify(originalDetails),
-            zoom: 0,
-            details: storeData,
-          },
-        ]);
+        this.createUserPosition(
+          evt.place.lon,
+          evt.place.lat,
+          storeData,
+          JSON.stringify(originalDetails)
+        );
         if (
           this.userPositionService.getNumberOfUsers() >=
           this.dataStoreService.getDataStoreSize()
         ) {
-          //this.userPositionService.addUserPosition(this.geoPositionCollection);
           map.getView().animate({
             center: fromLonLat([evt.place.lon, evt.place.lat]),
             zoom: this.zoomLevelSingleMarker,
@@ -125,6 +167,35 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
         }
       });
     }
+  }
+
+  private createUserPosition(
+    longitude: number,
+    latitude: number,
+    storeData: StoreData | undefined,
+    info: string
+  ) {
+    this.userPositionService.addUserPosition([
+      {
+        coords: {
+          altitude: 0,
+          longitude,
+          accuracy: 0,
+          altitudeAccuracy: null,
+          heading: null,
+          latitude,
+          speed: null,
+          toJSON: function () {
+            throw new Error('Function not implemented.');
+          },
+        },
+        id: uuidv4(),
+        userName: storeData ? storeData['firstName'] : 'Unknown',
+        info,
+        zoom: 0,
+        details: storeData,
+      },
+    ]);
   }
 
   ngAfterViewInit(): void {
@@ -146,22 +217,36 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
         }
       });
     this.dataStoreService.dataStore$.subscribe((data) => {
+      let longitude = 0;
+      let latitude = 0;
       data.forEach((data) => {
-        if (this.textInput && this.sendTextInput) {
-          this.textInput.value = this.getAddress(data);
-          console.log('search street map for', this.textInput.value);
-          this.sendTextInput.click();
+        if (
+          Object.keys(data).filter((key) => COORDINATE_KEYS.includes(key))
+            .length
+        ) {
+          longitude = Number(data[LONGITUDE]);
+          latitude = Number(data[LATITUDE]);
+          this.createUserPosition(longitude, latitude, data, data[INFO]);
+          const pictureColumns = Object.keys(data).filter((columnName) =>
+            imagesFilter(columnName)
+          );
+          pictureColumns.forEach((columnName) =>
+            this.pictureStore.storePicture(data[columnName], columnName)
+          );
+        } else {
+          if (this.textInput && this.sendTextInput) {
+            this.textInput.value = this.getAddress(data);
+            console.log('search street map for', this.textInput.value);
+            this.sendTextInput.click();
+          }
         }
-      });
-      if (this.map && this.markersVectorLayer) {
-        const vectorLayerSource = this.markersVectorLayer.getSource();
-        if (vectorLayerSource) {
-          this.map.getView().fit(vectorLayerSource.getExtent(), {
-            size: this.map.getSize(),
-            maxZoom: this.zoomLevelSingleMarker,
+        if (longitude && latitude) {
+          this.map?.getView().animate({
+            center: fromLonLat([longitude, latitude]),
+            zoom: this.zoomLevelSingleMarker,
           });
         }
-      }
+      });
     });
   }
 
@@ -297,6 +382,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
       controls: defaultControls({ attribution: false }).extend([
         attribution,
         this.fileImportControl,
+        this.exportFileControl,
       ]),
       target: 'map',
       view: new View({

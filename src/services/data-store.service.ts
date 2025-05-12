@@ -19,15 +19,13 @@ export class DataStoreService {
     return this.dataStore.length;
   }
 
+  public getStore() {
+    return [...this.dataStore];
+  }
+
   public store(info: StoreData[]) {
-    const newInfo = info.filter((newData) =>
-      this.dataStore.every(
-        (storedData) =>
-          !Object.keys(storedData).every((k) => newData[k] === storedData[k])
-      )
-    );
-    this.dataStore = this.dataStore.concat(newInfo);
-    this.dataStore$.next(newInfo);
+    this.dataStore = info;
+    this.dataStore$.next(info);
   }
 
   public get(filter: StoreData): StoreData | undefined {
