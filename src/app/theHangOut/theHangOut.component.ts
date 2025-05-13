@@ -107,7 +107,7 @@ export class TheHangOutComponent
                 center: [0, 0],
                 zoom: 14,
               } as GeoPosition;
-              this.userPositions.addUserPosition([userPos]);
+              this.userPositions.addUserPositions([userPos]);
               // Found a new user, so ping this user position
               const myPosition = this.userPositions.getUserPosition(
                 this.userId

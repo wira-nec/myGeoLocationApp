@@ -1,6 +1,9 @@
 import { Component, Input } from '@angular/core';
-import { StoreData } from '../../../services/data-store.service';
-import { getBlobs, getImageNames } from '../../helpers/dataManipulations';
+import {
+  StoreData,
+  getBlobs,
+  getImageNames,
+} from '../../../services/data-store.service';
 import { LoadPictureService } from '../../../services/load-picture.service';
 import { CommonModule } from '@angular/common';
 

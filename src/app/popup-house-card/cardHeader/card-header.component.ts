@@ -2,8 +2,8 @@ import { Component, Input } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { StoreData } from '../../../services/data-store.service';
+import { FIXED_DETAIL_COLUMNS } from '../../../services/data-store.service';
 import { Overlay } from 'ol';
-import { FIXED_DETAIL_COLUMNS } from '../../helpers/dataManipulations';
 
 @Component({
   selector: 'app-card-header',

@@ -3,6 +3,8 @@ import { GeoPosition } from '../app/view-models/geoPosition';
 import { BehaviorSubject } from 'rxjs';
 import { isEqual } from 'lodash';
 import { Coordinate } from 'ol/coordinate';
+import { StoreData } from './data-store.service';
+import { v4 as uuidv4 } from 'uuid';
 
 interface IdMapper {
   id: string;
@@ -61,11 +63,41 @@ export class UserPositionService {
     );
   }
 
-  public addUserPosition(geoPosition: GeoPosition[]) {
+  public addUserPositions(geoPosition: GeoPosition[]) {
     geoPosition.forEach((geoPos) => {
       this.userPositions.push(geoPos);
     });
     this.userPositions$.next(geoPosition);
+  }
+
+  public createUserPosition(
+    longitude: number,
+    latitude: number,
+    userName = 'Unknown',
+    storeData: StoreData | undefined,
+    info: string
+  ) {
+    const position = {
+      coords: {
+        altitude: 0,
+        longitude,
+        accuracy: 0,
+        altitudeAccuracy: null,
+        heading: null,
+        latitude,
+        speed: null,
+        toJSON: function () {
+          throw new Error('Function not implemented.');
+        },
+      },
+      id: uuidv4(),
+      userName,
+      info,
+      zoom: 0,
+      details: storeData,
+    };
+    this.userPositions.push(position);
+    this.userPositions$.next([position]);
   }
 
   public setUserCoordinatesAndOrZoom(

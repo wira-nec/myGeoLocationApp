@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
-import { StoreData } from '../../../services/data-store.service';
 import {
-  blobsFilter,
+  StoreData,
   FIXED_DETAIL_COLUMNS,
   imagesFilter,
-} from '../../helpers/dataManipulations';
+} from '../../../services/data-store.service';
+import { blobsFilter } from '../../helpers/dataManipulations';
 
 @Component({
   selector: 'app-excel-content',
