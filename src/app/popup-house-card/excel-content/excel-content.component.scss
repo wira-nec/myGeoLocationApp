@@ -1,17 +1,14 @@
 ::ng-deep app-excel-content {
   display: flex;
-  width: auto;
-  min-width: 300px;
-  max-width: 300px;
+  flex: 1;
 }
 
 .leftColumn {
-  display: flex;
   float: left;
-  flex: 1 1 100%;
+  flex: 1 1 0;
 }
 
-.info-table {
+.info-table0 {
   width: 100%;
 }
 
@@ -38,7 +35,7 @@
 
 .cell {
   display: flex;
-  flex: 1 1 100%;
+  flex: 1 1 0;
   justify-content: start;
   align-items: center;
   text-wrap: balance;
@@ -46,12 +43,12 @@
 
 .cellLeft {
   display: flex;
-  flex: 1 1 100%;
+  flex: 1 1 0;
   text-wrap: nowrap;
 }
 
 .cellRight {
   display: flex;
-  flex: 1 1 100%;
+  flex: 1 1 0;
   text-wrap: balance;
 }

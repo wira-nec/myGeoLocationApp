@@ -13,7 +13,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import Map from 'ol/Map';
 import { UserPositionService } from '../../services/user-position.service';
-import { StoreData } from '../../services/data-store.service';
+import {
+  getBlobs,
+  getImageNames,
+  StoreData,
+} from '../../services/data-store.service';
 import Overlay from 'ol/Overlay';
 import { getUid } from 'ol/util';
 import { CommonModule, NgClass } from '@angular/common';
@@ -22,6 +26,7 @@ import { CardHeaderComponent } from './cardHeader/card-header.component';
 import { ExcelContentComponent } from './excel-content/excel-content.component';
 import { PicturesContentComponent } from './pictures-content/pictures-content.component';
 import { MapBrowserEvent } from 'ol';
+import { LoadPictureService } from '../../services/load-picture.service';
 
 @Component({
   selector: 'app-popup-house-card',
@@ -49,7 +54,8 @@ export class PopupHouseCardComponent implements OnInit {
     private ref: ElementRef,
     private userPositionService: UserPositionService,
     public changeDetectorRef: ChangeDetectorRef,
-    readonly fontSizeService: FontSizeService
+    readonly fontSizeService: FontSizeService,
+    private pictureService: LoadPictureService
   ) {}
 
   details!: StoreData;
@@ -86,6 +92,15 @@ export class PopupHouseCardComponent implements OnInit {
         );
       }
     }
+  }
+
+  hasPictures(details: StoreData) {
+    if (details) {
+      if (getBlobs(details).length > 0 || getImageNames(details).length > 0) {
+        return true;
+      }
+    }
+    return false;
   }
 
   ngOnInit() {

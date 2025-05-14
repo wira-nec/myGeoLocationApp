@@ -5,8 +5,9 @@
 
 .rightColumn {
   float: left;
+  display: flex;
+  flex: 1 1 0;
   padding-left: 20px;
-  columns: 5em 2;
 }
 
 .rowWrap {
@@ -14,10 +15,13 @@
   flex-direction: row;
   flex-wrap: wrap;
 }
+.cell {
+  flex: 1 1 49%;
+}
 
 .picture-image {
   flex: 1;
-  padding: 10px 0px;
+  padding: 5px 2px 0px 2px;
 }
 
 img {
@@ -25,15 +29,4 @@ img {
   height: auto;
   object-fit: cover;
   flex: initial;
-}
-
-$columns: (
-  1: 5em 1,
-  2: 5em 2,
-);
-
-@each $columnWidth, $width in $columns {
-  .rightColumn_#{$columnWidth} {
-    columns: $width !important;
-  }
 }

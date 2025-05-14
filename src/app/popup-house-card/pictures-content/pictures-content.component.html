@@ -1,11 +1,4 @@
-<div
-  [hidden]="pictures(details).length === 0"
-  class="rightColumn"
-  [ngClass]="{
-    rightColumn_1: pictures(details).length < 3,
-    rightColumn_2: pictures(details).length === 3
-  }"
->
+<div class="rightColumn">
   <div class="rowWrap">
     <div class="cell" *ngFor="let item of pictures(details)">
       <div class="picture-image">
