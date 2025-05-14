@@ -5,7 +5,7 @@ export type ToastType = 'success' | 'error' | 'warning';
 export interface Toast {
   type: ToastType;
   title?: string;
-  body?: string;
+  body?: string[];
   delay?: number;
 }
 
@@ -23,7 +23,7 @@ export class ToasterService {
       .pipe(filter((toast) => toast !== null));
   }
 
-  show(type: ToastType, title?: string, body?: string, delay?: number) {
+  show(type: ToastType, title?: string, body?: string[], delay?: number) {
     this.subject.next({ type, title, body, delay });
   }
 }

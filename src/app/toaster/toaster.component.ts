@@ -1,9 +1,10 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Toast } from '../../services/toaster.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-toaster',
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './toaster.component.html',
   styleUrl: './toaster.component.scss',
 })

@@ -1,6 +1,8 @@
 <div class="toast toast-{{ toast.type }}" [style.top.px]="index * 115">
   <h4 class="toast-heading">{{ toast.title }}</h4>
-  <p>{{ toast.body }}</p>
+  <ul class="body-container">
+    <li class="body" *ngFor="let body of toast.body">{{ body }}</li>
+  </ul>
   <a
     class="close"
     (click)="remove.emit(index)"

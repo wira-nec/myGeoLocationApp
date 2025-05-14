@@ -11,7 +11,10 @@ import { View } from 'ol';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { OSM } from 'ol/source';
 import { UserPositionService } from '../../services/user-position.service';
-import { DataStoreService } from '../../services/data-store.service';
+import {
+  DataStoreService,
+  getAddress,
+} from '../../services/data-store.service';
 import { Attribution, defaults as defaultControls } from 'ol/control';
 import TileLayer from 'ol/layer/Tile';
 import { fromLonLat } from 'ol/proj';
@@ -71,6 +74,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
       .subscribe((data) => {
         let longitude = 0;
         let latitude = 0;
+        const errorMessage: string[] = [];
         data.forEach((data) => {
           if (
             Object.keys(data).filter((key) => COORDINATE_KEYS.includes(key))
@@ -94,22 +98,26 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
           } else {
             try {
               requestLocation(data);
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (e) {
-              this.toaster.show(
-                'error',
-                'Location request failed',
-                (e as Error).message,
-                600000
-              );
+              errorMessage.push(getAddress(data));
             }
           }
-          if (longitude && latitude) {
-            this.map.getView().animate({
-              center: fromLonLat([longitude, latitude]),
-              zoom: this.markers.zoomLevelSingleMarker,
-            });
-          }
         });
+        if (longitude && latitude) {
+          this.map.getView().animate({
+            center: fromLonLat([longitude, latitude]),
+            zoom: this.markers.zoomLevelSingleMarker,
+          });
+        }
+        if (errorMessage.length) {
+          this.toaster.show(
+            'error',
+            `${errorMessage.length} location request(s) failed for following address(es)`,
+            errorMessage,
+            600000
+          );
+        }
       });
   }
 
