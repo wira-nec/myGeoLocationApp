@@ -1,0 +1,6 @@
+<app-toaster
+  *ngFor="let toast of toasts; let i = index"
+  [toast]="toast"
+  [index]="i"
+  (remove)="remove($event)"
+></app-toaster>

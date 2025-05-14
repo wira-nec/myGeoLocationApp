@@ -29,6 +29,7 @@ import {
 } from '../../services/data-store.service';
 import { geocoderCreator, requestLocation } from '../helpers/geocoderCreator';
 import { UserMarkers } from '../helpers/userMarkers';
+import { ToasterService } from '../../services/toaster.service';
 
 @Component({
   selector: 'app-houses-map',
@@ -49,7 +50,8 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
     private readonly userPositionService: UserPositionService,
     private readonly dataStoreService: DataStoreService,
     private readonly pictureStore: LoadPictureService,
-    private readonly markers: UserMarkers
+    private readonly markers: UserMarkers,
+    private readonly toaster: ToasterService
   ) {}
 
   ngOnInit(): void {
@@ -90,7 +92,16 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
               this.pictureStore.storePicture(data[columnName], columnName)
             );
           } else {
-            requestLocation(data);
+            try {
+              requestLocation(data);
+            } catch (e) {
+              this.toaster.show(
+                'error',
+                'Location request failed',
+                (e as Error).message,
+                600000
+              );
+            }
           }
           if (longitude && latitude) {
             this.map.getView().animate({
@@ -127,6 +138,13 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
           source: new OSM(),
         }),
       ],
+    });
+
+    this.map.on('loadstart', () => {
+      this.map.getTargetElement().classList.add('spinner');
+    });
+    this.map.on('loadend', () => {
+      this.map.getTargetElement().classList.remove('spinner');
     });
 
     this.markers.initializeUseMarkers(this.map);
