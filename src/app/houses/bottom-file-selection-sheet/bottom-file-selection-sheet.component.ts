@@ -44,7 +44,7 @@ export class BottomFileSelectionSheetComponent implements OnInit {
   ) {
     this.importsNotFinished =
       Object.keys(loadPictureService.pictureStore$.value).length === 0 ||
-      dataStoreService.getDataStoreSize() === 0;
+      dataStoreService.getIncreasedDataStoreSize() === 0;
     progressService.setProgress(this.PROGRESS_ID, 0);
   }
 
@@ -65,9 +65,10 @@ export class BottomFileSelectionSheetComponent implements OnInit {
       .pipe(filter((data) => !!data.length))
       .subscribe({
         next: (data) => {
-          this.maxProgressCount = data.length;
+          this.maxProgressCount =
+            this.dataStoreService.getIncreasedDataStoreSize();
           this.currentProgressCount = 1;
-          this.isDataStoreLoaded = !!data.length;
+          this.isDataStoreLoaded = !!this.maxProgressCount;
           if (this.isUserPositionLoaded && this.importsNotFinished) {
             this.closeLink();
           }

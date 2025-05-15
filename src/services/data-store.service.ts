@@ -21,11 +21,11 @@ export const imagesFilter = (value: string): boolean => {
   return /\.(gif|jpe?g|tiff?|png|webp|bmp)$/i.test(value);
 };
 
-export const getAddress = (data: StoreData): string => {
-  return `${data[FIXED_DETAIL_COLUMNS[0]]}, ${data[FIXED_DETAIL_COLUMNS[1]]}, ${
-    data[FIXED_DETAIL_COLUMNS[2]]
-  }`;
-};
+export const getAddress = (data: StoreData) => [
+  data[FIXED_DETAIL_COLUMNS[0]],
+  data[FIXED_DETAIL_COLUMNS[1]],
+  data[FIXED_DETAIL_COLUMNS[2]].toString(),
+];
 
 export const getImageNames = (details: StoreData) => {
   return Object.values(details).filter((value) => imagesFilter(value));
@@ -40,6 +40,7 @@ export const getBlobs = (details: StoreData) => {
 })
 export class DataStoreService {
   private dataStore: StoreData[];
+  private lastNumberOfDataRecordsAdded = 0;
 
   dataStore$ = new BehaviorSubject<StoreData[]>([]);
 
@@ -47,8 +48,8 @@ export class DataStoreService {
     this.dataStore = [];
   }
 
-  public getDataStoreSize() {
-    return this.dataStore.length;
+  public getIncreasedDataStoreSize() {
+    return this.lastNumberOfDataRecordsAdded;
   }
 
   public getStore() {
@@ -56,8 +57,14 @@ export class DataStoreService {
   }
 
   public store(info: StoreData[]) {
-    this.dataStore = info;
-    this.dataStore$.next(info);
+    const newInfo = this.mergeById(info, this.dataStore);
+    console.log(newInfo);
+    const allData = this.mergeWithDataStore(info);
+    console.log(allData);
+
+    this.lastNumberOfDataRecordsAdded = allData.length - this.dataStore.length;
+    this.dataStore = allData;
+    this.dataStore$.next(newInfo);
   }
 
   public get(filter: StoreData): StoreData | undefined {
@@ -76,5 +83,47 @@ export class DataStoreService {
         )
       );
     });
+  }
+
+  private mergeById(a1: StoreData[], a2: StoreData[]) {
+    return a1.map((itm) => ({
+      ...a2.find(
+        (item) =>
+          item[FIXED_DETAIL_COLUMNS[0]] === itm[FIXED_DETAIL_COLUMNS[0]] &&
+          item[FIXED_DETAIL_COLUMNS[1]] === itm[FIXED_DETAIL_COLUMNS[1]] &&
+          item[FIXED_DETAIL_COLUMNS[2]] === itm[FIXED_DETAIL_COLUMNS[2]] &&
+          item
+      ),
+      ...itm,
+    }));
+  }
+
+  private mergeWithDataStore(info: StoreData[]) {
+    const map = new Map();
+    this.dataStore.forEach((item) =>
+      map.set(
+        item[FIXED_DETAIL_COLUMNS[0]] +
+          item[FIXED_DETAIL_COLUMNS[1]] +
+          item[FIXED_DETAIL_COLUMNS[2]],
+        item
+      )
+    );
+    info.forEach((item) =>
+      map.set(
+        item[FIXED_DETAIL_COLUMNS[0]] +
+          item[FIXED_DETAIL_COLUMNS[1]] +
+          item[FIXED_DETAIL_COLUMNS[2]],
+        {
+          ...map.get(
+            item[FIXED_DETAIL_COLUMNS[0]] +
+              item[FIXED_DETAIL_COLUMNS[1]] +
+              item[FIXED_DETAIL_COLUMNS[2]]
+          ),
+          ...item,
+        }
+      )
+    );
+    const allData = Array.from(map.values());
+    return allData;
   }
 }

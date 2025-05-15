@@ -1,5 +1,8 @@
 import { Control } from 'ol/control';
-import { DataStoreService } from '../../../services/data-store.service';
+import {
+  DataStoreService,
+  getAddress,
+} from '../../../services/data-store.service';
 import { UserPositionService } from '../../../services/user-position.service';
 import { ExcelService } from '../../../services/excel.service';
 import { JsonCreatorService } from '../../../services/json-creator.service';
@@ -41,13 +44,14 @@ export class ExportControl extends Control {
     this.loadPictureService = inject(LoadPictureService);
 
     const exportFiles = (): void => {
-      if (this.dataStoreService.getDataStoreSize() > 0) {
+      if (this.dataStoreService.getIncreasedDataStoreSize() > 0) {
         const dataStore = this.dataStoreService.getStore();
         const sheet = dataStore.map((data) => {
+          const [postcode, city, houseNumber] = getAddress(data);
           const userPos = this.userPositionService.getUserByAddress(
-            data[FIXED_DETAIL_COLUMNS[1]],
-            data[FIXED_DETAIL_COLUMNS[0]],
-            data[FIXED_DETAIL_COLUMNS[2]].toString()
+            city,
+            postcode,
+            houseNumber
           );
           if (userPos) {
             return {

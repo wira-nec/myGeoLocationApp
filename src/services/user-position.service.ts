@@ -3,7 +3,11 @@ import { GeoPosition } from '../app/view-models/geoPosition';
 import { BehaviorSubject } from 'rxjs';
 import { isEqual } from 'lodash';
 import { Coordinate } from 'ol/coordinate';
-import { StoreData } from './data-store.service';
+import {
+  FIXED_DETAIL_COLUMNS,
+  getAddress,
+  StoreData,
+} from './data-store.service';
 import { v4 as uuidv4 } from 'uuid';
 
 interface IdMapper {
@@ -70,14 +74,14 @@ export class UserPositionService {
     this.userPositions$.next(geoPosition);
   }
 
-  public createUserPosition(
+  public updateUserPosition(
     longitude: number,
     latitude: number,
     userName = 'Unknown',
     storeData: StoreData | undefined,
     userPositionInfo: string
   ) {
-    const position = {
+    const position: GeoPosition = {
       coords: {
         altitude: 0,
         longitude,
@@ -96,6 +100,20 @@ export class UserPositionService {
       zoom: 0,
       details: storeData,
     };
+    if (storeData) {
+      const [postcode, city, houseNumber] = getAddress(storeData);
+      const userPos = this.getUserByAddress(city, postcode, houseNumber);
+      if (userPos) {
+        userPos.details = storeData;
+        userPos.coords = {
+          ...userPos.coords,
+          longitude,
+          latitude,
+        };
+        userPos.userPositionInfo = userPositionInfo;
+        return;
+      }
+    }
     this.userPositions.push(position);
     this.userPositions$.next([position]);
   }

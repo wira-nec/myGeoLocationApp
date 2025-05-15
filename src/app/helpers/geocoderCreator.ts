@@ -33,22 +33,21 @@ export function geocoderCreator(
       city: originalDetails.city,
     });
     console.log('street map found', originalDetails);
-    userPositionService.createUserPosition(
+    userPositionService.updateUserPosition(
       evt.place.lon,
       evt.place.lat,
       storeData ? storeData[FIRST_NAME] : undefined,
       storeData,
       JSON.stringify(originalDetails)
     );
-    if (
-      userPositionService.getNumberOfUsers() >=
-      dataStoreService.getDataStoreSize()
-    ) {
-      map.getView().animate({
-        center: fromLonLat([evt.place.lon, evt.place.lat]),
-        zoom: zoomLevelSingleMarker,
-      });
-    }
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  geocoder.once('addresschosen', (evt: any) => {
+    // Only position view once
+    map.getView().animate({
+      center: fromLonLat([evt.place.lon, evt.place.lat]),
+      zoom: zoomLevelSingleMarker,
+    });
   });
   return geocoder;
 }
@@ -61,7 +60,8 @@ export function requestLocation(data: StoreData) {
     '.gcd-txt-search'
   ) as HTMLButtonElement;
   if (textInput && sendTextInput) {
-    textInput.value = getAddress(data);
+    const [postcode, city, houseNumber] = getAddress(data);
+    textInput.value = `${postcode}, ${houseNumber}, ${city}`;
     console.log('search street map for', textInput.value);
     sendTextInput.click();
   }

@@ -98,16 +98,25 @@ export class UserMarkers {
   public updateUserMarkerStyle() {
     Object.keys(this.userMarkers).forEach((key) => {
       const userPos = this.userPositionService.getUserPosition(key);
-      let labelText = '';
-      if (userPos?.details) {
-        labelText = getAddress(userPos.details);
-      } else {
-        labelText = userPos?.userName || 'Unknown';
-      }
+      const labelText = this.getAddressLabel(
+        userPos,
+        userPos?.userName || 'Unknown'
+      );
       styleUser(this.userMarkers[key], labelText, this.zoomLevelSingleMarker);
       this.userMarkers[key].changed();
     });
     this.refreshVectorLayer();
+  }
+
+  private getAddressLabel(
+    userPos: GeoPosition | undefined,
+    defaultText: string
+  ) {
+    if (userPos?.details) {
+      const [postcode, city, houseNumber] = getAddress(userPos.details);
+      return `${postcode}, ${houseNumber}, ${city}`;
+    }
+    return defaultText;
   }
 
   public setupMap(userPositions: GeoPosition[], view: View) {
@@ -129,9 +138,7 @@ export class UserMarkers {
       );
       styleUser(
         this.userMarkers[userPosition.id],
-        userPosition.details
-          ? `${getAddress(userPosition.details)}`
-          : userPosition.userName,
+        this.getAddressLabel(userPosition, userPosition.userName),
         this.zoomLevelSingleMarker
       );
     });

@@ -11,10 +11,6 @@ export class ProgressService {
 
   progress$ = this.progressSubject.asObservable();
 
-  reset(progressId: string) {
-    this.progressSubject.next({ [progressId]: 0 });
-  }
-
   setProgress(progressId: string, count: number) {
     this.progressSubject.next({ [progressId]: count });
   }

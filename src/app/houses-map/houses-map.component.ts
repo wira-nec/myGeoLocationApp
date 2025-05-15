@@ -14,6 +14,7 @@ import { UserPositionService } from '../../services/user-position.service';
 import {
   DataStoreService,
   getAddress,
+  StoreData,
 } from '../../services/data-store.service';
 import { Attribution, defaults as defaultControls } from 'ol/control';
 import TileLayer from 'ol/layer/Tile';
@@ -76,13 +77,10 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
         let latitude = 0;
         const errorMessage: string[] = [];
         data.forEach((data) => {
-          if (
-            Object.keys(data).filter((key) => COORDINATE_KEYS.includes(key))
-              .length
-          ) {
+          if (this.dataContainsLocation(data)) {
             longitude = Number(data[LONGITUDE]);
             latitude = Number(data[LATITUDE]);
-            this.userPositionService.createUserPosition(
+            this.userPositionService.updateUserPosition(
               longitude,
               latitude,
               data[FIRST_NAME],
@@ -96,11 +94,30 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
               this.pictureStore.storePicture(data[columnName], columnName)
             );
           } else {
-            try {
-              requestLocation(data);
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            } catch (e) {
-              errorMessage.push(getAddress(data));
+            const [postcode, city, houseNumber] = getAddress(data);
+            const userPos = this.userPositionService.getUserByAddress(
+              city,
+              postcode,
+              houseNumber
+            );
+            if (userPos) {
+              // Is data for existing userPosition,
+              // only update the userPosition data,
+              // location is already requested on creation.
+              this.userPositionService.updateUserPosition(
+                0,
+                0,
+                userPos.userName,
+                data,
+                userPos.userPositionInfo
+              );
+            } else {
+              try {
+                requestLocation(data);
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              } catch (e) {
+                errorMessage.push(`${postcode}, ${houseNumber}, ${city}`);
+              }
             }
           }
         });
@@ -171,4 +188,9 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
 
     return this.map;
   };
+
+  private dataContainsLocation(data: StoreData) {
+    return Object.keys(data).filter((key) => COORDINATE_KEYS.includes(key))
+      .length;
+  }
 }
