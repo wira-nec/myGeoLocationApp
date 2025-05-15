@@ -2,6 +2,8 @@ import {
   AfterContentInit,
   ChangeDetectorRef,
   Component,
+  DestroyRef,
+  inject,
   OnDestroy,
   OnInit,
 } from '@angular/core';
@@ -17,6 +19,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { pingServer, removeServer } from '../helpers/pushServers';
 import { AuthService } from '../../services/auth.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-hangout',
@@ -28,6 +31,8 @@ import { AuthService } from '../../services/auth.service';
 export class TheHangOutComponent
   implements OnInit, AfterContentInit, OnDestroy
 {
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(
     private readonly http: HttpClient,
     private readonly route: ActivatedRoute,
@@ -70,11 +75,16 @@ export class TheHangOutComponent
         this.logout();
       } else {
         this.userPosition$ = this.userPositions.userPositions$.asObservable();
-        this.authService.user$.subscribe((user) => {
-          if (!user?.id) {
-            // user is logged out
-            this.logout();
-          }
+        const authServiceSubscription = this.authService.user$
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe((user) => {
+            if (!user?.id) {
+              // user is logged out
+              this.logout();
+            }
+          });
+        this.destroyRef.onDestroy(() => {
+          authServiceSubscription.unsubscribe();
         });
         this.userPositions.userPositions$.next([thisUserPos]);
         const channel = this.pusher.init();
@@ -99,7 +109,7 @@ export class TheHangOutComponent
               userPos = {
                 id: pingData.userId,
                 userName: pingData.username,
-                info: 'Todo ?',
+                userPositionInfo: 'Todo ?',
                 coords: {
                   latitude: pingData.lat,
                   longitude: pingData.lng,

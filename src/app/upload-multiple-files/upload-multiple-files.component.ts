@@ -10,23 +10,27 @@ import { CommonModule } from '@angular/common';
   imports: [MatProgressBarModule, ImportProgressBarComponent, CommonModule],
   templateUrl: './upload-multiple-files.component.html',
   styleUrl: './upload-multiple-files.component.scss',
-  providers: [ProgressService],
 })
 export class UploadMultipleFilesComponent {
+  readonly PROGRESS_ID = 'pictures-import-progress';
   constructor(
     private pictureService: LoadPictureService,
     readonly progressService: ProgressService
   ) {
-    this.progressService.reset();
+    progressService.setProgress(this.PROGRESS_ID, 0);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   uploadFiles(e: any) {
+    this.progressService.setProgress(this.PROGRESS_ID, 0);
     const files = Array.from(e.target.files as FileList);
-    this.progressService.reset(100 / files.length);
+    let counter = 1;
     files.forEach((file: File) => {
       this.pictureService.loadPicture(file, file.name);
-      this.progressService.incrementProgress();
+      this.progressService.setProgress(
+        this.PROGRESS_ID,
+        (100 / files.length) * counter++
+      );
     });
   }
 }

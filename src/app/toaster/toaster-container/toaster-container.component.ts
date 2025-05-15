@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { Toast, ToasterService } from '../../../services/toaster.service';
 import { ToasterComponent } from '../toaster.component';
 import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-toaster-container',
@@ -9,13 +10,11 @@ import { CommonModule } from '@angular/common';
   templateUrl: './toaster-container.component.html',
   styleUrl: './toaster-container.component.scss',
 })
-export class ToasterContainerComponent implements OnInit {
+export class ToasterContainerComponent {
   toasts: Toast[] = [];
 
-  constructor(public readonly toaster: ToasterService) {}
-
-  ngOnInit() {
-    this.toaster.toast$.subscribe((toast) => {
+  constructor(public readonly toaster: ToasterService) {
+    this.toaster.toast$.pipe(takeUntilDestroyed()).subscribe((toast) => {
       this.toasts = [toast, ...this.toasts];
       setTimeout(() => this.toasts.pop(), toast.delay || 6000);
     });

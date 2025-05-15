@@ -45,7 +45,7 @@ import { ToasterService } from '../../services/toaster.service';
 export class HousesMapComponent implements OnInit, AfterViewInit {
   map!: Map;
 
-  private destroyRef = inject(DestroyRef);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly fileImportControl = new ImportFilesControl();
   private readonly exportFileControl = new ExportControl();
 
@@ -62,14 +62,14 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.userPositionService.userPositions$
+    const userPositionSubscription = this.userPositionService.userPositions$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((userPositions) => {
         if (userPositions.length) {
           this.markers.setupMap(userPositions, this.map.getView());
         }
       });
-    this.dataStoreService.dataStore$
+    const dataStoreServiceSubscription = this.dataStoreService.dataStore$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((data) => {
         let longitude = 0;
@@ -119,6 +119,10 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
           );
         }
       });
+    this.destroyRef.onDestroy(() => {
+      userPositionSubscription.unsubscribe();
+      dataStoreServiceSubscription.unsubscribe();
+    });
   }
 
   private initializeMap = () => {

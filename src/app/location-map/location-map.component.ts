@@ -26,7 +26,7 @@ export class LocationMapComponent implements OnInit {
   currentPositionUrl: SafeResourceUrl | null = null;
   watchSubscription: Subscription | null = null;
   error: GeolocationPositionError | null = null;
-  private destroyRef = inject(DestroyRef);
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(
     readonly geolocation$: GeolocationService,
@@ -35,11 +35,16 @@ export class LocationMapComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.geolocation$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (position) => {
-        this.currentPositionUrl = this.getUrl(position);
-        this.changeDetectorRef.markForCheck();
-      },
+    const geoLocationSubscription = this.geolocation$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (position) => {
+          this.currentPositionUrl = this.getUrl(position);
+          this.changeDetectorRef.markForCheck();
+        },
+      });
+    this.destroyRef.onDestroy(() => {
+      geoLocationSubscription.unsubscribe();
     });
   }
 

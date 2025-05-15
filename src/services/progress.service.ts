@@ -1,21 +1,21 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
-@Injectable()
+export type Progress = Record<string, number>;
+
+@Injectable({
+  providedIn: 'root',
+})
 export class ProgressService {
-  private progressSubject = new BehaviorSubject<number>(0);
+  private progressSubject = new BehaviorSubject<Progress>({});
 
   progress$ = this.progressSubject.asObservable();
-  bufferSize = 1;
 
-  reset(bufferSize = 1) {
-    this.progressSubject.next(0);
-    this.bufferSize = bufferSize;
+  reset(progressId: string) {
+    this.progressSubject.next({ [progressId]: 0 });
   }
 
-  incrementProgress(count = 1) {
-    this.progressSubject.next(
-      (100 / this.bufferSize) * count + this.progressSubject.value
-    );
+  setProgress(progressId: string, count: number) {
+    this.progressSubject.next({ [progressId]: count });
   }
 }

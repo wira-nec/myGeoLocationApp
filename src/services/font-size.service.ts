@@ -1,5 +1,6 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Injectable } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
@@ -9,6 +10,7 @@ export class FontSizeService {
   constructor(private responsive: BreakpointObserver) {
     this.responsive
       .observe([Breakpoints.Handset, Breakpoints.Tablet, Breakpoints.Web])
+      .pipe(takeUntilDestroyed())
       .subscribe((result) => {
         const breakpoints = result.breakpoints;
         if (

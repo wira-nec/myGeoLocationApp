@@ -39,7 +39,7 @@ export class UserPositionService {
     houseNumber: string
   ): GeoPosition | undefined {
     return this.userPositions.find((userPos) => {
-      const userInfo = JSON.parse(userPos.info);
+      const userInfo = JSON.parse(userPos.userPositionInfo);
       const userHouseNumber = userInfo.housenumber.split('-').at(-1) as string;
       return (
         userInfo.city.toLowerCase() === city.toLowerCase() &&
@@ -75,7 +75,7 @@ export class UserPositionService {
     latitude: number,
     userName = 'Unknown',
     storeData: StoreData | undefined,
-    info: string
+    userPositionInfo: string
   ) {
     const position = {
       coords: {
@@ -92,7 +92,7 @@ export class UserPositionService {
       },
       id: uuidv4(),
       userName,
-      info,
+      userPositionInfo,
       zoom: 0,
       details: storeData,
     };

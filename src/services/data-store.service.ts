@@ -13,7 +13,7 @@ export const FIXED_DETAIL_COLUMNS = [
 
 export const LONGITUDE = 'longitude';
 export const LATITUDE = 'latitude';
-export const INFO = 'info';
+export const INFO = 'userPositionInfo';
 export const FIRST_NAME = 'firstName';
 export const COORDINATE_KEYS: string[] = [LONGITUDE, LATITUDE];
 

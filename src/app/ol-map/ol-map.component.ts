@@ -5,7 +5,6 @@ import {
   DestroyRef,
   inject,
   Input,
-  OnDestroy,
   OnInit,
 } from '@angular/core';
 import { MousePositionComponent } from '../components/mouse-position/mouse-position.component';
@@ -20,7 +19,7 @@ import { Vector } from 'ol/source';
 import { fromLonLat } from 'ol/proj';
 import { CommonModule } from '@angular/common';
 import { OlMapComponent } from '../components/map/map.component';
-import { debounceTime, Subject, takeUntil } from 'rxjs';
+import { debounceTime, Subject } from 'rxjs';
 import Style from 'ol/style/Style';
 import Icon from 'ol/style/Icon';
 import Text from 'ol/style/Text.js';
@@ -45,9 +44,7 @@ import Stroke from 'ol/style/Stroke';
   templateUrl: './ol-map.component.html',
   styleUrl: './ol-map.component.scss',
 })
-export class MapComponent
-  implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy
-{
+export class MapComponent implements OnInit, AfterViewInit, AfterViewChecked {
   @Input({ required: false }) extendedView = true;
   @Input() userId!: string;
   @Input()
@@ -73,9 +70,8 @@ export class MapComponent
   private canvasStyleIsSet = false;
   private zoomLevelSingleMarker = 13;
   private userMarkers: Record<string, Feature> = {};
-  private unsubscribe$ = new Subject();
+  private readonly destroyRef = inject(DestroyRef);
   private zoomInput = new Subject<ObjectEvent>();
-  private destroyRef = inject(DestroyRef);
   private markersVectorLayer = new VectorLayer<
     Vector<Feature<Geometry>>,
     Feature<Geometry>
@@ -83,7 +79,7 @@ export class MapComponent
 
   constructor(private readonly userPositionService: UserPositionService) {
     this.zoomInput
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(takeUntilDestroyed())
       .pipe(debounceTime(300))
       .subscribe(() => {
         this.onViewChanged();
@@ -97,20 +93,25 @@ export class MapComponent
   }
 
   ngAfterViewInit(): void {
-    this.userPositionService.userPositions$
-      .pipe(takeUntil(this.unsubscribe$))
+    const userPositionSubscription = this.userPositionService.userPositions$
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((userPositions) => {
         if (userPositions) {
           this.setupMap(userPositions);
         }
       });
-    this.userPositionService.removedUserPosition$
-      .pipe(takeUntil(this.unsubscribe$))
-      .subscribe((removedUserPosition) => {
-        if (removedUserPosition) {
-          this.updateMap(removedUserPosition);
-        }
-      });
+    const removeUserPositionSubscription =
+      this.userPositionService.removedUserPosition$
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((removedUserPosition) => {
+          if (removedUserPosition) {
+            this.updateMap(removedUserPosition);
+          }
+        });
+    this.destroyRef.onDestroy(() => {
+      userPositionSubscription.unsubscribe();
+      removeUserPositionSubscription.unsubscribe();
+    });
   }
 
   ngAfterViewChecked(): void {
@@ -121,11 +122,6 @@ export class MapComponent
         this.canvasStyleIsSet = true;
       }
     }
-  }
-
-  ngOnDestroy() {
-    this.unsubscribe$.next(undefined);
-    this.unsubscribe$.complete();
   }
 
   private onViewChanged = () => {

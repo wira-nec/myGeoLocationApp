@@ -1,4 +1,10 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ViewChild,
+  DestroyRef,
+  inject,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -8,6 +14,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-header',
@@ -26,6 +33,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 })
 export class HeaderComponent implements OnInit {
   @ViewChild(MatMenuTrigger) trigger: MatMenuTrigger | null = null;
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(private authService$: AuthService) {}
 
@@ -33,13 +41,18 @@ export class HeaderComponent implements OnInit {
   isLoggedIn = false;
 
   ngOnInit() {
-    this.authService$.user$.subscribe((user) => {
-      if (user) {
-        this.isLoggedIn = true;
-        this.userName = user.name;
-      } else {
-        this.isLoggedIn = false;
-      }
+    const authServiceSubscription = this.authService$.user$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((user) => {
+        if (user) {
+          this.isLoggedIn = true;
+          this.userName = user.name;
+        } else {
+          this.isLoggedIn = false;
+        }
+      });
+    this.destroyRef.onDestroy(() => {
+      authServiceSubscription.unsubscribe();
     });
   }
 

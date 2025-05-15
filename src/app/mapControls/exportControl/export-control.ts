@@ -54,7 +54,7 @@ export class ExportControl extends Control {
               ...data,
               longitude: userPos.coords.longitude.toString(),
               latitude: userPos.coords.latitude.toString(),
-              userPositionInfo: userPos.info,
+              userPositionInfo: userPos.userPositionInfo,
             };
           } else {
             return data;

@@ -1,4 +1,10 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+  inject,
+  DestroyRef,
+} from '@angular/core';
 import { GeolocationService } from '../../services/geoLocationService';
 import { HeaderComponent } from '../header/header.component';
 import { CommonModule } from '@angular/common';
@@ -8,6 +14,7 @@ import { AuthService } from '../../services/auth.service';
 import { UserPositionService } from '../../services/user-position.service';
 import { Router } from '@angular/router';
 import { first } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-home',
@@ -19,6 +26,7 @@ import { first } from 'rxjs';
 export class HomeComponent implements OnInit {
   error: GeolocationPositionError | null = null;
   userPosition: GeoPosition | undefined;
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(
     private router: Router,
@@ -32,21 +40,26 @@ export class HomeComponent implements OnInit {
   userId = '';
 
   ngOnInit() {
-    this.authService.user$.subscribe((user) => {
-      if (user?.id) {
-        if (!!this.userId && this.userId !== user.id) {
-          this.userPositions$.removeUserPosition(this.userId);
+    const authServiceSubscription = this.authService.user$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((user) => {
+        if (user?.id) {
+          if (!!this.userId && this.userId !== user.id) {
+            this.userPositions$.removeUserPosition(this.userId);
+          }
+          this.username = user.name;
+          this.userId = user.id;
+          this.showMap();
+        } else {
+          // user is logged out
+          this.userId = '';
+          this.username = '';
+          this.userPosition = undefined;
+          this.userPositions$.clearUserPositions();
         }
-        this.username = user.name;
-        this.userId = user.id;
-        this.showMap();
-      } else {
-        // user is logged out
-        this.userId = '';
-        this.username = '';
-        this.userPosition = undefined;
-        this.userPositions$.clearUserPositions();
-      }
+      });
+    this.destroyRef.onDestroy(() => {
+      authServiceSubscription.unsubscribe();
     });
   }
 
@@ -61,7 +74,7 @@ export class HomeComponent implements OnInit {
         this.userPosition = {
           id: this.userId,
           userName: this.username,
-          info: 'Just created user',
+          userPositionInfo: 'Just created user',
           coords: position.coords,
           center: [0, 0],
           zoom: 14,

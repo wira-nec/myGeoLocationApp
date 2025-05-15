@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, DestroyRef } from '@angular/core';
 import { MatBottomSheetRef } from '@angular/material/bottom-sheet';
 import { UploadMultipleFilesComponent } from '../../upload-multiple-files/upload-multiple-files.component';
 import { DataStoreService } from '../../../services/data-store.service';
@@ -8,6 +8,8 @@ import { ImportProgressBarComponent } from '../../import-progress-bar/import-pro
 import { ProgressService } from '../../../services/progress.service';
 import { CommonModule } from '@angular/common';
 import { UserPositionService } from '../../../services/user-position.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-bottom-file-selection-sheet',
@@ -18,10 +20,12 @@ import { UserPositionService } from '../../../services/user-position.service';
   ],
   templateUrl: './bottom-file-selection-sheet.component.html',
   styleUrl: './bottom-file-selection-sheet.component.scss',
-  providers: [ProgressService],
 })
 export class BottomFileSelectionSheetComponent implements OnInit {
+  readonly PROGRESS_ID = 'xsl-import-progress';
   excelData!: never[];
+  private maxProgressCount = 0;
+  private currentProgressCount = 0;
   private _bottomSheetRef =
     inject<MatBottomSheetRef<BottomFileSelectionSheetComponent>>(
       MatBottomSheetRef
@@ -30,40 +34,60 @@ export class BottomFileSelectionSheetComponent implements OnInit {
   private isDataStoreLoaded = false;
   private isUserPositionLoaded = false;
   private importsNotFinished = true;
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(
     private readonly loadPictureService: LoadPictureService,
     private readonly dataStoreService: DataStoreService,
     private readonly userPositionService: UserPositionService,
-    readonly progressService: ProgressService
+    private readonly progressService: ProgressService
   ) {
     this.importsNotFinished =
       Object.keys(loadPictureService.pictureStore$.value).length === 0 ||
       dataStoreService.getDataStoreSize() === 0;
+    progressService.setProgress(this.PROGRESS_ID, 0);
   }
 
   ngOnInit(): void {
-    this.loadPictureService.pictureStore$.subscribe({
-      next: (pictures) => {
-        this.isUserPositionLoaded = !!Object.keys(pictures).length;
-        if (this.isDataStoreLoaded && this.importsNotFinished) {
-          this.closeLink();
-        }
-      },
-    });
-    this.dataStoreService.dataStore$.subscribe({
-      next: (data) => {
-        this.isDataStoreLoaded = !!data.length;
-        if (data.length) {
-          this.progressService.reset(data.length);
-        }
-        if (this.isUserPositionLoaded && this.importsNotFinished) {
-          this.closeLink();
-        }
-      },
-    });
-    this.userPositionService.userPositions$.subscribe((userPositions) => {
-      this.progressService.incrementProgress(userPositions.length);
+    const loadPictureServiceSubscription = this.loadPictureService.pictureStore$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(filter((pic) => !!Object.keys(pic).length))
+      .subscribe({
+        next: (pictures) => {
+          this.isUserPositionLoaded = !!Object.keys(pictures).length;
+          if (this.isDataStoreLoaded && this.importsNotFinished) {
+            this.closeLink();
+          }
+        },
+      });
+    const dataStoreServiceSubscription = this.dataStoreService.dataStore$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(filter((data) => !!data.length))
+      .subscribe({
+        next: (data) => {
+          this.maxProgressCount = data.length;
+          this.currentProgressCount = 1;
+          this.isDataStoreLoaded = !!data.length;
+          if (this.isUserPositionLoaded && this.importsNotFinished) {
+            this.closeLink();
+          }
+        },
+      });
+    const userPositionServiceSubscription =
+      this.userPositionService.userPositions$
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .pipe(filter((pos) => !!pos.length))
+        .subscribe(() => {
+          this.progressService.setProgress(
+            this.PROGRESS_ID,
+            (100 / this.maxProgressCount) * this.currentProgressCount++
+          );
+        });
+
+    this.destroyRef.onDestroy(() => {
+      loadPictureServiceSubscription.unsubscribe();
+      dataStoreServiceSubscription.unsubscribe();
+      userPositionServiceSubscription.unsubscribe();
     });
   }
 
@@ -73,6 +97,7 @@ export class BottomFileSelectionSheetComponent implements OnInit {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onFileChange(event: any) {
+    this.progressService.setProgress(this.PROGRESS_ID, 0);
     const file = event.target.files[0];
     const reader = new FileReader();
     reader.onload = (e: ProgressEvent<FileReader>) => {
