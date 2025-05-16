@@ -8,7 +8,7 @@ describe('ScalelineComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ScaleLineComponent],
+      imports: [ScaleLineComponent],
     }).compileComponents();
   });
 

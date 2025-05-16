@@ -1,18 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { OlMapComponent } from './ol-map.component';
+import { MapComponent } from './ol-map.component';
 
-describe('OlMapComponent', () => {
-  let component: OlMapComponent;
-  let fixture: ComponentFixture<OlMapComponent>;
+describe('MapComponent', () => {
+  let component: MapComponent;
+  let fixture: ComponentFixture<MapComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [OlMapComponent]
-    })
-    .compileComponents();
+      imports: [MapComponent],
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(OlMapComponent);
+    fixture = TestBed.createComponent(MapComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

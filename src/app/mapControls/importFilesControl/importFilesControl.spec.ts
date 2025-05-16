@@ -1,7 +1,10 @@
 import { ImportFilesControl } from './importFilesControl';
+import { TestBed } from '@angular/core/testing';
 
 describe('ImportFileControl', () => {
   it('should create an instance', () => {
-    expect(new ImportFilesControl({})).toBeTruthy();
+    expect(
+      TestBed.runInInjectionContext(() => new ImportFilesControl({}))
+    ).toBeTruthy();
   });
 });

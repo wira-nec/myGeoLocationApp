@@ -19,35 +19,19 @@ describe('service', () => {
   describe('numberCoordinates', () => {
     it('formats lon/lat coordinates', () => {
       const coords = [7.1234, 46.9876];
-      expect(service.numberCoordinates(coords)).toBe('7 47');
-      expect(
-        service.numberCoordinates(
-          coords,
-          2,
-          'co {x} E; {y} N',
-        ),
-      ).toBe('co 7.12 E; 46.99 N');
+      expect(service.numberCoordinates(coords)).toBe('7, 47');
     });
 
     it('formats metric coordinates', () => {
       const coords = [2600000, 1600000];
-      expect(
-        service.numberCoordinates(coords, 0, '{x}, {y}'),
-      ).toBe('2,600,000, 1,600,000');
+      expect(service.numberCoordinates(coords, 0)).toBe('2600000, 1600000');
     });
 
     it('formats with correct number of digits', () => {
       const coords = [2600000, 1600000];
-      expect(
-        service.numberCoordinates(coords, 4, '{x}, {y}'),
-      ).toBe('2,600,000.0000, 1,600,000.0000');
-    });
-
-    it('formats with a template', () => {
-      const coords = [2600000, 1600000];
-      expect(
-        service.numberCoordinates(coords, 0, '{x}, {y} m'),
-      ).toBe('2,600,000, 1,600,000 m');
+      expect(service.numberCoordinates(coords, 4)).toBe(
+        '2600000.0000, 1600000.0000'
+      );
     });
   });
 });
