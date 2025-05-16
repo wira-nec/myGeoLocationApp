@@ -64,7 +64,7 @@ export class BottomFileSelectionSheetComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .pipe(filter((data) => !!data.length))
       .subscribe({
-        next: (data) => {
+        next: () => {
           this.maxProgressCount =
             this.dataStoreService.getIncreasedDataStoreSize();
           this.currentProgressCount = 1;

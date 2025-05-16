@@ -7,7 +7,6 @@ import { UserPositionService } from '../../../services/user-position.service';
 import { ExcelService } from '../../../services/excel.service';
 import { JsonCreatorService } from '../../../services/json-creator.service';
 import { LoadPictureService } from '../../../services/load-picture.service';
-import { FIXED_DETAIL_COLUMNS } from '../../../services/data-store.service';
 import { inject } from '@angular/core';
 
 const EXPORTED_FILENAME = 'exportedMap';

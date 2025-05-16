@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { TheHangOutComponent } from './theHangOut/theHangOut.component';
 import { HomeComponent } from './home/home.component';
-import { UserInfoComponent } from './components/userInfo/userInfo.component';
 import { HousesComponent } from './houses/houses.component';
 // import { LocationMapComponent } from './location-map/location-map.component';
 

@@ -1,8 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 
 const localhostEndPoint = 'http://localhost:4000';
+/*
 const simpleExpressPusherServerEndPoint =
   'https://leafy-praline-b56f06.netlify.app/.netlify/functions/api';
+*/
 
 export function helloServer(
   http: HttpClient,

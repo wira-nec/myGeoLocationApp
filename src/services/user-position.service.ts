@@ -3,11 +3,7 @@ import { GeoPosition } from '../app/view-models/geoPosition';
 import { BehaviorSubject } from 'rxjs';
 import { isEqual } from 'lodash';
 import { Coordinate } from 'ol/coordinate';
-import {
-  FIXED_DETAIL_COLUMNS,
-  getAddress,
-  StoreData,
-} from './data-store.service';
+import { getAddress, StoreData } from './data-store.service';
 import { v4 as uuidv4 } from 'uuid';
 
 interface IdMapper {
