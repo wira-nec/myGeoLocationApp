@@ -17,20 +17,16 @@ export class UploadMultipleFilesComponent {
     private pictureService: LoadPictureService,
     readonly progressService: ProgressService
   ) {
-    progressService.setProgress(this.PROGRESS_ID, 0);
+    // progressService.setProgress(this.PROGRESS_ID, 0);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   uploadFiles(e: any) {
-    this.progressService.setProgress(this.PROGRESS_ID, 0);
     const files = Array.from(e.target.files as FileList);
-    let counter = 1;
+    this.progressService.setMaxCount(this.PROGRESS_ID, files.length);
     files.forEach((file: File) => {
       this.pictureService.loadPicture(file, file.name);
-      this.progressService.setProgress(
-        this.PROGRESS_ID,
-        (100 / files.length) * counter++
-      );
+      this.progressService.increaseProgressByStep(this.PROGRESS_ID);
     });
   }
 }

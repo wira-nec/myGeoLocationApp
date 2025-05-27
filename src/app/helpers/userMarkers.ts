@@ -26,7 +26,7 @@ const styleUser = (
   if (zoomLevelSingleMarker > 15.5) {
     feature.setStyle(getHouseStyle(labelText));
   } else {
-    feature.setStyle(getDotStyle(4));
+    feature.setStyle(getDotStyle(4, labelText === 'Unknown'));
   }
 };
 
@@ -44,7 +44,7 @@ const getHouseStyle = (labelText: string): StyleLike | undefined => {
       font: 'bold 12px Calibri,sans-serif',
       offsetY: -5,
       fill: new Fill({
-        color: 'blue',
+        color: labelText === 'Unknown' ? 'red' : 'blue',
       }),
       stroke: new Stroke({
         color: 'white',
@@ -54,11 +54,11 @@ const getHouseStyle = (labelText: string): StyleLike | undefined => {
   });
 };
 
-const getDotStyle = (radius: number): StyleLike | undefined => {
+const getDotStyle = (radius: number, isRed: boolean): StyleLike | undefined => {
   return new Style({
     image: new CircleStyle({
       radius: radius,
-      fill: new Fill({ color: 'black' }),
+      fill: new Fill({ color: isRed ? 'red' : 'black' }),
       stroke: new Stroke({
         color: 'white',
         width: 2,
@@ -113,8 +113,10 @@ export class UserMarkers {
     defaultText: string
   ) {
     if (userPos?.details) {
-      const [postcode, city, houseNumber] = getAddress(userPos.details);
-      return `${postcode}, ${houseNumber}, ${city}`;
+      const [postcode, city, houseNumber, street] = getAddress(userPos.details);
+      return `${postcode}, ${street}${
+        street?.length ? ' ' : ''
+      }${houseNumber}, ${city}`;
     }
     return defaultText;
   }

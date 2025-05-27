@@ -31,9 +31,16 @@ import {
   LATITUDE,
   LONGITUDE,
 } from '../../services/data-store.service';
-import { geocoderCreator, requestLocation } from '../helpers/geocoderCreator';
+import {
+  geocoderCreator,
+  requestLocation,
+  geocodeHandlingFinished,
+} from '../helpers/geocoderCreator';
 import { UserMarkers } from '../helpers/userMarkers';
 import { ToasterService } from '../../services/toaster.service';
+import { filter, takeWhile } from 'rxjs';
+import { ProgressService } from '../../services/progress.service';
+import { PROGRESS_ID } from '../houses/bottom-file-selection-sheet/bottom-file-selection-sheet.component';
 
 @Component({
   selector: 'app-houses-map',
@@ -46,17 +53,20 @@ import { ToasterService } from '../../services/toaster.service';
 export class HousesMapComponent implements OnInit, AfterViewInit {
   map!: Map;
 
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly destroyRef: DestroyRef;
   private readonly fileImportControl = new ImportFilesControl();
   private readonly exportFileControl = new ExportControl();
+  private readonly markers = inject(UserMarkers);
 
   constructor(
     private readonly userPositionService: UserPositionService,
     private readonly dataStoreService: DataStoreService,
     private readonly pictureStore: LoadPictureService,
-    private readonly markers: UserMarkers,
-    private readonly toaster: ToasterService
-  ) {}
+    private readonly toaster: ToasterService,
+    private readonly progressService: ProgressService
+  ) {
+    this.destroyRef = inject(DestroyRef);
+  }
 
   ngOnInit(): void {
     this.initializeMap();
@@ -64,18 +74,40 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     const userPositionSubscription = this.userPositionService.userPositions$
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((userPositions) => !!userPositions.length)
+      )
       .subscribe((userPositions) => {
-        if (userPositions.length) {
-          this.markers.setupMap(userPositions, this.map.getView());
+        this.markers.setupMap(userPositions, this.map.getView());
+      });
+    this.progressService.progress$
+      .pipe(
+        takeWhile(
+          (progress) =>
+            !progress[PROGRESS_ID] || progress[PROGRESS_ID].value !== 100,
+          true
+        ),
+        filter(
+          (progress) =>
+            Object.keys(progress).length > 0 && !!progress[PROGRESS_ID]
+        )
+      )
+      .subscribe((progress) => {
+        if (progress[PROGRESS_ID].value === 100) {
+          geocodeHandlingFinished();
         }
       });
     const dataStoreServiceSubscription = this.dataStoreService.dataStore$
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((data) => !!data.length)
+      )
       .subscribe((data) => {
         let longitude = 0;
         let latitude = 0;
         const errorMessage: string[] = [];
+        this.progressService.setMaxCount(PROGRESS_ID, data.length);
         data.forEach((data) => {
           if (this.dataContainsLocation(data)) {
             longitude = Number(data[LONGITUDE]);
@@ -93,12 +125,14 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
             pictureColumns.forEach((columnName) =>
               this.pictureStore.storePicture(data[columnName], columnName)
             );
+            this.progressService.increaseProgressByStep(PROGRESS_ID);
           } else {
-            const [postcode, city, houseNumber] = getAddress(data);
+            const [postcode, city, houseNumber, street] = getAddress(data);
             const userPos = this.userPositionService.getUserByAddress(
               city,
               postcode,
-              houseNumber
+              houseNumber,
+              street
             );
             if (userPos) {
               // Is data for existing userPosition,
@@ -111,6 +145,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
                 data,
                 userPos.userPositionInfo
               );
+              this.progressService.increaseProgressByStep(PROGRESS_ID);
             } else {
               try {
                 requestLocation(data);
@@ -122,10 +157,14 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
           }
         });
         if (longitude && latitude) {
-          this.map.getView().animate({
-            center: fromLonLat([longitude, latitude]),
-            zoom: this.markers.zoomLevelSingleMarker,
-          });
+          // Give it some time to process last userPosition update
+          // before moving the map
+          setTimeout(() => {
+            this.map.getView().animate({
+              center: fromLonLat([longitude, latitude]),
+              zoom: this.markers.zoomLevelSingleMarker,
+            });
+          }, 1000);
         }
         if (errorMessage.length) {
           this.toaster.show(
@@ -182,7 +221,9 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
         this.map,
         this.markers.zoomLevelSingleMarker,
         this.dataStoreService,
-        this.userPositionService
+        this.userPositionService,
+        this.toaster,
+        this.progressService
       )
     );
 
@@ -190,7 +231,8 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   };
 
   private dataContainsLocation(data: StoreData) {
-    return Object.keys(data).filter((key) => COORDINATE_KEYS.includes(key))
-      .length;
+    return Object.keys(data).some(
+      (key) => COORDINATE_KEYS.includes(key) && !!data[key]
+    );
   }
 }

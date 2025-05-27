@@ -1,8 +1,13 @@
 import { Component, Input } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { StoreData } from '../../../services/data-store.service';
-import { FIXED_DETAIL_COLUMNS } from '../../../services/data-store.service';
+import {
+  CITY,
+  HOUSE_NUMBER,
+  POSTCODE,
+  StoreData,
+  STREET,
+} from '../../../services/data-store.service';
 import { Overlay } from 'ol';
 
 @Component({
@@ -17,9 +22,9 @@ export class CardHeaderComponent {
 
   address() {
     if (this.details) {
-      return `${this.details[FIXED_DETAIL_COLUMNS[0]]}, ${
-        this.details[FIXED_DETAIL_COLUMNS[1]]
-      }, ${this.details[FIXED_DETAIL_COLUMNS[2]]}`;
+      return `${this.details[CITY]}, ${this.details[POSTCODE]}, ${
+        this.details[STREET] || ''
+      }, ${this.details[HOUSE_NUMBER]}`;
     }
     return '';
   }

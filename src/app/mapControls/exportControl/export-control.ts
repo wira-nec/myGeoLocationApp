@@ -43,14 +43,15 @@ export class ExportControl extends Control {
     this.loadPictureService = inject(LoadPictureService);
 
     const exportFiles = (): void => {
-      if (this.dataStoreService.getIncreasedDataStoreSize() > 0) {
-        const dataStore = this.dataStoreService.getStore();
+      const dataStore = this.dataStoreService.getStore();
+      if (dataStore.length > 0) {
         const sheet = dataStore.map((data) => {
-          const [postcode, city, houseNumber] = getAddress(data);
+          const [postcode, city, houseNumber, street] = getAddress(data);
           const userPos = this.userPositionService.getUserByAddress(
             city,
             postcode,
-            houseNumber
+            houseNumber,
+            street
           );
           if (userPos) {
             return {
@@ -60,10 +61,13 @@ export class ExportControl extends Control {
               userPositionInfo: userPos.userPositionInfo,
             };
           } else {
-            return data;
+            return {
+              ...data,
+              error: `Different address was found for ${postcode} ${houseNumber}, ${city}, please verify the address in the excel sheet`,
+            };
           }
         });
-        this.excelService.generateExcel(sheet, EXPORTED_FILENAME + '.xls');
+        this.excelService.generateExcel(sheet, EXPORTED_FILENAME + '.xlsx');
         this.jsonCreatorService.savaJsonFile(
           this.jsonCreatorService.createJson(
             this.loadPictureService.getPicturesStore()

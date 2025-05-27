@@ -36,16 +36,65 @@ export class UserPositionService {
   public getUserByAddress(
     city: string,
     postcode: string,
-    houseNumber: string
+    houseNumber: string,
+    street?: string
   ): GeoPosition | undefined {
     return this.userPositions.find((userPos) => {
       const userInfo = JSON.parse(userPos.userPositionInfo);
       const userHouseNumber = userInfo.housenumber.split('-').at(-1) as string;
-      return (
+      let addressFound =
         userInfo.city.toLowerCase() === city.toLowerCase() &&
-        userInfo.postcode.toLowerCase() === postcode.toLowerCase() &&
-        userHouseNumber.toLowerCase() === houseNumber.toLowerCase()
-      );
+        userInfo.postcode.replaceAll(' ', '').toLowerCase() ===
+          postcode.replaceAll(' ', '').toLowerCase() &&
+        userHouseNumber.toLowerCase() === houseNumber.toLowerCase();
+      // Sometimes open street map returns the correct address on a wrong postcode, so check for street as well
+      if (!addressFound && street) {
+        addressFound =
+          userInfo.street.toLowerCase() === street.toLowerCase() &&
+          userInfo.city.toLowerCase() === city.toLowerCase() &&
+          userInfo.street.toLowerCase() === street.toLowerCase() &&
+          userHouseNumber.toLowerCase() === houseNumber.toLowerCase();
+      }
+      return addressFound;
+    });
+  }
+
+  public findNearestByAddress(
+    city: string,
+    postcode: string,
+    houseNumber: string,
+    street?: string
+  ): GeoPosition | undefined {
+    // Find the nearest user position by address
+    return this.userPositions.find((userPos) => {
+      // Regex to get house number till first non-digit character
+      // e.g. 123-456 => 123
+      // e.g. 123 => 123
+      // e.g. 123a => 123
+      const regex = new RegExp(`^\\d+`);
+      const userInfo = JSON.parse(userPos.userPositionInfo);
+      // When no street given, check if the user position matches the postcode, city, and closest house number
+      if (
+        !street &&
+        userInfo.city.toLowerCase() === city.toLowerCase() &&
+        userInfo.postcode.replaceAll(' ', '').toLowerCase() ===
+          postcode.replaceAll(' ', '').toLowerCase() &&
+        userInfo.housenumber.toLowerCase().match(regex)?.[0] ===
+          houseNumber.toLowerCase().match(regex)?.[0]
+      ) {
+        return true;
+      }
+      // Else check if the user position matches the street, city, and closest house number
+      if (
+        userInfo.street.toLowerCase() === street?.toLowerCase() &&
+        userInfo.city.toLowerCase() === city.toLowerCase() &&
+        // compare house number with regex
+        userInfo.housenumber.toLowerCase().match(regex)?.[0] ===
+          houseNumber.toLowerCase().match(regex)?.[0]
+      ) {
+        return true;
+      }
+      return false;
     });
   }
 
@@ -97,14 +146,19 @@ export class UserPositionService {
       details: storeData,
     };
     if (storeData) {
-      const [postcode, city, houseNumber] = getAddress(storeData);
-      const userPos = this.getUserByAddress(city, postcode, houseNumber);
+      const [postcode, city, houseNumber, street] = getAddress(storeData);
+      const userPos = this.getUserByAddress(
+        city,
+        postcode,
+        houseNumber,
+        street
+      );
       if (userPos) {
         userPos.details = storeData;
         userPos.coords = {
           ...userPos.coords,
-          longitude,
-          latitude,
+          longitude: longitude || userPos.coords.longitude,
+          latitude: latitude || userPos.coords.latitude,
         };
         userPos.userPositionInfo = userPositionInfo;
         return;

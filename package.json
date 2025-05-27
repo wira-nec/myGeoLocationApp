@@ -46,10 +46,12 @@
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
+    "@angular/animations": "^19.2.0",
     "@angular-builders/jest": "^19.0.1",
     "@angular-devkit/build-angular": "^19.2.6",
     "@angular/cli": "^19.2.6",
     "@angular/compiler-cli": "^19.2.0",
+    "@testing-library/angular": "^16.0.0",
     "@types/jest": "^29.5.14",
     "@types/lodash": "^4.17.16",
     "@types/ol": "7.0.0",

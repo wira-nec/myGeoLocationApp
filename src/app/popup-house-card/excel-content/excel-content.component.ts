@@ -1,8 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import {
+  CITY,
+  HOUSE_NUMBER,
+  INFO,
+  POSTCODE,
+  STREET,
   StoreData,
-  FIXED_DETAIL_COLUMNS,
   imagesFilter,
 } from '../../../services/data-store.service';
 import { blobsFilter } from '../../helpers/dataManipulations';
@@ -31,7 +35,7 @@ export class ExcelContentComponent {
       return Object.entries(details)
         .filter(
           (entry) =>
-            !FIXED_DETAIL_COLUMNS.includes(entry[0]) &&
+            ![POSTCODE, CITY, HOUSE_NUMBER, INFO, STREET].includes(entry[0]) &&
             !imagesFilter(entry[1]) &&
             !blobsFilter(entry[1])
         )

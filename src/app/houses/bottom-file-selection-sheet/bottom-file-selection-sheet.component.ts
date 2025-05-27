@@ -1,15 +1,19 @@
 import { Component, inject, OnInit, DestroyRef } from '@angular/core';
 import { MatBottomSheetRef } from '@angular/material/bottom-sheet';
 import { UploadMultipleFilesComponent } from '../../upload-multiple-files/upload-multiple-files.component';
-import { DataStoreService } from '../../../services/data-store.service';
-import * as XLSX from 'xlsx';
+import {
+  DataStoreService,
+  StoreData,
+} from '../../../services/data-store.service';
 import { LoadPictureService } from '../../../services/load-picture.service';
 import { ImportProgressBarComponent } from '../../import-progress-bar/import-progress-bar.component';
 import { ProgressService } from '../../../services/progress.service';
 import { CommonModule } from '@angular/common';
-import { UserPositionService } from '../../../services/user-position.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
+import { ExcelService } from '../../../services/excel.service';
+
+export const PROGRESS_ID = 'xsl-import-progress';
 
 @Component({
   selector: 'app-bottom-file-selection-sheet',
@@ -22,10 +26,8 @@ import { filter } from 'rxjs';
   styleUrl: './bottom-file-selection-sheet.component.scss',
 })
 export class BottomFileSelectionSheetComponent implements OnInit {
-  readonly PROGRESS_ID = 'xsl-import-progress';
-  excelData!: never[];
-  private maxProgressCount = 0;
-  private currentProgressCount = 0;
+  progressId = PROGRESS_ID;
+  excelData: StoreData[] = [];
   private _bottomSheetRef =
     inject<MatBottomSheetRef<BottomFileSelectionSheetComponent>>(
       MatBottomSheetRef
@@ -39,19 +41,21 @@ export class BottomFileSelectionSheetComponent implements OnInit {
   constructor(
     private readonly loadPictureService: LoadPictureService,
     private readonly dataStoreService: DataStoreService,
-    private readonly userPositionService: UserPositionService,
-    private readonly progressService: ProgressService
+    private readonly progressService: ProgressService,
+    private readonly excelService: ExcelService
   ) {
     this.importsNotFinished =
       Object.keys(loadPictureService.pictureStore$.value).length === 0 ||
       dataStoreService.getIncreasedDataStoreSize() === 0;
-    progressService.setProgress(this.PROGRESS_ID, 0);
+    // progressService.setProgress(this.PROGRESS_ID, 0);
   }
 
   ngOnInit(): void {
     const loadPictureServiceSubscription = this.loadPictureService.pictureStore$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .pipe(filter((pic) => !!Object.keys(pic).length))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((pic) => !!Object.keys(pic).length)
+      )
       .subscribe({
         next: (pictures) => {
           this.isUserPositionLoaded = !!Object.keys(pictures).length;
@@ -61,34 +65,23 @@ export class BottomFileSelectionSheetComponent implements OnInit {
         },
       });
     const dataStoreServiceSubscription = this.dataStoreService.dataStore$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .pipe(filter((data) => !!data.length))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((data) => !!data.length)
+      )
       .subscribe({
         next: () => {
-          this.maxProgressCount =
-            this.dataStoreService.getIncreasedDataStoreSize();
-          this.currentProgressCount = 1;
-          this.isDataStoreLoaded = !!this.maxProgressCount;
+          this.isDataStoreLoaded =
+            !!this.dataStoreService.getIncreasedDataStoreSize();
           if (this.isUserPositionLoaded && this.importsNotFinished) {
             this.closeLink();
           }
         },
       });
-    const userPositionServiceSubscription =
-      this.userPositionService.userPositions$
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .pipe(filter((pos) => !!pos.length))
-        .subscribe(() => {
-          this.progressService.setProgress(
-            this.PROGRESS_ID,
-            (100 / this.maxProgressCount) * this.currentProgressCount++
-          );
-        });
 
     this.destroyRef.onDestroy(() => {
       loadPictureServiceSubscription.unsubscribe();
       dataStoreServiceSubscription.unsubscribe();
-      userPositionServiceSubscription.unsubscribe();
     });
   }
 
@@ -98,15 +91,15 @@ export class BottomFileSelectionSheetComponent implements OnInit {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onFileChange(event: any) {
-    this.progressService.setProgress(this.PROGRESS_ID, 0);
     const file = event.target.files[0];
     const reader = new FileReader();
     reader.onload = (e: ProgressEvent<FileReader>) => {
       if (e.target?.result) {
-        const workbook = XLSX.read(e.target.result, { type: 'binary' });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        this.excelData = XLSX.utils.sheet_to_json(worksheet, { raw: true });
+        this.excelData = this.excelService.importExcelFile(
+          e.target.result,
+          this.excelData
+        );
+        this.progressService.setMaxCount(PROGRESS_ID, 1); // Reset progress bar
         this.dataStoreService.store(this.excelData);
       }
     };

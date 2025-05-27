@@ -1,9 +1,9 @@
 import { Component, DestroyRef, inject, Input, OnInit } from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { Progress, ProgressService } from '../../services/progress.service';
+import { ProgressService } from '../../services/progress.service';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter, map } from 'rxjs';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-import-progress-bar',
@@ -21,17 +21,21 @@ export class ImportProgressBarComponent implements OnInit {
 
   ngOnInit() {
     if (this.progressId) {
-      this.progressService.setProgress(this.progressId, 0);
+      //this.progressService.setProgress(this.progressId, 0);
       const progressServiceSubscription = this.progressService.progress$
-        .pipe(takeUntilDestroyed(this.destroyRef))
         .pipe(
-          filter((value: Progress) =>
-            Object.keys(value).includes(this.progressId)
+          takeUntilDestroyed(this.destroyRef),
+          filter(
+            (progress) =>
+              Object.keys(progress).length > 0 && !!progress[this.progressId]
           )
         )
-        .pipe(map((value: Progress) => Object.values(value)))
         .subscribe((progress) => {
-          this.progress = progress[0];
+          console.log(
+            `Progress for ${this.progressId}`,
+            progress[this.progressId]
+          );
+          this.progress = progress[this.progressId].value;
         });
       this.destroyRef.onDestroy(() => {
         progressServiceSubscription.unsubscribe();

@@ -14,9 +14,13 @@ import { MatListModule } from '@angular/material/list';
 import Map from 'ol/Map';
 import { UserPositionService } from '../../services/user-position.service';
 import {
+  CITY,
   getBlobs,
   getImageNames,
+  HOUSE_NUMBER,
+  POSTCODE,
   StoreData,
+  STREET,
 } from '../../services/data-store.service';
 import Overlay from 'ol/Overlay';
 import { getUid } from 'ol/util';
@@ -77,12 +81,32 @@ export class PopupHouseCardComponent implements OnInit {
             if (userId) {
               const selectedUserPos =
                 this.userPositionService.getUserPosition(userId);
-              if (selectedUserPos?.details) {
+              if (!selectedUserPos?.details) {
+                this.details = {
+                  ['Error']: `No details found for this address. Please check the address in imported excel sheet.`,
+                };
+                const userInfo = JSON.parse(
+                  selectedUserPos
+                    ? selectedUserPos.userPositionInfo
+                    : `{
+                        "postcode": "column 'postcode' not found",
+                        "city": "column 'city' not found",
+                        "housenumber": "column 'housenumber' not found"
+                      }`
+                );
+                this.details = {
+                  ...this.details,
+                  [POSTCODE]: userInfo.postcode,
+                  [CITY]: userInfo.city,
+                  [HOUSE_NUMBER]: userInfo.housenumber,
+                  [STREET]: userInfo.street,
+                };
+              } else {
                 this.details = selectedUserPos.details;
-                if (this.overlay && this.map) {
-                  this.overlay.setPosition(event.coordinate);
-                  this.map.addOverlay(this.overlay);
-                }
+              }
+              if (this.overlay && this.map) {
+                this.overlay.setPosition(event.coordinate);
+                this.map.addOverlay(this.overlay);
               }
             }
           },
