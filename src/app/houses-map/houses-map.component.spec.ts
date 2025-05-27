@@ -4,7 +4,7 @@ import { HousesMapComponent } from './houses-map.component';
 import { DataStoreService } from '../../services/data-store.service';
 import { Map } from 'ol';
 import { DestroyRef } from '@angular/core';
-import { UserPositionService } from '../../services/user-position.service';
+import { GeoPositionService } from '../../services/geo-position.service';
 import { setUpMockedServices } from '../../test/setUpMockedServices';
 import * as olProj from 'ol/proj';
 import * as geocoderCreator from '../helpers/geocoderCreator';
@@ -25,7 +25,7 @@ jest.mock('../mapControls/importFilesControl/importFilesControl', () => ({
 // Helper function to create component instance
 function createComponent(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  userPositionServiceMock: any,
+  geoPositionServiceMock: any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   dataStoreServiceMock: any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,13 +35,16 @@ function createComponent(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   toasterMock: any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  mapMock: any
+  mapMock: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  progressServiceMock: any
 ) {
   const component = new HousesMapComponent(
-    userPositionServiceMock,
+    geoPositionServiceMock,
     dataStoreServiceMock,
     pictureStoreMock,
-    toasterMock
+    toasterMock,
+    progressServiceMock
   );
   component.map = mapMock as Map;
   return component;
@@ -68,7 +71,7 @@ describe('HousesMapComponent', () => {
 
 describe('HousesMapComponent ngAfterViewInit', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let userPositionServiceMock: any;
+  let geoPositionServiceMock: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let dataStoreServiceMock: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -81,12 +84,14 @@ describe('HousesMapComponent ngAfterViewInit', () => {
   let mapMock: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let viewMock: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let progressServiceMock: any;
   let requestLocationSpy: jest.SpyInstance;
 
   beforeEach(() => {
     // Mocks
     ({
-      userPositionServiceMock,
+      geoPositionServiceMock,
       dataStoreServiceMock,
       pictureStoreMock,
       markersMock,
@@ -94,6 +99,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
       viewMock,
       mapMock,
       requestLocationSpy,
+      progressServiceMock,
     } = setUpMockedServices());
     // Patch geocoderCreator
     jest.spyOn(geocoderCreator, 'geocoderCreator').mockReturnValue({});
@@ -106,7 +112,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     jest.clearAllMocks();
   });
 
-  it('should subscribe to userPositions$ and call setupMap when userPositions is non-empty', () => {
+  it('should subscribe to geoPositions$ and call setupMap when geoPositions is non-empty', () => {
     TestBed.configureTestingModule({
       providers: [
         {
@@ -118,15 +124,16 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     TestBed.runInInjectionContext((): void => {
       // Create component
       const component = createComponent(
-        userPositionServiceMock,
+        geoPositionServiceMock,
         dataStoreServiceMock,
         pictureStoreMock,
         markersMock,
         toasterMock,
-        mapMock
+        mapMock,
+        progressServiceMock
       );
       component.ngAfterViewInit();
-      userPositionServiceMock.userPositions$.next([{ lat: 1, lon: 2 }]);
+      geoPositionServiceMock.geoPositions$.next([{ lat: 1, lon: 2 }]);
       expect(markersMock.setupMap).toHaveBeenCalledWith(
         [{ lat: 1, lon: 2 }],
         viewMock
@@ -134,7 +141,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     });
   });
 
-  it('should not call setupMap when userPositions is empty', () => {
+  it('should not call setupMap when geoPositions is empty', () => {
     TestBed.configureTestingModule({
       providers: [
         {
@@ -146,20 +153,21 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     TestBed.runInInjectionContext((): void => {
       // Create component
       const component = createComponent(
-        userPositionServiceMock,
+        geoPositionServiceMock,
         dataStoreServiceMock,
         pictureStoreMock,
         markersMock,
         toasterMock,
-        mapMock
+        mapMock,
+        progressServiceMock
       );
       component.ngAfterViewInit();
-      userPositionServiceMock.userPositions$.next([]);
+      geoPositionServiceMock.geoPositions$.next([]);
       expect(markersMock.setupMap).not.toHaveBeenCalled();
     });
   });
 
-  it('should process dataStore$ with location and call updateUserPosition and storePicture', () => {
+  it('should process dataStore$ with location and call updateGeoPosition and storePicture', () => {
     const data = [
       {
         longitude: '5',
@@ -168,7 +176,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
         city: 'Test City',
         housenumber: 123,
         firstName: 'John',
-        userPositionInfo: 'info',
+        geoPositionInfo: 'info',
         'img.jpg': 'this is a blob',
       },
     ];
@@ -184,17 +192,18 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     TestBed.runInInjectionContext((): void => {
       // Create component
       const component = createComponent(
-        userPositionServiceMock,
+        geoPositionServiceMock,
         dataStoreServiceMock,
         pictureStoreMock,
         markersMock,
         toasterMock,
-        mapMock
+        mapMock,
+        progressServiceMock
       );
       component.ngAfterViewInit();
       dataStoreServiceMock.dataStore$.next(data);
 
-      expect(userPositionServiceMock.updateUserPosition).toHaveBeenCalledWith(
+      expect(geoPositionServiceMock.updateGeoPosition).toHaveBeenCalledWith(
         5,
         6,
         'John',
@@ -220,7 +229,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
       },
     ];
 
-    userPositionServiceMock.getUserByAddress.mockReturnValue(undefined);
+    geoPositionServiceMock.getGeoPositionByAddress.mockReturnValue(undefined);
 
     TestBed.configureTestingModule({
       providers: [
@@ -233,12 +242,13 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     TestBed.runInInjectionContext((): void => {
       // Create component
       const component = createComponent(
-        userPositionServiceMock,
+        geoPositionServiceMock,
         dataStoreServiceMock,
         pictureStoreMock,
         markersMock,
         toasterMock,
-        mapMock
+        mapMock,
+        progressServiceMock
       );
       component.ngAfterViewInit();
       dataStoreServiceMock.dataStore$.next(data);
@@ -258,7 +268,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
       },
     ];
 
-    userPositionServiceMock.getUserByAddress.mockReturnValue(undefined);
+    geoPositionServiceMock.getGeoPositionByAddress.mockReturnValue(undefined);
     requestLocationSpy.mockImplementation(() => {
       throw new Error('fail');
     });
@@ -274,12 +284,13 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     TestBed.runInInjectionContext((): void => {
       // Create component
       const component = createComponent(
-        userPositionServiceMock,
+        geoPositionServiceMock,
         dataStoreServiceMock,
         pictureStoreMock,
         markersMock,
         toasterMock,
-        mapMock
+        mapMock,
+        progressServiceMock
       );
       component.ngAfterViewInit();
       dataStoreServiceMock.dataStore$.next(data);
@@ -293,7 +304,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     });
   });
 
-  it('should update userPosition if getUserByAddress returns a user', () => {
+  it('should update geoPosition if getGeoPositionByAddress returns a geoPosition', () => {
     const data = [
       {
         notLongitude: 'x',
@@ -304,9 +315,9 @@ describe('HousesMapComponent ngAfterViewInit', () => {
       },
     ];
 
-    userPositionServiceMock.getUserByAddress.mockReturnValue({
+    geoPositionServiceMock.getGeoPositionByAddress.mockReturnValue({
       userName: 'Jane',
-      userPositionInfo: 'info',
+      geoPositionInfo: 'info',
     });
 
     TestBed.configureTestingModule({
@@ -320,17 +331,18 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     TestBed.runInInjectionContext((): void => {
       // Create component
       const component = createComponent(
-        userPositionServiceMock,
+        geoPositionServiceMock,
         dataStoreServiceMock,
         pictureStoreMock,
         markersMock,
         toasterMock,
-        mapMock
+        mapMock,
+        progressServiceMock
       );
       component.ngAfterViewInit();
       dataStoreServiceMock.dataStore$.next(data);
 
-      expect(userPositionServiceMock.updateUserPosition).toHaveBeenCalledWith(
+      expect(geoPositionServiceMock.updateGeoPosition).toHaveBeenCalledWith(
         0,
         0,
         'Jane',
@@ -350,7 +362,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     const unsubscribe1 = jest.fn();
     const unsubscribe2 = jest.fn();
     // Patch subscribe to return objects with unsubscribe
-    userPositionServiceMock.userPositions$.pipe = jest.fn().mockReturnValue({
+    geoPositionServiceMock.geoPositions$.pipe = jest.fn().mockReturnValue({
       subscribe: jest.fn().mockReturnValue({ unsubscribe: unsubscribe1 }),
     });
     dataStoreServiceMock.dataStore$.pipe = jest.fn().mockReturnValue({
@@ -369,8 +381,8 @@ describe('HousesMapComponent ngAfterViewInit', () => {
       providers: [
         { provide: DestroyRef, useValue: destroyRefMock }, // Mock the DestroyRef
         {
-          provide: UserPositionService, // Mock the UserPositionService
-          useValue: userPositionServiceMock,
+          provide: GeoPositionService, // Mock the GeoPositionService
+          useValue: geoPositionServiceMock,
         },
         {
           provide: DataStoreService, // Mock the DataStoreService

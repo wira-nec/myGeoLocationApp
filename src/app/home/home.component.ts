@@ -11,7 +11,7 @@ import { CommonModule } from '@angular/common';
 import { MapComponent } from '../ol-map/ol-map.component';
 import { GeoPosition } from '../view-models/geoPosition';
 import { AuthService } from '../../services/auth.service';
-import { UserPositionService } from '../../services/user-position.service';
+import { GeoPositionService } from '../../services/geo-position.service';
 import { Router } from '@angular/router';
 import { first } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -25,14 +25,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class HomeComponent implements OnInit {
   error: GeolocationPositionError | null = null;
-  userPosition: GeoPosition | undefined;
+  geoPosition: GeoPosition | undefined;
   private readonly destroyRef = inject(DestroyRef);
 
   constructor(
     private router: Router,
     private readonly changeDetectorRef: ChangeDetectorRef,
     private authService: AuthService,
-    private readonly userPositions$: UserPositionService,
+    private readonly geoPositions$: GeoPositionService,
     readonly geolocation$: GeolocationService
   ) {}
 
@@ -45,7 +45,7 @@ export class HomeComponent implements OnInit {
       .subscribe((user) => {
         if (user?.id) {
           if (!!this.userId && this.userId !== user.id) {
-            this.userPositions$.removeUserPosition(this.userId);
+            this.geoPositions$.removeGeoPosition(this.userId);
           }
           this.username = user.name;
           this.userId = user.id;
@@ -54,8 +54,8 @@ export class HomeComponent implements OnInit {
           // user is logged out
           this.userId = '';
           this.username = '';
-          this.userPosition = undefined;
-          this.userPositions$.clearUserPositions();
+          this.geoPosition = undefined;
+          this.geoPositions$.clearGeoPositions();
         }
       });
     this.destroyRef.onDestroy(() => {
@@ -71,15 +71,15 @@ export class HomeComponent implements OnInit {
     this.geolocation$.pipe(first()).subscribe({
       next: (position) => {
         this.error = null;
-        this.userPosition = {
+        this.geoPosition = {
           id: this.userId,
           userName: this.username,
-          userPositionInfo: 'Just created user',
+          geoPositionInfo: 'Just created user',
           coords: position.coords,
           center: [0, 0],
           zoom: 14,
         } as GeoPosition;
-        this.userPositions$.addUserPositions([this.userPosition]);
+        this.geoPositions$.addGeoPositions([this.geoPosition]);
         this.changeDetectorRef.markForCheck();
       },
       error: (err) => {

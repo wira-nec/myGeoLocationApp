@@ -13,7 +13,7 @@ import { MapComponent } from '../ol-map/ol-map.component';
 import { CommonModule } from '@angular/common';
 import { GeolocationService } from '../../services/geoLocationService';
 import { GeoPosition } from '../view-models/geoPosition';
-import { UserPositionService } from '../../services/user-position.service';
+import { GeoPositionService } from '../../services/geo-position.service';
 import { Observable } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -38,15 +38,15 @@ export class TheHangOutComponent
     private readonly route: ActivatedRoute,
     private readonly pusher: PusherService,
     private readonly changeDetectorRef: ChangeDetectorRef,
-    private readonly userPositions: UserPositionService,
+    private readonly geoPositions: GeoPositionService,
     private readonly authService: AuthService,
     private readonly router: Router,
     readonly geolocation$: GeolocationService
   ) {}
 
-  userPosition$!: Observable<GeoPosition[]>;
+  geoPosition$!: Observable<GeoPosition[]>;
   username = '';
-  userId = '';
+  geoPositionId = '';
   message = '';
   showAlert = false;
   showLocationUpdate = false;
@@ -54,7 +54,7 @@ export class TheHangOutComponent
   private pingMyPosition(myPosition: GeoPosition | undefined, info: string) {
     if (myPosition) {
       pingServer(this.http, {
-        userId: this.userId,
+        userId: this.geoPositionId,
         lat: myPosition.coords.latitude,
         lng: myPosition.coords.longitude,
         username: this.username,
@@ -68,13 +68,13 @@ export class TheHangOutComponent
       this.route.snapshot.paramMap.has('userId') &&
       this.route.snapshot.paramMap.has('username')
     ) {
-      this.userId = this.route.snapshot.paramMap.get('userId') as string;
+      this.geoPositionId = this.route.snapshot.paramMap.get('userId') as string;
       this.username = this.route.snapshot.paramMap.get('username') as string;
-      const thisUserPos = this.userPositions.getUserPosition(this.userId);
-      if (!thisUserPos) {
+      const theGeoPos = this.geoPositions.getGeoPosition(this.geoPositionId);
+      if (!theGeoPos) {
         this.logout();
       } else {
-        this.userPosition$ = this.userPositions.userPositions$.asObservable();
+        this.geoPosition$ = this.geoPositions.geoPositions$.asObservable();
         const authServiceSubscription = this.authService.user$
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe((user) => {
@@ -86,7 +86,7 @@ export class TheHangOutComponent
         this.destroyRef.onDestroy(() => {
           authServiceSubscription.unsubscribe();
         });
-        this.userPositions.userPositions$.next([thisUserPos]);
+        this.geoPositions.geoPositions$.next([theGeoPos]);
         const channel = this.pusher.init();
         // Start looking for other users
         channel.bind(
@@ -98,18 +98,18 @@ export class TheHangOutComponent
             username: string;
             info: string;
           }) => {
-            let userPos = this.userPositions.getUserPosition(pingData.userId);
-            if (userPos) {
-              this.userPositions.setUserCoordinatesAndOrZoom(pingData.userId, {
-                ...userPos.coords,
+            let geoPos = this.geoPositions.getGeoPosition(pingData.userId);
+            if (geoPos) {
+              this.geoPositions.setGeoCoordinatesAndOrZoom(pingData.userId, {
+                ...geoPos.coords,
                 latitude: pingData.lat,
                 longitude: pingData.lng,
               });
             } else {
-              userPos = {
+              geoPos = {
                 id: pingData.userId,
                 userName: pingData.username,
-                userPositionInfo: 'Todo ?',
+                geoPositionInfo: 'Todo ?',
                 coords: {
                   latitude: pingData.lat,
                   longitude: pingData.lng,
@@ -117,10 +117,10 @@ export class TheHangOutComponent
                 center: [0, 0],
                 zoom: 14,
               } as GeoPosition;
-              this.userPositions.addUserPositions([userPos]);
+              this.geoPositions.addGeoPositions([geoPos]);
               // Found a new user, so ping this user position
-              const myPosition = this.userPositions.getUserPosition(
-                this.userId
+              const myPosition = this.geoPositions.getGeoPosition(
+                this.geoPositionId
               );
               // Give other user time to setup it push channel
               setTimeout(() => {
@@ -130,18 +130,18 @@ export class TheHangOutComponent
                 );
               }, 1000);
             }
-            this.userPositions.userPositions$.next([userPos]);
+            this.geoPositions.geoPositions$.next([geoPos]);
             this.showLocationUpdate = true;
-            this.message = `User "${userPos.userName}" says '${pingData.info}'`;
+            this.message = `User "${geoPos.userName}" says '${pingData.info}'`;
             this.changeDetectorRef.markForCheck();
           }
         );
         // Look for user that are removed.
         channel.bind('remove', (data: { userId: string }) => {
-          const userPos = this.userPositions.removeUserPosition(data.userId);
-          if (userPos) {
+          const geoPos = this.geoPositions.removeGeoPosition(data.userId);
+          if (geoPos) {
             this.showLocationUpdate = true;
-            this.message = `User "${userPos.userName}" says goodbye`;
+            this.message = `User "${geoPos.userName}" says goodbye`;
             this.changeDetectorRef.markForCheck();
           }
         });
@@ -150,17 +150,17 @@ export class TheHangOutComponent
   }
 
   ngAfterContentInit(): void {
-    const thisUserPos = this.userPositions.getUserPosition(this.userId);
-    if (thisUserPos) {
+    const theGeoPos = this.geoPositions.getGeoPosition(this.geoPositionId);
+    if (theGeoPos) {
       this.pingMyPosition(
-        thisUserPos,
+        theGeoPos,
         `Hello, I'm ${this.username} and I just joined the Hangout`
       );
     }
   }
 
   private logout() {
-    this.userPositions.clearUserPositions();
+    this.geoPositions.clearGeoPositions();
     this.navigateHome();
   }
 
@@ -169,8 +169,8 @@ export class TheHangOutComponent
   }
 
   ngOnDestroy() {
-    removeServer(this.http, { userId: this.userId });
-    this.userId = '';
+    removeServer(this.http, { userId: this.geoPositionId });
+    this.geoPositionId = '';
     this.username = '';
   }
 }

@@ -20,11 +20,11 @@ export class ExcelService {
    * @param fileName - The name of the file to be generated.
    */
   generateExcel(data: StoreData[], fileName: string): void {
-    // split data into ['userPositionInfo', 'longitude', 'latitude', 'error'] and the rest
+    // split data into ['geoPositionInfo', 'longitude', 'latitude', 'error'] and the rest
     // So their will be 2 sheets in the excel file, one with the original information and one with the location information
     const [sheet1Data, sheet2Data] = data.reduce(
       (acc, item) => {
-        const { userPositionInfo, longitude, latitude, error, ...rest } = item;
+        const { geoPositionInfo, longitude, latitude, error, ...rest } = item;
         acc[0].push(rest);
         // Add also postcode, city, house number and street to the second sheet for link to original sheet
         acc[1].push({
@@ -32,7 +32,7 @@ export class ExcelService {
           city: rest[CITY],
           housenumber: rest[HOUSE_NUMBER],
           street: rest[STREET],
-          userPositionInfo,
+          geoPositionInfo,
           longitude,
           latitude,
           error,
@@ -75,13 +75,8 @@ export class ExcelService {
     const uniqueHeaders = Array.from(new Set(data.flatMap(Object.keys)));
     // create a boolean array from uniqueHeaders
     // where boolean is true if value is in
-    // ['userPositionInfo', 'longitude', 'latitude', 'error']
-    const hiddenHeaders = [
-      'userPositionInfo',
-      'longitude',
-      'latitude',
-      'error',
-    ];
+    // ['geoPositionInfo', 'longitude', 'latitude', 'error']
+    const hiddenHeaders = ['geoPositionInfo', 'longitude', 'latitude', 'error'];
     const hiddenColumns = uniqueHeaders.map((header) =>
       hiddenHeaders.includes(header)
     );

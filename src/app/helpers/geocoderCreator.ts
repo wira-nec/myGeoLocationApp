@@ -6,7 +6,7 @@ import {
   getAddress,
   StoreData,
 } from '../../services/data-store.service';
-import { UserPositionService } from '../../services/user-position.service';
+import { GeoPositionService } from '../../services/geo-position.service';
 import { fromLonLat } from 'ol/proj';
 import { ToasterService } from '../../services/toaster.service';
 import { ProgressService } from '../../services/progress.service';
@@ -36,7 +36,7 @@ export function geocoderCreator(
   map: Map,
   zoomLevelSingleMarker: number,
   dataStoreService: DataStoreService,
-  userPositionService: UserPositionService,
+  geoPositionService: GeoPositionService,
   toaster: ToasterService,
   progressService: ProgressService
 ) {
@@ -102,7 +102,7 @@ export function geocoderCreator(
             },
           }));
         }
-        const errorMessage = `No results found for "${query}", please check your excel sheet`;
+        const errorMessage = `No address found for "${query}", please verify address in your excel sheet`;
         toaster.show('error', errorMessage, [], 300000);
         progressService.increaseProgressByStep(PROGRESS_ID);
         return [];
@@ -136,7 +136,7 @@ export function geocoderCreator(
     if (errorMessage) {
       toaster.show('warning', errorMessage, [], 300000);
     }
-    userPositionService.updateUserPosition(
+    geoPositionService.updateGeoPosition(
       evt.place.lon,
       evt.place.lat,
       storeData ? storeData[FIRST_NAME] : undefined,

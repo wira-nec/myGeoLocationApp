@@ -10,9 +10,9 @@
     This is the place to be and hangout with your friends
   </div>
   <ng-template #elseBlock>
-    <div *ngIf="!!userPosition && !!userPosition.userName">
+    <div *ngIf="!!geoPosition && !!geoPosition.userName">
       <app-map
-        [coordinatesChange]="userPosition"
+        [coordinatesChange]="geoPosition"
         [userId]="userId"
         [extendedView]="false"
       ></app-map>

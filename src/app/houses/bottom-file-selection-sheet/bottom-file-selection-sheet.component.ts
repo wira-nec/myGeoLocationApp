@@ -34,7 +34,7 @@ export class BottomFileSelectionSheetComponent implements OnInit {
     );
 
   private isDataStoreLoaded = false;
-  private isUserPositionLoaded = false;
+  private isGeoPositionLoaded = false;
   private importsNotFinished = true;
   private readonly destroyRef = inject(DestroyRef);
 
@@ -58,7 +58,7 @@ export class BottomFileSelectionSheetComponent implements OnInit {
       )
       .subscribe({
         next: (pictures) => {
-          this.isUserPositionLoaded = !!Object.keys(pictures).length;
+          this.isGeoPositionLoaded = !!Object.keys(pictures).length;
           if (this.isDataStoreLoaded && this.importsNotFinished) {
             this.closeLink();
           }
@@ -73,7 +73,7 @@ export class BottomFileSelectionSheetComponent implements OnInit {
         next: () => {
           this.isDataStoreLoaded =
             !!this.dataStoreService.getIncreasedDataStoreSize();
-          if (this.isUserPositionLoaded && this.importsNotFinished) {
+          if (this.isGeoPositionLoaded && this.importsNotFinished) {
             this.closeLink();
           }
         },

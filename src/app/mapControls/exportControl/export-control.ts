@@ -3,7 +3,7 @@ import {
   DataStoreService,
   getAddress,
 } from '../../../services/data-store.service';
-import { UserPositionService } from '../../../services/user-position.service';
+import { GeoPositionService } from '../../../services/geo-position.service';
 import { ExcelService } from '../../../services/excel.service';
 import { JsonCreatorService } from '../../../services/json-creator.service';
 import { LoadPictureService } from '../../../services/load-picture.service';
@@ -13,7 +13,7 @@ const EXPORTED_FILENAME = 'exportedMap';
 
 export class ExportControl extends Control {
   private dataStoreService!: DataStoreService;
-  private userPositionService!: UserPositionService;
+  private geoPositionService!: GeoPositionService;
   private excelService!: ExcelService;
   private jsonCreatorService!: JsonCreatorService;
   private loadPictureService!: LoadPictureService;
@@ -37,7 +37,7 @@ export class ExportControl extends Control {
     });
 
     this.dataStoreService = inject(DataStoreService);
-    this.userPositionService = inject(UserPositionService);
+    this.geoPositionService = inject(GeoPositionService);
     this.excelService = inject(ExcelService);
     this.jsonCreatorService = inject(JsonCreatorService);
     this.loadPictureService = inject(LoadPictureService);
@@ -47,18 +47,18 @@ export class ExportControl extends Control {
       if (dataStore.length > 0) {
         const sheet = dataStore.map((data) => {
           const [postcode, city, houseNumber, street] = getAddress(data);
-          const userPos = this.userPositionService.getUserByAddress(
+          const geoPos = this.geoPositionService.getGeoPositionByAddress(
             city,
             postcode,
             houseNumber,
             street
           );
-          if (userPos) {
+          if (geoPos) {
             return {
               ...data,
-              longitude: userPos.coords.longitude.toString(),
-              latitude: userPos.coords.latitude.toString(),
-              userPositionInfo: userPos.userPositionInfo,
+              longitude: geoPos.coords.longitude.toString(),
+              latitude: geoPos.coords.latitude.toString(),
+              geoPositionInfo: geoPos.geoPositionInfo,
             };
           } else {
             return {

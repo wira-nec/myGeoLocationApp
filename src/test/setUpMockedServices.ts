@@ -5,10 +5,10 @@ import { PictureStore } from '../services/load-picture.service';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function setUpMockedServices() {
-  const userPositionServiceMock = {
-    userPositions$: new Subject<any[]>(),
-    updateUserPosition: jest.fn(),
-    getUserByAddress: jest.fn(),
+  const geoPositionServiceMock = {
+    geoPositions$: new Subject<any[]>(),
+    updateGeoPosition: jest.fn(),
+    getGeoPositionByAddress: jest.fn(),
   };
 
   const dataStoreServiceMock = {
@@ -58,7 +58,7 @@ export function setUpMockedServices() {
     .mockImplementation(() => jest.fn);
 
   return {
-    userPositionServiceMock,
+    geoPositionServiceMock,
     dataStoreServiceMock,
     pictureStoreMock,
     markersMock,

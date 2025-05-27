@@ -2,7 +2,7 @@ import { Component, ElementRef, Input, OnInit } from '@angular/core';
 import Map from 'ol/Map';
 import { PopoverContainerComponent } from '../popover/popover-container/popover-container.component';
 import Overlay from 'ol/Overlay';
-import { UserPositionService } from '../../../services/user-position.service';
+import { GeoPositionService } from '../../../services/geo-position.service';
 import { StoreData } from '../../../services/data-store.service';
 import { CommonModule, KeyValue, NgFor } from '@angular/common';
 import { getUid } from 'ol';
@@ -20,7 +20,7 @@ export class UserInfoComponent implements OnInit {
 
   constructor(
     private ref: ElementRef,
-    private userPositionService: UserPositionService,
+    private geoPositionService: GeoPositionService,
     private pictureService: LoadPictureService
   ) {}
 
@@ -50,12 +50,12 @@ export class UserInfoComponent implements OnInit {
           if (pixel) {
             this.map.forEachFeatureAtPixel(pixel, (feature) => {
               const uid = getUid(feature);
-              const userId = this.userPositionService.getUserIdByUid(uid);
-              if (userId) {
-                const selectedUserPos =
-                  this.userPositionService.getUserPosition(userId);
-                if (selectedUserPos?.details) {
-                  this.details = selectedUserPos.details;
+              const geoPositionId = this.geoPositionService.getIdByUid(uid);
+              if (geoPositionId) {
+                const selectedGeoPos =
+                  this.geoPositionService.getGeoPosition(geoPositionId);
+                if (selectedGeoPos?.details) {
+                  this.details = selectedGeoPos.details;
                   if (this.overlay && this.map) {
                     this.overlay.setPosition(event.coordinate);
                     this.map.addOverlay(this.overlay);

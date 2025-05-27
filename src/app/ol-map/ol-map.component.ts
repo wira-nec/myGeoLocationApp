@@ -27,7 +27,7 @@ import { Attribution, defaults as defaultControls } from 'ol/control';
 import { Geometry, Point } from 'ol/geom';
 import { ObjectEvent } from 'ol/Object';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { UserPositionService } from '../../services/user-position.service';
+import { GeoPositionService } from '../../services/geo-position.service';
 import { GeoPosition } from '../view-models/geoPosition';
 import Fill from 'ol/style/Fill';
 import Stroke from 'ol/style/Stroke';
@@ -48,17 +48,17 @@ export class MapComponent implements OnInit, AfterViewInit, AfterViewChecked {
   @Input({ required: false }) extendedView = true;
   @Input() userId!: string;
   @Input()
-  set coordinatesChange(userPosition: GeoPosition) {
-    const userPos = this.userPositionService.getUserPosition(userPosition.id);
-    if (userPos) {
-      if (userPosition.coords.latitude && userPosition.coords.longitude) {
-        this.userPositionService.setUserCoordinatesAndOrZoom(
-          userPos.id,
-          userPosition.coords,
+  set coordinatesChange(geoPosition: GeoPosition) {
+    const geoPos = this.geoPositionService.getGeoPosition(geoPosition.id);
+    if (geoPos) {
+      if (geoPosition.coords.latitude && geoPosition.coords.longitude) {
+        this.geoPositionService.setGeoCoordinatesAndOrZoom(
+          geoPos.id,
+          geoPosition.coords,
           this.zoomLevelSingleMarker
         );
         this.logMessage = this.logMessage.concat(
-          `coordinates changes for user "${userPos.userName}" to ${userPosition.coords.latitude}/${userPosition.coords.longitude}\n`
+          `coordinates changes for user "${geoPos.userName}" to ${geoPosition.coords.latitude}/${geoPosition.coords.longitude}\n`
         );
       }
     }
@@ -77,7 +77,7 @@ export class MapComponent implements OnInit, AfterViewInit, AfterViewChecked {
     Feature<Geometry>
   >();
 
-  constructor(private readonly userPositionService: UserPositionService) {
+  constructor(private readonly geoPositionService: GeoPositionService) {
     this.zoomInput
       .pipe(takeUntilDestroyed())
       .pipe(debounceTime(300))
@@ -93,24 +93,24 @@ export class MapComponent implements OnInit, AfterViewInit, AfterViewChecked {
   }
 
   ngAfterViewInit(): void {
-    const userPositionSubscription = this.userPositionService.userPositions$
+    const geoPositionSubscription = this.geoPositionService.geoPositions$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((userPositions) => {
-        if (userPositions) {
-          this.setupMap(userPositions);
+      .subscribe((geoPositions) => {
+        if (geoPositions) {
+          this.setupMap(geoPositions);
         }
       });
-    const removeUserPositionSubscription =
-      this.userPositionService.removedUserPosition$
+    const removeGeoPositionSubscription =
+      this.geoPositionService.removedGeoPosition$
         .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((removedUserPosition) => {
-          if (removedUserPosition) {
-            this.updateMap(removedUserPosition);
+        .subscribe((removedGeoPosition) => {
+          if (removedGeoPosition) {
+            this.updateMap(removedGeoPosition);
           }
         });
     this.destroyRef.onDestroy(() => {
-      userPositionSubscription.unsubscribe();
-      removeUserPositionSubscription.unsubscribe();
+      geoPositionSubscription.unsubscribe();
+      removeGeoPositionSubscription.unsubscribe();
     });
   }
 
@@ -130,7 +130,7 @@ export class MapComponent implements OnInit, AfterViewInit, AfterViewChecked {
   };
 
   private onCenterChanged = (e: ObjectEvent) => {
-    const input = this.userPositionService.getUserPosition(this.userId);
+    const input = this.geoPositionService.getGeoPosition(this.userId);
     if (input && input.id === this.userId) {
       input.center = (e.target as View).getCenter();
     }
@@ -172,25 +172,25 @@ export class MapComponent implements OnInit, AfterViewInit, AfterViewChecked {
     );
   };
 
-  private setupMap(userPositions: GeoPosition[]) {
+  private setupMap(geoPositions: GeoPosition[]) {
     const view = this.map?.getView();
     view?.setZoom(this.zoomLevelSingleMarker);
-    userPositions.forEach((userPosition) => {
-      if (!Object.keys(this.userMarkers).includes(userPosition.id)) {
-        this.userMarkers[userPosition.id] = new Feature<Geometry>();
+    geoPositions.forEach((geoPosition) => {
+      if (!Object.keys(this.userMarkers).includes(geoPosition.id)) {
+        this.userMarkers[geoPosition.id] = new Feature<Geometry>();
       }
       const coords = [
-        userPosition.coords.longitude,
-        userPosition.coords.latitude,
+        geoPosition.coords.longitude,
+        geoPosition.coords.latitude,
       ];
-      this.userMarkers[userPosition.id].setGeometry(
+      this.userMarkers[geoPosition.id].setGeometry(
         new Point(fromLonLat(coords))
       );
-      this.styleUser(this.userMarkers[userPosition.id], userPosition.userName);
+      this.styleUser(this.userMarkers[geoPosition.id], geoPosition.userName);
       if (
-        userPosition.id === this.userId &&
-        userPosition.coords.latitude &&
-        userPosition.coords.longitude
+        geoPosition.id === this.userId &&
+        geoPosition.coords.latitude &&
+        geoPosition.coords.longitude
       ) {
         view?.setCenter(fromLonLat(coords));
       }
@@ -198,9 +198,9 @@ export class MapComponent implements OnInit, AfterViewInit, AfterViewChecked {
     this.refreshVectorLayer();
   }
 
-  private updateMap(userPosition: GeoPosition) {
-    if (Object.keys(this.userMarkers).includes(userPosition.id)) {
-      delete this.userMarkers[userPosition.id];
+  private updateMap(geoPosition: GeoPosition) {
+    if (Object.keys(this.userMarkers).includes(geoPosition.id)) {
+      delete this.userMarkers[geoPosition.id];
     }
     this.refreshVectorLayer();
   }

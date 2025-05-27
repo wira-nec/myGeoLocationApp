@@ -4,7 +4,7 @@ import { Fill, Icon, Text, Stroke, Style } from 'ol/style';
 import CircleStyle from 'ol/style/Circle';
 import { getAddress } from '../../services/data-store.service';
 import { Geometry, Point } from 'ol/geom';
-import { UserPositionService } from '../../services/user-position.service';
+import { GeoPositionService } from '../../services/geo-position.service';
 import { GeoPosition } from '../view-models/geoPosition';
 import View from 'ol/View';
 import { fromLonLat } from 'ol/proj';
@@ -78,7 +78,7 @@ export class UserMarkers {
   >();
   private map!: Map;
 
-  constructor(private readonly userPositionService: UserPositionService) {
+  constructor(private readonly geoPositionService: GeoPositionService) {
     this.zoomInput
       .pipe(takeUntilDestroyed())
       .pipe(debounceTime(300))
@@ -97,10 +97,10 @@ export class UserMarkers {
 
   public updateUserMarkerStyle() {
     Object.keys(this.userMarkers).forEach((key) => {
-      const userPos = this.userPositionService.getUserPosition(key);
+      const geoPos = this.geoPositionService.getGeoPosition(key);
       const labelText = this.getAddressLabel(
-        userPos,
-        userPos?.userName || 'Unknown'
+        geoPos,
+        geoPos?.userName || 'Unknown'
       );
       styleUser(this.userMarkers[key], labelText, this.zoomLevelSingleMarker);
       this.userMarkers[key].changed();
@@ -109,11 +109,11 @@ export class UserMarkers {
   }
 
   private getAddressLabel(
-    userPos: GeoPosition | undefined,
+    geoPos: GeoPosition | undefined,
     defaultText: string
   ) {
-    if (userPos?.details) {
-      const [postcode, city, houseNumber, street] = getAddress(userPos.details);
+    if (geoPos?.details) {
+      const [postcode, city, houseNumber, street] = getAddress(geoPos.details);
       return `${postcode}, ${street}${
         street?.length ? ' ' : ''
       }${houseNumber}, ${city}`;
@@ -121,26 +121,26 @@ export class UserMarkers {
     return defaultText;
   }
 
-  public setupMap(userPositions: GeoPosition[], view: View) {
+  public setupMap(geoPositions: GeoPosition[], view: View) {
     view?.setZoom(this.zoomLevelSingleMarker);
-    userPositions.forEach((userPosition) => {
-      if (!Object.keys(this.userMarkers).includes(userPosition.id)) {
-        this.userMarkers[userPosition.id] = new Feature<Geometry>();
-        this.userPositionService.setUserIdUid(
-          userPosition.id,
-          getUid(this.userMarkers[userPosition.id])
+    geoPositions.forEach((geoPosition) => {
+      if (!Object.keys(this.userMarkers).includes(geoPosition.id)) {
+        this.userMarkers[geoPosition.id] = new Feature<Geometry>();
+        this.geoPositionService.setGeoPositionIdUid(
+          geoPosition.id,
+          getUid(this.userMarkers[geoPosition.id])
         );
       }
       const coords = [
-        userPosition.coords.longitude,
-        userPosition.coords.latitude,
+        geoPosition.coords.longitude,
+        geoPosition.coords.latitude,
       ];
-      this.userMarkers[userPosition.id].setGeometry(
+      this.userMarkers[geoPosition.id].setGeometry(
         new Point(fromLonLat(coords))
       );
       styleUser(
-        this.userMarkers[userPosition.id],
-        this.getAddressLabel(userPosition, userPosition.userName),
+        this.userMarkers[geoPosition.id],
+        this.getAddressLabel(geoPosition, geoPosition.userName),
         this.zoomLevelSingleMarker
       );
     });

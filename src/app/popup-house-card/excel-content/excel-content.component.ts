@@ -4,6 +4,8 @@ import {
   CITY,
   HOUSE_NUMBER,
   INFO,
+  LATITUDE,
+  LONGITUDE,
   POSTCODE,
   STREET,
   StoreData,
@@ -35,7 +37,15 @@ export class ExcelContentComponent {
       return Object.entries(details)
         .filter(
           (entry) =>
-            ![POSTCODE, CITY, HOUSE_NUMBER, INFO, STREET].includes(entry[0]) &&
+            ![
+              POSTCODE,
+              CITY,
+              HOUSE_NUMBER,
+              INFO,
+              STREET,
+              LONGITUDE,
+              LATITUDE,
+            ].includes(entry[0]) &&
             !imagesFilter(entry[1]) &&
             !blobsFilter(entry[1])
         )

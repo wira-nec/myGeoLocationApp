@@ -10,7 +10,7 @@ import { OlMapComponent } from '../components/map/map.component';
 import { View } from 'ol';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { OSM } from 'ol/source';
-import { UserPositionService } from '../../services/user-position.service';
+import { GeoPositionService } from '../../services/geo-position.service';
 import {
   DataStoreService,
   getAddress,
@@ -59,7 +59,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   private readonly markers = inject(UserMarkers);
 
   constructor(
-    private readonly userPositionService: UserPositionService,
+    private readonly geoPositionService: GeoPositionService,
     private readonly dataStoreService: DataStoreService,
     private readonly pictureStore: LoadPictureService,
     private readonly toaster: ToasterService,
@@ -73,13 +73,13 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    const userPositionSubscription = this.userPositionService.userPositions$
+    const geoPositionSubscription = this.geoPositionService.geoPositions$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        filter((userPositions) => !!userPositions.length)
+        filter((geoPositions) => !!geoPositions.length)
       )
-      .subscribe((userPositions) => {
-        this.markers.setupMap(userPositions, this.map.getView());
+      .subscribe((geoPositions) => {
+        this.markers.setupMap(geoPositions, this.map.getView());
       });
     this.progressService.progress$
       .pipe(
@@ -112,7 +112,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
           if (this.dataContainsLocation(data)) {
             longitude = Number(data[LONGITUDE]);
             latitude = Number(data[LATITUDE]);
-            this.userPositionService.updateUserPosition(
+            this.geoPositionService.updateGeoPosition(
               longitude,
               latitude,
               data[FIRST_NAME],
@@ -128,22 +128,22 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
             this.progressService.increaseProgressByStep(PROGRESS_ID);
           } else {
             const [postcode, city, houseNumber, street] = getAddress(data);
-            const userPos = this.userPositionService.getUserByAddress(
+            const geoPos = this.geoPositionService.getGeoPositionByAddress(
               city,
               postcode,
               houseNumber,
               street
             );
-            if (userPos) {
-              // Is data for existing userPosition,
-              // only update the userPosition data,
+            if (geoPos) {
+              // Is data for existing geoPosition,
+              // only update the geoPosition data,
               // location is already requested on creation.
-              this.userPositionService.updateUserPosition(
+              this.geoPositionService.updateGeoPosition(
                 0,
                 0,
-                userPos.userName,
+                geoPos.userName,
                 data,
-                userPos.userPositionInfo
+                geoPos.geoPositionInfo
               );
               this.progressService.increaseProgressByStep(PROGRESS_ID);
             } else {
@@ -157,7 +157,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
           }
         });
         if (longitude && latitude) {
-          // Give it some time to process last userPosition update
+          // Give it some time to process last geoPosition update
           // before moving the map
           setTimeout(() => {
             this.map.getView().animate({
@@ -176,7 +176,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
         }
       });
     this.destroyRef.onDestroy(() => {
-      userPositionSubscription.unsubscribe();
+      geoPositionSubscription.unsubscribe();
       dataStoreServiceSubscription.unsubscribe();
     });
   }
@@ -221,7 +221,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
         this.map,
         this.markers.zoomLevelSingleMarker,
         this.dataStoreService,
-        this.userPositionService,
+        this.geoPositionService,
         this.toaster,
         this.progressService
       )

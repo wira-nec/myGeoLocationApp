@@ -12,7 +12,7 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import Map from 'ol/Map';
-import { UserPositionService } from '../../services/user-position.service';
+import { GeoPositionService } from '../../services/geo-position.service';
 import {
   CITY,
   getBlobs,
@@ -30,7 +30,6 @@ import { CardHeaderComponent } from './cardHeader/card-header.component';
 import { ExcelContentComponent } from './excel-content/excel-content.component';
 import { PicturesContentComponent } from './pictures-content/pictures-content.component';
 import { MapBrowserEvent } from 'ol';
-import { LoadPictureService } from '../../services/load-picture.service';
 
 @Component({
   selector: 'app-popup-house-card',
@@ -56,10 +55,9 @@ export class PopupHouseCardComponent implements OnInit {
 
   constructor(
     private ref: ElementRef,
-    private userPositionService: UserPositionService,
+    private geoPositionService: GeoPositionService,
     public changeDetectorRef: ChangeDetectorRef,
-    readonly fontSizeService: FontSizeService,
-    private pictureService: LoadPictureService
+    readonly fontSizeService: FontSizeService
   ) {}
 
   details!: StoreData;
@@ -77,32 +75,32 @@ export class PopupHouseCardComponent implements OnInit {
           pixel,
           (feature) => {
             const uid = getUid(feature);
-            const userId = this.userPositionService.getUserIdByUid(uid);
-            if (userId) {
-              const selectedUserPos =
-                this.userPositionService.getUserPosition(userId);
-              if (!selectedUserPos?.details) {
-                this.details = {
-                  ['Error']: `No details found for this address. Please check the address in imported excel sheet.`,
-                };
-                const userInfo = JSON.parse(
-                  selectedUserPos
-                    ? selectedUserPos.userPositionInfo
+            const geoPositionId = this.geoPositionService.getIdByUid(uid);
+            if (geoPositionId) {
+              const selectedGeoPos =
+                this.geoPositionService.getGeoPosition(geoPositionId);
+              if (!selectedGeoPos?.details) {
+                const geoInfo = JSON.parse(
+                  selectedGeoPos
+                    ? selectedGeoPos.geoPositionInfo
                     : `{
                         "postcode": "column 'postcode' not found",
                         "city": "column 'city' not found",
                         "housenumber": "column 'housenumber' not found"
                       }`
                 );
+                const address_not_found = selectedGeoPos
+                  ? `Address "${geoInfo.street} ${geoInfo.housenumber}, ${geoInfo.postcode} ${geoInfo.city}" not found`
+                  : 'No address found';
                 this.details = {
-                  ...this.details,
-                  [POSTCODE]: userInfo.postcode,
-                  [CITY]: userInfo.city,
-                  [HOUSE_NUMBER]: userInfo.housenumber,
-                  [STREET]: userInfo.street,
+                  ['Error']: `${address_not_found}. Please verify address in excel sheet.`,
+                  [POSTCODE]: geoInfo.postcode,
+                  [CITY]: geoInfo.city,
+                  [HOUSE_NUMBER]: geoInfo.housenumber,
+                  [STREET]: geoInfo.street,
                 };
               } else {
-                this.details = selectedUserPos.details;
+                this.details = selectedGeoPos.details;
               }
               if (this.overlay && this.map) {
                 this.overlay.setPosition(event.coordinate);

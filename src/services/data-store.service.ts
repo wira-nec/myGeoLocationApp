@@ -8,7 +8,7 @@ export type StoreData = Record<string, string>;
 export const POSTCODE = 'postcode';
 export const CITY = 'city';
 export const HOUSE_NUMBER = 'housenumber';
-export const INFO = 'userPositionInfo';
+export const INFO = 'geoPositionInfo';
 export const STREET = 'street';
 export const LONGITUDE = 'longitude';
 export const LATITUDE = 'latitude';
@@ -147,7 +147,7 @@ export class DataStoreService {
             ),
           });
           if (!storeData) {
-            errorMessage = `Looking for ${originalDetails.query} but found address "${originalDetails.postcode} ${originalDetails.housenumber}, ${originalDetails.city}" which is not present your excel sheet. Please check the address in the imported excel sheet.`;
+            errorMessage = `Looking for ${originalDetails.query} but found address "${originalDetails.postcode} ${originalDetails.housenumber}, ${originalDetails.city}" which is not present your excel sheet. Please verify address in the excel sheet.`;
           } else {
             errorMessage = `Please fix City in "${originalDetails.street} ${originalDetails.housenumber}, ${originalDetails.city}" and change ${storeData[CITY]} to ${originalDetails.city} in your excel sheet.`;
             storeData[CITY] = originalDetails.city;
