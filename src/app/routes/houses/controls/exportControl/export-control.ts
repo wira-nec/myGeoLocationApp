@@ -5,7 +5,7 @@ import {
 } from '../../../../core/services/data-store.service';
 import { GeoPositionService } from '../../../../core/services/geo-position.service';
 import { ExcelService } from '../../../../core/services/excel.service';
-import { JsonCreatorService } from '../../../../core/services/json-creator.service';
+import { JsonCreator } from '../../../../core/providers/json-creator';
 import { LoadPictureService } from '../../../../core/services/load-picture.service';
 import { inject } from '@angular/core';
 
@@ -15,7 +15,7 @@ export class ExportControl extends Control {
   private dataStoreService!: DataStoreService;
   private geoPositionService!: GeoPositionService;
   private excelService!: ExcelService;
-  private jsonCreatorService!: JsonCreatorService;
+  private jsonCreatorService!: JsonCreator;
   private loadPictureService!: LoadPictureService;
 
   /**
@@ -39,7 +39,7 @@ export class ExportControl extends Control {
     this.dataStoreService = inject(DataStoreService);
     this.geoPositionService = inject(GeoPositionService);
     this.excelService = inject(ExcelService);
-    this.jsonCreatorService = inject(JsonCreatorService);
+    this.jsonCreatorService = inject(JsonCreator);
     this.loadPictureService = inject(LoadPictureService);
 
     const exportFiles = (): void => {

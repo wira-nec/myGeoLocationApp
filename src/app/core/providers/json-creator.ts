@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 @Injectable({
   providedIn: 'root',
 })
-export class JsonCreatorService {
+export class JsonCreator {
   createJson(data: object) {
     return JSON.stringify(data, null, 2);
   }
