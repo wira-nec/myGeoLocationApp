@@ -17,7 +17,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import VectorLayer from 'ol/layer/Vector';
 import Vector from 'ol/source/Vector';
 
-const styleUser = (
+const style = (
   feature: Feature,
   labelText: string,
   zoomLevelSingleMarker: number
@@ -68,10 +68,10 @@ const getDotStyle = (radius: number, isRed: boolean): StyleLike | undefined => {
 };
 
 @Injectable()
-export class UserMarkers {
+export class Markers {
   private zoomInput = new Subject<ObjectEvent>();
   public zoomLevelSingleMarker = 13;
-  private userMarkers: Record<string, Feature> = {};
+  private markers: Record<string, Feature> = {};
   private markersVectorLayer = new VectorLayer<
     Vector<Feature<Geometry>>,
     Feature<Geometry>
@@ -91,19 +91,19 @@ export class UserMarkers {
     const vectorLayerSource = this.markersVectorLayer.getSource();
     if (vectorLayerSource) {
       vectorLayerSource.clear(true);
-      vectorLayerSource.addFeatures(Object.values(this.userMarkers));
+      vectorLayerSource.addFeatures(Object.values(this.markers));
     }
   }
 
-  public updateUserMarkerStyle() {
-    Object.keys(this.userMarkers).forEach((key) => {
+  public updateMarkerStyle() {
+    Object.keys(this.markers).forEach((key) => {
       const geoPos = this.geoPositionService.getGeoPosition(key);
       const labelText = this.getAddressLabel(
         geoPos,
         geoPos?.userName || 'Unknown'
       );
-      styleUser(this.userMarkers[key], labelText, this.zoomLevelSingleMarker);
-      this.userMarkers[key].changed();
+      style(this.markers[key], labelText, this.zoomLevelSingleMarker);
+      this.markers[key].changed();
     });
     this.refreshVectorLayer();
   }
@@ -124,22 +124,20 @@ export class UserMarkers {
   public setupMap(geoPositions: GeoPosition[], view: View) {
     view?.setZoom(this.zoomLevelSingleMarker);
     geoPositions.forEach((geoPosition) => {
-      if (!Object.keys(this.userMarkers).includes(geoPosition.id)) {
-        this.userMarkers[geoPosition.id] = new Feature<Geometry>();
+      if (!Object.keys(this.markers).includes(geoPosition.id)) {
+        this.markers[geoPosition.id] = new Feature<Geometry>();
         this.geoPositionService.setGeoPositionIdUid(
           geoPosition.id,
-          getUid(this.userMarkers[geoPosition.id])
+          getUid(this.markers[geoPosition.id])
         );
       }
       const coords = [
         geoPosition.coords.longitude,
         geoPosition.coords.latitude,
       ];
-      this.userMarkers[geoPosition.id].setGeometry(
-        new Point(fromLonLat(coords))
-      );
-      styleUser(
-        this.userMarkers[geoPosition.id],
+      this.markers[geoPosition.id].setGeometry(new Point(fromLonLat(coords)));
+      style(
+        this.markers[geoPosition.id],
         this.getAddressLabel(geoPosition, geoPosition.userName),
         this.zoomLevelSingleMarker
       );
@@ -150,14 +148,14 @@ export class UserMarkers {
   private onViewChanged(map: Map) {
     const view = map.getView();
     this.zoomLevelSingleMarker = view?.getZoom() || 13;
-    this.updateUserMarkerStyle();
+    this.updateMarkerStyle();
     console.log('zoom', this.zoomLevelSingleMarker);
   }
 
-  public initializeUseMarkers(map: Map) {
+  public initializeMarkers(map: Map) {
     this.map = map;
     this.markersVectorLayer = new VectorLayer({
-      source: new Vector({ features: Object.values(this.userMarkers) }),
+      source: new Vector({ features: Object.values(this.markers) }),
     });
     map.addLayer(this.markersVectorLayer);
     const view = map.getView();

@@ -36,7 +36,7 @@ import {
   requestLocation,
   geocodeHandlingFinished,
 } from '../helpers/geocoderCreator';
-import { UserMarkers } from '../providers/userMarkers';
+import { Markers } from '../providers/markers';
 import { ToasterService } from '../../../core/services/toaster.service';
 import { filter, takeWhile } from 'rxjs';
 import { ProgressService } from '../../../core/services/progress.service';
@@ -48,7 +48,7 @@ import { PROGRESS_ID } from '../bottom-file-selection-sheet/bottom-file-selectio
   imports: [PopupHouseCardComponent, OlMapComponent],
   templateUrl: './houses-map.component.html',
   styleUrl: './houses-map.component.scss',
-  providers: [UserMarkers],
+  providers: [Markers],
 })
 export class HousesMapComponent implements OnInit, AfterViewInit {
   map!: Map;
@@ -56,7 +56,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   private readonly destroyRef: DestroyRef;
   private readonly fileImportControl = new ImportFilesControl();
   private readonly exportFileControl = new ExportControl();
-  private readonly markers = inject(UserMarkers);
+  private readonly markers = inject(Markers);
 
   constructor(
     private readonly geoPositionService: GeoPositionService,
@@ -215,7 +215,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
       this.map.getTargetElement().classList.remove('spinner');
     });
 
-    this.markers.initializeUseMarkers(this.map);
+    this.markers.initializeMarkers(this.map);
     this.map.addControl(
       geocoderCreator(
         this.map,

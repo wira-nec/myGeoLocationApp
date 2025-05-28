@@ -8,7 +8,7 @@ import { GeoPositionService } from '../../../core/services/geo-position.service'
 import { setUpMockedServices } from '../../../../test/setUpMockedServices';
 import * as olProj from 'ol/proj';
 import * as geocoderCreator from '../helpers/geocoderCreator';
-import { UserMarkers } from '../providers/userMarkers';
+import { Markers } from '../providers/markers';
 
 const destroyRefMock = {
   onDestroy: jest.fn(),
@@ -116,7 +116,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     TestBed.configureTestingModule({
       providers: [
         {
-          provide: UserMarkers,
+          provide: Markers,
           useValue: markersMock,
         },
       ],
@@ -145,7 +145,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     TestBed.configureTestingModule({
       providers: [
         {
-          provide: UserMarkers,
+          provide: Markers,
           useValue: markersMock,
         },
       ],
@@ -184,7 +184,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     TestBed.configureTestingModule({
       providers: [
         {
-          provide: UserMarkers,
+          provide: Markers,
           useValue: markersMock,
         },
       ],
@@ -234,7 +234,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     TestBed.configureTestingModule({
       providers: [
         {
-          provide: UserMarkers,
+          provide: Markers,
           useValue: markersMock,
         },
       ],
@@ -276,7 +276,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     TestBed.configureTestingModule({
       providers: [
         {
-          provide: UserMarkers,
+          provide: Markers,
           useValue: markersMock,
         },
       ],
@@ -323,7 +323,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     TestBed.configureTestingModule({
       providers: [
         {
-          provide: UserMarkers,
+          provide: Markers,
           useValue: markersMock,
         },
       ],
@@ -371,7 +371,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
     TestBed.configureTestingModule({
       providers: [
         {
-          provide: UserMarkers,
+          provide: Markers,
           useValue: markersMock,
         },
       ],

@@ -31,7 +31,7 @@ export function setUpMockedServices() {
 
   const markersMock = {
     setupMap: jest.fn(),
-    initializeUseMarkers: jest.fn(),
+    initializeMarkers: jest.fn(),
     zoomLevelSingleMarker: 10,
   };
 
