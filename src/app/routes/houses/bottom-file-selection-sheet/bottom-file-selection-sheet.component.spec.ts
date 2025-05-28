@@ -10,7 +10,7 @@ describe('BottomFileSelectionSheetComponent', () => {
     MatBottomSheetRef<BottomFileSelectionSheetComponent>
   >;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let geoPositionServiceMock: any;
+  let excelServiceMock: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let dataStoreServiceMock: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,10 +26,10 @@ describe('BottomFileSelectionSheetComponent', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
     ({
-      geoPositionServiceMock: geoPositionServiceMock,
       dataStoreServiceMock,
       pictureStoreMock,
       progressServiceMock,
+      excelServiceMock,
     } = setUpMockedServices());
     TestBed.configureTestingModule({
       providers: [
@@ -43,8 +43,8 @@ describe('BottomFileSelectionSheetComponent', () => {
       component = new BottomFileSelectionSheetComponent(
         pictureStoreMock,
         dataStoreServiceMock,
-        geoPositionServiceMock,
-        progressServiceMock
+        progressServiceMock,
+        excelServiceMock
       );
     });
   });

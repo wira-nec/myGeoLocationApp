@@ -21,6 +21,8 @@ export function setUpMockedServices() {
   const progressServiceMock = {
     progress$: new Subject<number>(),
     setProgress: jest.fn(),
+    setMaxCount: jest.fn(),
+    increaseProgressByStep: jest.fn(),
   };
 
   const pictureStoreMock = {
@@ -52,6 +54,16 @@ export function setUpMockedServices() {
     addControl: jest.fn(),
   };
 
+  const excelServiceMock = {
+    generateExcel: jest.fn(),
+    importExcelFile: jest
+      .fn()
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .mockImplementation((e: ArrayBuffer, _: StoreData[]) =>
+        Array.from(new TextDecoder().decode(e))
+      ),
+  };
+
   // Patch requestLocation
   const requestLocationSpy = jest
     .spyOn(geocoderCreator, 'requestLocation')
@@ -67,5 +79,6 @@ export function setUpMockedServices() {
     mapMock,
     requestLocationSpy,
     progressServiceMock,
+    excelServiceMock,
   };
 }

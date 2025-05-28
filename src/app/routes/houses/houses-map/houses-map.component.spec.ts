@@ -9,12 +9,13 @@ import { setUpMockedServices } from '../../../../test/setUpMockedServices';
 import * as olProj from 'ol/proj';
 import * as geocoderCreator from '../helpers/geocoderCreator';
 import { Markers } from '../providers/markers';
+import { waitFor } from '@testing-library/angular';
 
 const destroyRefMock = {
   onDestroy: jest.fn(),
 };
 
-jest.mock('../mapControls/importFilesControl/importFilesControl', () => ({
+jest.mock('../controls/importFilesControl/importFilesControl', () => ({
   __esModule: true,
   ImportFilesControl: jest.fn().mockImplementation(() => ({
     open: jest.fn(),
@@ -189,7 +190,7 @@ describe('HousesMapComponent ngAfterViewInit', () => {
         },
       ],
     });
-    TestBed.runInInjectionContext((): void => {
+    TestBed.runInInjectionContext(async (): Promise<void> => {
       // Create component
       const component = createComponent(
         geoPositionServiceMock,
@@ -214,7 +215,9 @@ describe('HousesMapComponent ngAfterViewInit', () => {
         'this is a blob',
         'img.jpg'
       );
-      expect(viewMock.animate).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(viewMock.animate).toHaveBeenCalled();
+      });
     });
   });
 
