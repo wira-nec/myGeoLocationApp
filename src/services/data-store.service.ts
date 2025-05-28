@@ -13,6 +13,7 @@ export const STREET = 'street';
 export const LONGITUDE = 'longitude';
 export const LATITUDE = 'latitude';
 export const FIRST_NAME = 'firstName';
+export const SHEET_NAME = 'sheetName';
 export const COORDINATE_KEYS: string[] = [LONGITUDE, LATITUDE];
 
 export const imagesFilter = (value: string): boolean => {
@@ -113,56 +114,58 @@ export class DataStoreService {
     return undefined;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public findByApproach(originalDetails: any): [StoreData | undefined, string] {
+  public findByApproach(
+    postcode: string,
+    houseNumber: string,
+    street: string,
+    city: string,
+    query: string
+  ): [StoreData | undefined, string] {
     let errorMessage = '';
     let storeData = this.get({
-      [POSTCODE]: originalDetails.postcode,
-      [HOUSE_NUMBER]: originalDetails.housenumber,
-      [CITY]: originalDetails.city,
+      [POSTCODE]: postcode,
+      [HOUSE_NUMBER]: houseNumber,
+      [CITY]: city,
     });
     if (!storeData) {
       // try to get it by street name, city and house number
       storeData = this.get({
-        [STREET]: originalDetails.street,
-        [HOUSE_NUMBER]: originalDetails.housenumber,
-        [CITY]: originalDetails.city,
+        [STREET]: street,
+        [HOUSE_NUMBER]: houseNumber,
+        [CITY]: city,
       });
       if (!storeData) {
         // try to get it by city, street name and partial house number
         storeData = this.get({
-          [STREET]: originalDetails.street,
+          [STREET]: street,
           // filter house number with for non numbers
-          [HOUSE_NUMBER]: originalDetails.housenumber.replace(/[^0-9].*/g, ''),
-          [CITY]: originalDetails.city,
+          [HOUSE_NUMBER]: houseNumber.replace(/[^0-9].*/g, ''),
+          [CITY]: city,
         });
         if (!storeData) {
           // try to get it by postcode, street name, partial house number.
           storeData = this.get({
-            [POSTCODE]: originalDetails.postcode,
-            [STREET]: originalDetails.street,
-            [HOUSE_NUMBER]: originalDetails.housenumber.replace(
-              /[^0-9].*/g,
-              ''
-            ),
+            [POSTCODE]: postcode,
+            [STREET]: street,
+            [HOUSE_NUMBER]: houseNumber.replace(/[^0-9].*/g, ''),
           });
           if (!storeData) {
-            errorMessage = `Looking for ${originalDetails.query} but found address "${originalDetails.postcode} ${originalDetails.housenumber}, ${originalDetails.city}" which is not present your excel sheet. Please verify address in the excel sheet.`;
+            errorMessage = `Looking for ${query} but found address "${postcode} ${houseNumber}, ${city}" which is not present your excel sheet. Please verify address in the excel sheet.`;
           } else {
-            errorMessage = `Please fix City in "${originalDetails.street} ${originalDetails.housenumber}, ${originalDetails.city}" and change ${storeData[CITY]} to ${originalDetails.city} in your excel sheet.`;
-            storeData[CITY] = originalDetails.city;
-            storeData[HOUSE_NUMBER] = originalDetails.housenumber;
+            errorMessage = `Please fix City in "${street} ${houseNumber}, ${city}" and change ${storeData[CITY]} to ${city} in your excel sheet.`;
+            storeData[CITY] = city;
+            storeData[HOUSE_NUMBER] = houseNumber;
           }
         } else {
-          errorMessage = `Please fix house number in "${originalDetails.street} ${originalDetails.housenumber}, ${originalDetails.city}" and change ${storeData[HOUSE_NUMBER]} to ${originalDetails.housenumber} in your excel sheet.`;
-          storeData[HOUSE_NUMBER] = originalDetails.housenumber;
+          errorMessage = `Please fix house number in "${street} ${houseNumber}, ${city}" and change ${storeData[HOUSE_NUMBER]} to ${houseNumber} in your excel sheet.`;
+          storeData[HOUSE_NUMBER] = houseNumber;
         }
       } else {
-        errorMessage = `Please fix postcode in "${originalDetails.street} ${originalDetails.housenumber}, ${originalDetails.city}" and change ${storeData[POSTCODE]} to ${originalDetails.postcode} in your excel sheet.`;
-        storeData[POSTCODE] = originalDetails.postcode;
+        errorMessage = `Please fix postcode in "${street} ${houseNumber}, ${city}" and change ${storeData[POSTCODE]} to ${postcode} in your excel sheet.`;
+        storeData[POSTCODE] = postcode;
       }
     }
-    console.log('street map found', originalDetails);
+    console.log('street map found', postcode, houseNumber, city, street, query);
     return [storeData, errorMessage];
   }
 }

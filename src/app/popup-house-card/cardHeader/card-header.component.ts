@@ -23,8 +23,8 @@ export class CardHeaderComponent {
   address() {
     if (this.details) {
       return `${this.details[CITY]}, ${this.details[POSTCODE]}, ${
-        this.details[STREET] || ''
-      }, ${this.details[HOUSE_NUMBER]}`;
+        this.details[STREET] ? this.details[STREET] + ', ' : ''
+      }${this.details[HOUSE_NUMBER]}`;
     }
     return '';
   }

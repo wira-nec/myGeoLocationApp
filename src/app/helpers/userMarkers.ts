@@ -114,8 +114,8 @@ export class UserMarkers {
   ) {
     if (geoPos?.details) {
       const [postcode, city, houseNumber, street] = getAddress(geoPos.details);
-      return `${postcode}, ${street}${
-        street?.length ? ' ' : ''
+      return `${postcode}, ${
+        street?.length ? street + ' ,' : ''
       }${houseNumber}, ${city}`;
     }
     return defaultText;

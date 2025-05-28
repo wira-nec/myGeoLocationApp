@@ -129,10 +129,16 @@ export function geocoderCreator(
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   geocoder.on('addresschosen', (evt: any) => {
-    const originalDetails = evt.address.original.details;
-    // try to get it by postcode, city and house number
-    const [storeData, errorMessage] =
-      dataStoreService.findByApproach(originalDetails);
+    const { postcode, street, housenumber, city, query } =
+      evt.address.original.details;
+    // try to get storedData by postcode or street and house number, city
+    const [storeData, errorMessage] = dataStoreService.findByApproach(
+      postcode,
+      housenumber,
+      street,
+      city,
+      query
+    );
     if (errorMessage) {
       toaster.show('warning', errorMessage, [], 300000);
     }
@@ -141,7 +147,7 @@ export function geocoderCreator(
       evt.place.lat,
       storeData ? storeData[FIRST_NAME] : undefined,
       storeData,
-      JSON.stringify(originalDetails)
+      JSON.stringify({ postcode, street, housenumber, city, query })
     );
     progressService.increaseProgressByStep(PROGRESS_ID);
     console.log('responses', responses);

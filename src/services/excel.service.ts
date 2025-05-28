@@ -4,6 +4,7 @@ import {
   CITY,
   HOUSE_NUMBER,
   POSTCODE,
+  SHEET_NAME,
   StoreData,
   STREET,
 } from './data-store.service';
@@ -22,7 +23,7 @@ export class ExcelService {
   generateExcel(data: StoreData[], fileName: string): void {
     // split data into ['geoPositionInfo', 'longitude', 'latitude', 'error'] and the rest
     // So their will be 2 sheets in the excel file, one with the original information and one with the location information
-    const [sheet1Data, sheet2Data] = data.reduce(
+    const [sheetData, locationInfoData] = data.reduce(
       (acc, item) => {
         const { geoPositionInfo, longitude, latitude, error, ...rest } = item;
         acc[0].push(rest);
@@ -41,12 +42,28 @@ export class ExcelService {
       },
       [[], []] as [StoreData[], StoreData[]]
     );
-    const ws1: XLSX.WorkSheet = XLSX.utils.json_to_sheet(sheet1Data);
-    const ws2: XLSX.WorkSheet = XLSX.utils.json_to_sheet(sheet2Data);
-    const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws1, 'Sheet1');
-    XLSX.utils.book_append_sheet(wb, ws2, 'LocationInfo');
-    XLSX.writeFile(wb, fileName);
+    // Group sheetData by sheetName and remove sheetName from the data
+    const groupedSheet1Data: Record<string, StoreData[]> = {};
+    sheetData.forEach((item) => {
+      const nameOfSheet = item[SHEET_NAME] || 'Sheet1';
+      if (!groupedSheet1Data[nameOfSheet]) {
+        groupedSheet1Data[nameOfSheet] = [];
+      }
+      // Remove sheetName from the item
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { sheetName, ...itemWithoutSheetName } = item;
+      groupedSheet1Data[nameOfSheet].push(itemWithoutSheetName);
+    });
+    // Save each group as a separate sheet
+    const workbook: XLSX.WorkBook = XLSX.utils.book_new();
+    Object.entries(groupedSheet1Data).forEach(([sheetName, sheetData]) => {
+      const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(sheetData);
+      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    });
+    const locationInfoSheet: XLSX.WorkSheet =
+      XLSX.utils.json_to_sheet(locationInfoData);
+    XLSX.utils.book_append_sheet(workbook, locationInfoSheet, 'LocationInfo');
+    XLSX.writeFile(workbook, fileName);
   }
 
   public importExcelFile(
@@ -59,7 +76,26 @@ export class ExcelService {
       const newSheetData = XLSX.utils.sheet_to_json(worksheet, {
         raw: true,
       }) as StoreData[];
-      excelData = mergeStoreData(newSheetData, excelData);
+      // Get the headers from the newSheetData
+      // and check if city, house number are present
+      // and also postcode or street or both present
+      const hasRequiredHeaders = newSheetData.some((item) => {
+        const keys = Object.keys(item);
+        return (
+          keys.includes(CITY) &&
+          keys.includes(HOUSE_NUMBER) &&
+          (keys.includes(POSTCODE) || keys.includes(STREET))
+        );
+      });
+      if (hasRequiredHeaders) {
+        // Add the sheetName as key in excelData
+        newSheetData.forEach((item) => {
+          if (sheetName !== 'LocationInfo') {
+            item[SHEET_NAME] = sheetName; // Add sheetName to each item
+          }
+        });
+        excelData = mergeStoreData(newSheetData, excelData);
+      } // Else skip sheet
     });
     return excelData;
   }
