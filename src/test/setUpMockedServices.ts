@@ -1,7 +1,7 @@
 import { BehaviorSubject, Subject } from 'rxjs';
-import { StoreData } from '../services/data-store.service';
-import * as geocoderCreator from '../app/helpers/geocoderCreator';
-import { PictureStore } from '../services/load-picture.service';
+import { StoreData } from '../app/core/services/data-store.service';
+import * as geocoderCreator from '../app/routes/houses/helpers/geocoderCreator';
+import { PictureStore } from '../app/core/services/load-picture.service';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function setUpMockedServices() {

@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
-import { TheHangOutComponent } from './theHangOut/theHangOut.component';
-import { HomeComponent } from './home/home.component';
-import { HousesComponent } from './houses/houses.component';
+import { TheHangOutComponent } from './routes/hangout/theHangOut/theHangOut.component';
+import { HomeComponent } from './routes/home/home.component';
+import { HousesComponent } from './routes/houses/houses.component';
 // import { LocationMapComponent } from './location-map/location-map.component';
 
 export const routes: Routes = [
