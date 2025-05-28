@@ -360,6 +360,11 @@ licenses; we recommend you read them, as their terms may differ from the
 terms above.
 
 --------------------------------------------------------------------------------
+Package: pusher-js
+License: "MIT"
+
+
+--------------------------------------------------------------------------------
 Package: ol-geocoder
 License: "MIT"
 
