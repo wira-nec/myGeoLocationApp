@@ -68,7 +68,7 @@ export class ExportControl extends Control {
           }
         });
         this.excelService.generateExcel(sheet, EXPORTED_FILENAME + '.xlsx');
-        this.jsonCreatorService.savaJsonFile(
+        this.jsonCreatorService.saveJsonFile(
           this.jsonCreatorService.createJson(
             this.loadPictureService.getPicturesStore()
           ),
