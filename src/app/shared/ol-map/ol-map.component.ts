@@ -68,7 +68,7 @@ export class MapComponent implements OnInit, AfterViewInit, AfterViewChecked {
   logMessage = '';
 
   private canvasStyleIsSet = false;
-  private zoomLevelSingleMarker = 13;
+  private zoomLevelSingleMarker = 11;
   private userMarkers: Record<string, Feature> = {};
   private readonly destroyRef = inject(DestroyRef);
   private zoomInput = new Subject<ObjectEvent>();
@@ -126,7 +126,7 @@ export class MapComponent implements OnInit, AfterViewInit, AfterViewChecked {
 
   private onViewChanged = () => {
     const view = this.map?.getView();
-    this.zoomLevelSingleMarker = view?.getZoom() || 13;
+    this.zoomLevelSingleMarker = view?.getZoom() || 11;
   };
 
   private onCenterChanged = (e: ObjectEvent) => {

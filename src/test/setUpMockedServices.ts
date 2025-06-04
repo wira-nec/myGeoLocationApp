@@ -13,7 +13,7 @@ export function setUpMockedServices() {
 
   const dataStoreServiceMock = {
     dataStore$: new Subject<StoreData[]>(),
-    getAddress: ['postcode', 'city', 'housenumber'],
+    getAddress: ['street', 'housenumber', 'city', 'postcode'],
     imagesFilter: (col: string) => col.startsWith('img'),
     store: jest.fn(),
   };

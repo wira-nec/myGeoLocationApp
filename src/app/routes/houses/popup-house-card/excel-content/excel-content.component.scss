@@ -21,16 +21,6 @@
 
 .row {
   display: flex;
-  border-bottom: grey;
-  border-style: solid;
-  border-width: 0px 0px 1px 0px;
-}
-
-.heading {
-  font-weight: bold;
-  border-bottom: black;
-  border-style: solid;
-  border-width: 0px 0px 2px 0px;
 }
 
 .cell {
@@ -51,4 +41,10 @@
   display: flex;
   flex: 1 1 0;
   text-wrap: balance;
+}
+
+.footer {
+  font-size: x-small;
+  padding: 15px 0px 5px 0px;
+  gap: 10px;
 }

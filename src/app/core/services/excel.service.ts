@@ -1,13 +1,6 @@
 import { Injectable } from '@angular/core';
 import * as XLSX from 'xlsx';
-import {
-  CITY,
-  HOUSE_NUMBER,
-  POSTCODE,
-  SHEET_NAME,
-  StoreData,
-  STREET,
-} from './data-store.service';
+import { getDataStoreKeys, SHEET_NAME, StoreData } from './data-store.service';
 import { mergeStoreData } from '../helpers/dataManipulations';
 
 @Injectable({
@@ -28,11 +21,14 @@ export class ExcelService {
         const { geoPositionInfo, longitude, latitude, error, ...rest } = item;
         acc[0].push(rest);
         // Add also postcode, city, house number and street to the second sheet for link to original sheet
+        const [address, street, postcode, houseNumber, city] =
+          getDataStoreKeys(rest);
         acc[1].push({
-          postcode: rest[POSTCODE],
-          city: rest[CITY],
-          housenumber: rest[HOUSE_NUMBER],
-          street: rest[STREET],
+          ...(rest[postcode] ? { [postcode]: rest[postcode] } : {}),
+          ...(rest[city] ? { [city]: rest[city] } : {}),
+          ...(rest[houseNumber] ? { [houseNumber]: rest[houseNumber] } : {}),
+          ...(rest[street] ? { [street]: rest[street] } : {}),
+          ...(rest[address] ? { [address]: rest[address] } : {}),
           geoPositionInfo,
           longitude,
           latitude,
@@ -77,14 +73,11 @@ export class ExcelService {
         raw: true,
       }) as StoreData[];
       // Get the headers from the newSheetData
-      // and check if city, house number are present
-      // and also postcode or street or both present
       const hasRequiredHeaders = newSheetData.some((item) => {
-        const keys = Object.keys(item);
+        const itemKeys = getDataStoreKeys(item);
         return (
-          keys.includes(CITY) &&
-          keys.includes(HOUSE_NUMBER) &&
-          (keys.includes(POSTCODE) || keys.includes(STREET))
+          // Or address is present or at least 3 of the other keys are present
+          (itemKeys.length === 1 && itemKeys[0]) || itemKeys.length >= 3
         );
       });
       if (hasRequiredHeaders) {

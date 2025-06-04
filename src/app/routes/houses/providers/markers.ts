@@ -23,7 +23,7 @@ const style = (
   zoomLevelSingleMarker: number
 ) => {
   if (!feature) return;
-  if (zoomLevelSingleMarker > 15.5) {
+  if (zoomLevelSingleMarker > 14) {
     feature.setStyle(getHouseStyle(labelText));
   } else {
     feature.setStyle(getDotStyle(4, labelText === 'Unknown'));
@@ -70,7 +70,7 @@ const getDotStyle = (radius: number, isRed: boolean): StyleLike | undefined => {
 @Injectable()
 export class Markers {
   private zoomInput = new Subject<ObjectEvent>();
-  public zoomLevelSingleMarker = 13;
+  public zoomLevelSingleMarker = 11;
   private markers: Record<string, Feature> = {};
   private markersVectorLayer = new VectorLayer<
     Vector<Feature<Geometry>>,
@@ -113,7 +113,7 @@ export class Markers {
     defaultText: string
   ) {
     if (geoPos?.details) {
-      const [postcode, city, houseNumber, street] = getAddress(geoPos.details);
+      const [street, houseNumber, city, postcode] = getAddress(geoPos.details);
       return `${postcode}, ${
         street?.length ? street + ' ,' : ''
       }${houseNumber}, ${city}`;
@@ -147,7 +147,7 @@ export class Markers {
 
   private onViewChanged(map: Map) {
     const view = map.getView();
-    this.zoomLevelSingleMarker = view?.getZoom() || 13;
+    this.zoomLevelSingleMarker = view?.getZoom() || 11;
     this.updateMarkerStyle();
     console.log('zoom', this.zoomLevelSingleMarker);
   }

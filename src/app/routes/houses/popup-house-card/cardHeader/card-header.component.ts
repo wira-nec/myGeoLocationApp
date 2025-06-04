@@ -2,11 +2,8 @@ import { Component, Input } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import {
-  CITY,
-  HOUSE_NUMBER,
-  POSTCODE,
+  getDataStoreKeys,
   StoreData,
-  STREET,
 } from '../../../../core/services/data-store.service';
 import { Overlay } from 'ol';
 
@@ -22,9 +19,16 @@ export class CardHeaderComponent {
 
   address() {
     if (this.details) {
-      return `${this.details[CITY]}, ${this.details[POSTCODE]}, ${
-        this.details[STREET] ? this.details[STREET] + ', ' : ''
-      }${this.details[HOUSE_NUMBER]}`;
+      const [address, street, postcode, houseNumber, city] = getDataStoreKeys(
+        this.details
+      );
+      if (address) {
+        return this.details[address];
+      } else {
+        return `${this.details[city]} ${this.details[postcode]} ${
+          this.details[street] ? this.details[street] + ' ' : ''
+        }${this.details[houseNumber]}`;
+      }
     }
     return '';
   }

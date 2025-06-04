@@ -9,11 +9,13 @@
   }"
 >
   <app-card-header [details]="details" [overlay]="overlay" />
-  <mat-divider></mat-divider>
   <mat-card-content class="card-content">
     <div class="columnsContainer">
       <app-excel-content [details]="details" />
-      <app-pictures-content *ngIf="hasPictures(details)" [details]="details" />
+      <app-pictures-content
+        *ngIf="checkIfItHasPictures()"
+        [details]="details"
+      />
     </div>
   </mat-card-content>
 </mat-card>

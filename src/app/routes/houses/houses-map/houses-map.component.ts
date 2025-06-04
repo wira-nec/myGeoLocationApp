@@ -41,6 +41,7 @@ import { ToasterService } from '../../../core/services/toaster.service';
 import { filter, takeWhile } from 'rxjs';
 import { ProgressService } from '../../../core/services/progress.service';
 import { PROGRESS_ID } from '../bottom-file-selection-sheet/bottom-file-selection-sheet.component';
+import { CenterControl } from '../controls/centerControl/center-control';
 
 @Component({
   selector: 'app-houses-map',
@@ -56,6 +57,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   private readonly destroyRef: DestroyRef;
   private readonly fileImportControl = new ImportFilesControl();
   private readonly exportFileControl = new ExportControl();
+  private readonly centerControl = new CenterControl();
   private readonly markers = inject(Markers);
 
   constructor(
@@ -127,7 +129,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
             );
             this.progressService.increaseProgressByStep(PROGRESS_ID);
           } else {
-            const [postcode, city, houseNumber, street] = getAddress(data);
+            const [street, houseNumber, city, postcode] = getAddress(data);
             const geoPos = this.geoPositionService.getGeoPositionByAddress(
               city,
               postcode,
@@ -161,7 +163,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
           // before moving the map
           setTimeout(() => {
             this.map.getView().animate({
-              center: fromLonLat([longitude, latitude]),
+              center: fromLonLat([5.4808, 52.2211]),
               zoom: this.markers.zoomLevelSingleMarker,
             });
           }, 1000);
@@ -196,6 +198,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
         attribution,
         this.fileImportControl,
         this.exportFileControl,
+        this.centerControl,
       ]),
       target: 'map',
       view: new View({

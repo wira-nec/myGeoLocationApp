@@ -46,7 +46,7 @@ export class ExportControl extends Control {
       const dataStore = this.dataStoreService.getStore();
       if (dataStore.length > 0) {
         const sheet = dataStore.map((data) => {
-          const [postcode, city, houseNumber, street] = getAddress(data);
+          const [street, houseNumber, city, postcode] = getAddress(data);
           const geoPos = this.geoPositionService.getGeoPositionByAddress(
             city,
             postcode,

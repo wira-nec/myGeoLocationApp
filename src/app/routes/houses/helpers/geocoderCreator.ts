@@ -155,7 +155,7 @@ export function geocoderCreator(
     if (isGeocodeHandlingFinished) {
       console.log('isGeocodeHandlingFinished', isGeocodeHandlingFinished);
       map.getView().animate({
-        center: fromLonLat([evt.place.lon, evt.place.lat]),
+        center: fromLonLat([5.4808, 52.2211]),
         zoom: zoomLevelSingleMarker,
       });
       isGeocodeHandlingFinished = false;
@@ -178,8 +178,10 @@ export function requestLocation(data: StoreData) {
     '.gcd-txt-search'
   ) as HTMLButtonElement;
   if (textInput && sendTextInput) {
-    const [postcode, city, houseNumber, street] = getAddress(data);
-    textInput.value = `${postcode}, ${street ?? ''} ${houseNumber}, ${city}`;
+    const [street, houseNumber, city, postcode] = getAddress(data);
+    textInput.value = `${street ?? ''} ${houseNumber}, ${city}, ${postcode}`
+      .replaceAll(',,', ',')
+      .replaceAll('  ', ' ');
     console.log('search street map for', textInput.value);
     sendTextInput.click();
   }

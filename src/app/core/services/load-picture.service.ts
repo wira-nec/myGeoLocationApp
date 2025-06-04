@@ -16,13 +16,11 @@ export class LoadPictureService {
       if (e.target?.result) {
         if (file.type.toLowerCase() === 'application/json') {
           const jsonData = JSON.parse(e.target?.result as string);
-          Object.keys(jsonData).forEach((key) => {
-            this.pictureStore[key] = jsonData[key];
-            this.pictureStore$.next({ [key]: jsonData[key] });
+          Object.keys(jsonData).forEach((filename) => {
+            this.storePicture(jsonData[filename], filename);
           });
         } else {
-          this.pictureStore[filename] = e.target?.result;
-          this.pictureStore$.next({ [filename]: e.target?.result });
+          this.storePicture(e.target?.result as string, filename);
         }
       }
     };
@@ -33,9 +31,10 @@ export class LoadPictureService {
     }
   }
 
+  // Store the picture in the pictureStore and emit the change
   public storePicture(blob: string, filename: string) {
-    this.pictureStore[filename] = blob;
-    this.pictureStore$.next({ [filename]: blob });
+    this.pictureStore[filename.toLowerCase()] = blob;
+    this.pictureStore$.next({ [filename.toLowerCase()]: blob });
   }
 
   public getPicture(key: string) {
@@ -43,6 +42,11 @@ export class LoadPictureService {
       return this.pictureStore[key] as string;
     }
     return key;
+  }
+
+  public hasNoBlobs(key: string): boolean {
+    const images = this.getPicture(key);
+    return images === key;
   }
 
   public getPicturesStore() {

@@ -15,8 +15,7 @@ import Map from 'ol/Map';
 import { GeoPositionService } from '../../../core/services/geo-position.service';
 import {
   CITY,
-  getBlobs,
-  getImageNames,
+  hasPictures,
   HOUSE_NUMBER,
   POSTCODE,
   StoreData,
@@ -116,13 +115,8 @@ export class PopupHouseCardComponent implements OnInit {
     }
   }
 
-  hasPictures(details: StoreData) {
-    if (details) {
-      if (getBlobs(details).length > 0 || getImageNames(details).length > 0) {
-        return true;
-      }
-    }
-    return false;
+  checkIfItHasPictures(): boolean {
+    return hasPictures(this.details);
   }
 
   ngOnInit() {

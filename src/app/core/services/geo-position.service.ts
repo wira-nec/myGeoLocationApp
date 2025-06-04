@@ -144,7 +144,7 @@ export class GeoPositionService {
       details: storeData,
     };
     if (storeData) {
-      const [postcode, city, houseNumber, street] = getAddress(storeData);
+      const [street, houseNumber, city, postcode] = getAddress(storeData);
       const geoPos = this.getGeoPositionByAddress(
         city,
         postcode,
