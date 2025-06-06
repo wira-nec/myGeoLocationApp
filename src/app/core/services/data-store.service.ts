@@ -104,7 +104,7 @@ export const getAddress = (data: StoreData) => {
     }
   } else {
     return [
-      data[streetKey].trim(),
+      data[streetKey] || ''.trim(),
       data[houseNumberKey].toString().trim(),
       data[cityKey].trim(),
       data[postcodeKey].replaceAll(' ', ''),

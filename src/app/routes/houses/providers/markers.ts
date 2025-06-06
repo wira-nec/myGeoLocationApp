@@ -28,6 +28,7 @@ const style = (
   } else {
     feature.setStyle(getDotStyle(4, labelText === 'Unknown'));
   }
+  feature.setProperties({ Address: labelText });
 };
 
 const getHouseStyle = (labelText: string): StyleLike | undefined => {
@@ -114,9 +115,9 @@ export class Markers {
   ) {
     if (geoPos?.details) {
       const [street, houseNumber, city, postcode] = getAddress(geoPos.details);
-      return `${postcode}, ${
-        street?.length ? street + ' ,' : ''
-      }${houseNumber}, ${city}`;
+      return `${
+        street?.length ? street + ' ' : ''
+      }${houseNumber} ${city}, ${postcode}`;
     }
     return defaultText;
   }

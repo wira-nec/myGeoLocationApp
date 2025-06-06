@@ -1,0 +1,29 @@
+.footer {
+  font-size: x-small;
+  padding: 15px 0px 5px 0px;
+  gap: 10px;
+  display: flex;
+}
+
+.upload-button {
+  padding: 2px 1px 0px 2px;
+}
+
+.upload-button mat-icon {
+  max-height: 14px;
+  max-width: 14px;
+}
+
+.cellLeft {
+  display: flex;
+  flex: 1 1 0;
+  margin-left: 10px;
+  text-wrap: nowrap;
+}
+
+.cellRight {
+  display: flex;
+  flex: 1 1 0;
+  flex-flow: row-reverse;
+  margin-right: 10px;
+}

@@ -8,7 +8,14 @@ body {
   --header-color: #d1dfb7;
   --sidebar-color: #fae6be;
   --text-color: black;
+  overflow: hidden;
 }
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}

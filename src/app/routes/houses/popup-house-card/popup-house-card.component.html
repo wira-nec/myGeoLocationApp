@@ -8,7 +8,7 @@
     big: fontSize === 3
   }"
 >
-  <app-card-header [details]="details" [overlay]="overlay" />
+  <app-card-header [details]="details" [map]="map" />
   <mat-card-content class="card-content">
     <div class="columnsContainer">
       <app-excel-content [details]="details" />
@@ -18,4 +18,7 @@
       />
     </div>
   </mat-card-content>
+  <mat-card-footer>
+    <app-card-footer [details]="details" />
+  </mat-card-footer>
 </mat-card>

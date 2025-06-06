@@ -22,7 +22,8 @@ export class ImportProgressBarComponent implements OnInit {
   ngOnInit() {
     if (this.progressId) {
       //this.progressService.setProgress(this.progressId, 0);
-      const progressServiceSubscription = this.progressService.progress$
+      const progressServiceSubscription = this.progressService
+        .getProgress()
         .pipe(
           takeUntilDestroyed(this.destroyRef),
           filter(

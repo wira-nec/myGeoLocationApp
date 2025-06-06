@@ -16,7 +16,9 @@ export class ToasterContainerComponent {
   constructor(public readonly toaster: ToasterService) {
     this.toaster.toast$.pipe(takeUntilDestroyed()).subscribe((toast) => {
       this.toasts = [toast, ...this.toasts];
-      setTimeout(() => this.toasts.pop(), toast.delay || 6000);
+      if (toast.delay) {
+        setTimeout(() => this.toasts.pop(), toast.delay || 6000);
+      }
     });
   }
 

@@ -7,13 +7,14 @@ import {
 } from '../../../core/services/data-store.service';
 import { LoadPictureService } from '../../../core/services/load-picture.service';
 import { ImportProgressBarComponent } from '../import-progress-bar/import-progress-bar.component';
-import { ProgressService } from '../../../core/services/progress.service';
+import {
+  PICTURES_IMPORT_PROGRESS_ID,
+  ProgressService,
+  XSL_IMPORT_PROGRESS_ID,
+} from '../../../core/services/progress.service';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter } from 'rxjs';
 import { ExcelService } from '../../../core/services/excel.service';
-
-export const PROGRESS_ID = 'xsl-import-progress';
 
 @Component({
   selector: 'app-bottom-file-selection-sheet',
@@ -26,67 +27,67 @@ export const PROGRESS_ID = 'xsl-import-progress';
   styleUrl: './bottom-file-selection-sheet.component.scss',
 })
 export class BottomFileSelectionSheetComponent implements OnInit {
-  progressId = PROGRESS_ID;
+  progressId = XSL_IMPORT_PROGRESS_ID;
   excelData: StoreData[] = [];
   private _bottomSheetRef =
     inject<MatBottomSheetRef<BottomFileSelectionSheetComponent>>(
       MatBottomSheetRef
     );
 
-  private isDataStoreLoaded = false;
-  private isGeoPositionLoaded = false;
-  private importsNotFinished = true;
+  private isDataStoreLoaded: boolean | undefined = undefined;
+  private arePicturesLoaded: boolean | undefined = undefined;
   private readonly destroyRef = inject(DestroyRef);
+  private importRunning = () =>
+    this.progressService.isProgressRunning(XSL_IMPORT_PROGRESS_ID) ||
+    this.progressService.isProgressRunning(PICTURES_IMPORT_PROGRESS_ID);
 
   constructor(
     private readonly loadPictureService: LoadPictureService,
     private readonly dataStoreService: DataStoreService,
     private readonly progressService: ProgressService,
     private readonly excelService: ExcelService
-  ) {
-    this.importsNotFinished =
-      Object.keys(loadPictureService.pictureStore$.value).length === 0 ||
-      dataStoreService.getIncreasedDataStoreSize() === 0;
-    // progressService.setProgress(this.PROGRESS_ID, 0);
-  }
+  ) {}
 
   ngOnInit(): void {
-    const loadPictureServiceSubscription = this.loadPictureService.pictureStore$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        filter((pic) => !!Object.keys(pic).length)
-      )
-      .subscribe({
-        next: (pictures) => {
-          this.isGeoPositionLoaded = !!Object.keys(pictures).length;
-          if (this.isDataStoreLoaded && this.importsNotFinished) {
-            this.closeLink();
+    const progressSubscription = this.progressService
+      .getProgress()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        if (this.isDataStoreLoaded === undefined) {
+          if (this.progressService.isProgressRunning(XSL_IMPORT_PROGRESS_ID)) {
+            this.isDataStoreLoaded = false;
           }
-        },
-      });
-    const dataStoreServiceSubscription = this.dataStoreService.dataStore$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        filter((data) => !!data.length)
-      )
-      .subscribe({
-        next: () => {
-          this.isDataStoreLoaded =
-            !!this.dataStoreService.getIncreasedDataStoreSize();
-          if (this.isGeoPositionLoaded && this.importsNotFinished) {
-            this.closeLink();
+        } else if (this.isDataStoreLoaded === false) {
+          this.isDataStoreLoaded = !this.progressService.isProgressRunning(
+            XSL_IMPORT_PROGRESS_ID
+          );
+        }
+        if (this.arePicturesLoaded === undefined) {
+          if (
+            this.progressService.isProgressRunning(PICTURES_IMPORT_PROGRESS_ID)
+          ) {
+            this.arePicturesLoaded = false;
           }
-        },
+        } else if (this.arePicturesLoaded === false) {
+          this.arePicturesLoaded = !this.progressService.isProgressRunning(
+            PICTURES_IMPORT_PROGRESS_ID
+          );
+        }
+        if (this.isDataStoreLoaded && this.arePicturesLoaded) {
+          this.closeLink();
+          progressSubscription.unsubscribe();
+        }
       });
 
     this.destroyRef.onDestroy(() => {
-      loadPictureServiceSubscription.unsubscribe();
-      dataStoreServiceSubscription.unsubscribe();
+      progressSubscription.unsubscribe();
     });
   }
 
   closeLink(): void {
-    this._bottomSheetRef.dismiss();
+    setTimeout(() => {
+      this._bottomSheetRef.dismiss();
+    }, 1000);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -99,7 +100,7 @@ export class BottomFileSelectionSheetComponent implements OnInit {
           e.target.result,
           this.excelData
         );
-        this.progressService.setMaxCount(PROGRESS_ID, 1); // Reset progress bar
+        this.progressService.setMaxCount(XSL_IMPORT_PROGRESS_ID, 1); // Reset progress bar
         this.dataStoreService.store(this.excelData);
       }
     };

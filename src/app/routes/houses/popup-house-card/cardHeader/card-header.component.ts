@@ -5,17 +5,28 @@ import {
   getDataStoreKeys,
   StoreData,
 } from '../../../../core/services/data-store.service';
-import { Overlay } from 'ol';
+import { Map } from 'ol';
+import { BasicEventHandlers } from '../../providers/basicEventHandler';
+import { MapEventHandlers } from '../../providers/mapEventHandlers';
 
 @Component({
   selector: 'app-card-header',
   imports: [MatCardModule, MatIconModule],
+  providers: [
+    MapEventHandlers,
+    {
+      provide: MapEventHandlers,
+      useExisting: BasicEventHandlers,
+    },
+  ],
   templateUrl: './card-header.component.html',
   styleUrl: './card-header.component.scss',
 })
 export class CardHeaderComponent {
   @Input() details!: StoreData;
-  @Input() overlay!: Overlay;
+  @Input() map!: Map;
+
+  constructor(private readonly mapEventHandlers: MapEventHandlers) {}
 
   address() {
     if (this.details) {
@@ -34,6 +45,6 @@ export class CardHeaderComponent {
   }
 
   closePopup() {
-    this.overlay.setPosition(undefined);
+    this.mapEventHandlers.closePopup();
   }
 }

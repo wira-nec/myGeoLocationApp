@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import {
   StoreData,
   getBlobs,
@@ -13,10 +13,21 @@ import { CommonModule } from '@angular/common';
   templateUrl: './pictures-content.component.html',
   styleUrl: './pictures-content.component.scss',
 })
-export class PicturesContentComponent {
+export class PicturesContentComponent implements OnInit {
   @Input() details!: StoreData;
 
-  constructor(private pictureService: LoadPictureService) {}
+  constructor(
+    private pictureService: LoadPictureService,
+    private readonly changeDetectorRef: ChangeDetectorRef
+  ) {}
+
+  ngOnInit(): void {
+    this.pictureService.pictureStore$.subscribe(() => {
+      // force a rerender of this component, since there are new pictures uploaded
+      this.details = { ...this.details };
+      this.changeDetectorRef.markForCheck();
+    });
+  }
 
   pictures(details: StoreData) {
     if (details) {

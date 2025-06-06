@@ -39,14 +39,21 @@ import {
 import { Markers } from '../providers/markers';
 import { ToasterService } from '../../../core/services/toaster.service';
 import { filter, takeWhile } from 'rxjs';
-import { ProgressService } from '../../../core/services/progress.service';
-import { PROGRESS_ID } from '../bottom-file-selection-sheet/bottom-file-selection-sheet.component';
+import {
+  ProgressService,
+  XSL_IMPORT_PROGRESS_ID,
+} from '../../../core/services/progress.service';
 import { CenterControl } from '../controls/centerControl/center-control';
+import { TooltipInfoComponentComponent } from '../tooltip-info-component/tooltip-info-component.component';
 
 @Component({
   selector: 'app-houses-map',
   standalone: true,
-  imports: [PopupHouseCardComponent, OlMapComponent],
+  imports: [
+    PopupHouseCardComponent,
+    OlMapComponent,
+    TooltipInfoComponentComponent,
+  ],
   templateUrl: './houses-map.component.html',
   styleUrl: './houses-map.component.scss',
   providers: [Markers],
@@ -83,20 +90,23 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
       .subscribe((geoPositions) => {
         this.markers.setupMap(geoPositions, this.map.getView());
       });
-    this.progressService.progress$
+    this.progressService
+      .getProgress()
       .pipe(
         takeWhile(
           (progress) =>
-            !progress[PROGRESS_ID] || progress[PROGRESS_ID].value !== 100,
+            !progress[XSL_IMPORT_PROGRESS_ID] ||
+            progress[XSL_IMPORT_PROGRESS_ID].value !== 100,
           true
         ),
         filter(
           (progress) =>
-            Object.keys(progress).length > 0 && !!progress[PROGRESS_ID]
+            Object.keys(progress).length > 0 &&
+            !!progress[XSL_IMPORT_PROGRESS_ID]
         )
       )
       .subscribe((progress) => {
-        if (progress[PROGRESS_ID].value === 100) {
+        if (progress[XSL_IMPORT_PROGRESS_ID].value === 100) {
           geocodeHandlingFinished();
         }
       });
@@ -105,31 +115,36 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
         takeUntilDestroyed(this.destroyRef),
         filter((data) => !!data.length)
       )
-      .subscribe((data) => {
+      .subscribe(async (data) => {
         let longitude = 0;
         let latitude = 0;
         const errorMessage: string[] = [];
-        this.progressService.setMaxCount(PROGRESS_ID, data.length);
-        data.forEach((data) => {
-          if (this.dataContainsLocation(data)) {
-            longitude = Number(data[LONGITUDE]);
-            latitude = Number(data[LATITUDE]);
+        this.progressService.setMaxCount(XSL_IMPORT_PROGRESS_ID, data.length);
+        // use for loop because of async function, which will not wait in a foreach
+        // eslint-disable-next-line @typescript-eslint/prefer-for-of
+        for (let index = 0; index < data.length; index++) {
+          const item = data[index];
+          if (this.dataContainsLocation(item)) {
+            longitude = Number(item[LONGITUDE]);
+            latitude = Number(item[LATITUDE]);
             this.geoPositionService.updateGeoPosition(
               longitude,
               latitude,
-              data[FIRST_NAME],
-              data,
-              data[INFO]
+              item[FIRST_NAME],
+              item,
+              item[INFO]
             );
-            const pictureColumns = Object.keys(data).filter((columnName) =>
+            const pictureColumns = Object.keys(item).filter((columnName) =>
               imagesFilter(columnName)
             );
             pictureColumns.forEach((columnName) =>
-              this.pictureStore.storePicture(data[columnName], columnName)
+              this.pictureStore.storePicture(item[columnName], columnName)
             );
-            this.progressService.increaseProgressByStep(PROGRESS_ID);
+            await this.progressService.increaseProgressByStep(
+              XSL_IMPORT_PROGRESS_ID
+            );
           } else {
-            const [street, houseNumber, city, postcode] = getAddress(data);
+            const [street, houseNumber, city, postcode] = getAddress(item);
             const geoPos = this.geoPositionService.getGeoPositionByAddress(
               city,
               postcode,
@@ -144,20 +159,22 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
                 0,
                 0,
                 geoPos.userName,
-                data,
+                item,
                 geoPos.geoPositionInfo
               );
-              this.progressService.increaseProgressByStep(PROGRESS_ID);
+              await this.progressService.increaseProgressByStep(
+                XSL_IMPORT_PROGRESS_ID
+              );
             } else {
               try {
-                requestLocation(data);
+                requestLocation(item);
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
               } catch (e) {
                 errorMessage.push(`${postcode}, ${houseNumber}, ${city}`);
               }
             }
           }
-        });
+        }
         if (longitude && latitude) {
           // Give it some time to process last geoPosition update
           // before moving the map

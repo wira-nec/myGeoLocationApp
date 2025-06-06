@@ -17,10 +17,13 @@ export class LoadPictureService {
         if (file.type.toLowerCase() === 'application/json') {
           const jsonData = JSON.parse(e.target?.result as string);
           Object.keys(jsonData).forEach((filename) => {
-            this.storePicture(jsonData[filename], filename);
+            this.storePicture(
+              jsonData[filename.toLowerCase()],
+              filename.toLowerCase()
+            );
           });
         } else {
-          this.storePicture(e.target?.result as string, filename);
+          this.storePicture(e.target?.result as string, filename.toLowerCase());
         }
       }
     };

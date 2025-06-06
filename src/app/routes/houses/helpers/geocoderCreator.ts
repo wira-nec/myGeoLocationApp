@@ -9,8 +9,10 @@ import {
 import { GeoPositionService } from '../../../core/services/geo-position.service';
 import { fromLonLat } from 'ol/proj';
 import { ToasterService } from '../../../core/services/toaster.service';
-import { ProgressService } from '../../../core/services/progress.service';
-import { PROGRESS_ID } from '../bottom-file-selection-sheet/bottom-file-selection-sheet.component';
+import {
+  ProgressService,
+  XSL_IMPORT_PROGRESS_ID,
+} from '../../../core/services/progress.service';
 
 // Minimal FeatureCollection type for GeoJSON features
 interface FeatureCollection {
@@ -104,7 +106,8 @@ export function geocoderCreator(
         }
         const errorMessage = `No address found for "${query}", please verify address in your excel sheet`;
         toaster.show('error', errorMessage, [], 300000);
-        progressService.increaseProgressByStep(PROGRESS_ID);
+        // Fire and forget, because handle response marked as async will not work.
+        progressService.increaseProgressByStep(XSL_IMPORT_PROGRESS_ID);
         return [];
       },
     };
@@ -128,7 +131,7 @@ export function geocoderCreator(
     debug: true,
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  geocoder.on('addresschosen', (evt: any) => {
+  geocoder.on('addresschosen', async (evt: any) => {
     const { postcode, street, housenumber, city, query } =
       evt.address.original.details;
     // try to get storedData by postcode or street and house number, city
@@ -140,7 +143,7 @@ export function geocoderCreator(
       query
     );
     if (errorMessage) {
-      toaster.show('warning', errorMessage, [], 300000);
+      toaster.show('warning', errorMessage, [], 0);
     }
     geoPositionService.updateGeoPosition(
       evt.place.lon,
@@ -149,7 +152,7 @@ export function geocoderCreator(
       storeData,
       JSON.stringify({ postcode, street, housenumber, city, query })
     );
-    progressService.increaseProgressByStep(PROGRESS_ID);
+    await progressService.increaseProgressByStep(XSL_IMPORT_PROGRESS_ID);
     console.log('responses', responses);
     // do only once a position view animation on first time last received address
     if (isGeocodeHandlingFinished) {
