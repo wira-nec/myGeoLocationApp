@@ -32,12 +32,17 @@ export class PicturesContentComponent implements OnInit {
   pictures(details: StoreData) {
     if (details) {
       const blobs = getBlobs(details);
-      getImageNames(details).map((imageName) =>
-        blobs.push(
-          // eslint-disable-next-line no-useless-escape
-          this.pictureService.getPicture(imageName.replace(/^.*[\\\/]/, ''))
-        )
-      );
+      getImageNames(details).forEach((imageName) => {
+        const blob = this.pictureService.getPicture(
+          imageName.replace(/^.*[\\\/]/, '')
+        );
+        if (!blobs.includes(blob)) {
+          blobs.push(
+            // eslint-disable-next-line no-useless-escape
+            this.pictureService.getPicture(imageName.replace(/^.*[\\\/]/, ''))
+          );
+        }
+      });
       return blobs;
     }
     return [];

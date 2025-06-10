@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, take } from 'rxjs';
+import { CompressImageService } from './compress-image.service';
 
 export type PictureStore = Record<string, string | ArrayBuffer>;
 
@@ -9,6 +10,8 @@ export type PictureStore = Record<string, string | ArrayBuffer>;
 export class LoadPictureService {
   private pictureStore: PictureStore = {};
   pictureStore$ = new BehaviorSubject<PictureStore>({});
+
+  constructor(private compressImage: CompressImageService) {}
 
   public loadPicture(file: File, filename: string) {
     const reader = new FileReader();
@@ -30,7 +33,13 @@ export class LoadPictureService {
     if (file.type.toLowerCase() === 'application/json') {
       reader.readAsText(file);
     } else {
-      reader.readAsDataURL(file);
+      this.compressImage
+        .compress(file)
+        .pipe(take(1))
+        .subscribe((compressedImage) => {
+          // now you can do upload the compressed image
+          this.storePicture(compressedImage, filename.toLowerCase());
+        });
     }
   }
 

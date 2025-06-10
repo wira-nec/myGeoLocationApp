@@ -2,6 +2,7 @@ import { Control } from 'ol/control';
 import {
   DataStoreService,
   getAddress,
+  getImageNames,
 } from '../../../../core/services/data-store.service';
 import { GeoPositionService } from '../../../../core/services/geo-position.service';
 import { ExcelService } from '../../../../core/services/excel.service';
@@ -47,6 +48,19 @@ export class ExportControl extends Control {
       if (dataStore.length > 0) {
         const sheet = dataStore.map((data) => {
           const [street, houseNumber, city, postcode] = getAddress(data);
+          const pictureNames = getImageNames(data);
+          let pictureBlobs = {};
+          if (pictureNames.length > 0) {
+            pictureNames.forEach((name) => {
+              const blob = this.loadPictureService.getPicture(name);
+              if (blob !== name) {
+                pictureBlobs = {
+                  ...pictureBlobs,
+                  [name]: blob,
+                };
+              }
+            });
+          }
           const geoPos = this.geoPositionService.getGeoPositionByAddress(
             city,
             postcode,
@@ -59,6 +73,7 @@ export class ExportControl extends Control {
               longitude: geoPos.coords.longitude.toString(),
               latitude: geoPos.coords.latitude.toString(),
               geoPositionInfo: geoPos.geoPositionInfo,
+              ...pictureBlobs,
             };
           } else {
             return {

@@ -1,12 +1,20 @@
 import { Injectable } from '@angular/core';
 import * as XLSX from 'xlsx';
-import { getDataStoreKeys, SHEET_NAME, StoreData } from './data-store.service';
+import {
+  getDataStoreKeys,
+  getImageNames,
+  SHEET_NAME,
+  StoreData,
+} from './data-store.service';
 import { mergeStoreData } from '../helpers/dataManipulations';
+import { ToasterService } from './toaster.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ExcelService {
+  constructor(private readonly toaster: ToasterService) {}
+
   /**
    * Generates an Excel file from the provided data.
    * The data is split into two sheets: one for general information and another for location details.
@@ -18,7 +26,19 @@ export class ExcelService {
     // So their will be 2 sheets in the excel file, one with the original information and one with the location information
     const [sheetData, locationInfoData] = data.reduce(
       (acc, item) => {
-        const { geoPositionInfo, longitude, latitude, error, ...rest } = item;
+        const pictureNames = getImageNames(item);
+        // Destructure geoPositionInfo, longitude, latitude, error, and all pictureNames from item
+        const { geoPositionInfo, longitude, latitude, error, ...restAll } =
+          item;
+        // Extract picture fields and remove them from restAll
+        const pictureFields: Record<string, string> = {};
+        pictureNames.forEach((name) => {
+          if (name in restAll) {
+            pictureFields[name] = restAll[name];
+            delete restAll[name];
+          }
+        });
+        const rest = restAll;
         acc[0].push(rest);
         // Add also postcode, city, house number and street to the second sheet for link to original sheet
         const [address, street, postcode, houseNumber, city] =
@@ -33,6 +53,7 @@ export class ExcelService {
           longitude,
           latitude,
           error,
+          ...pictureFields,
         });
         return acc;
       },
@@ -59,7 +80,15 @@ export class ExcelService {
     const locationInfoSheet: XLSX.WorkSheet =
       XLSX.utils.json_to_sheet(locationInfoData);
     XLSX.utils.book_append_sheet(workbook, locationInfoSheet, 'LocationInfo');
-    XLSX.writeFile(workbook, fileName);
+    try {
+      XLSX.writeFile(workbook, fileName);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (e: any) {
+      this.toaster.show(
+        'error',
+        `Failed to export excel document due to: ${e.message}`
+      );
+    }
   }
 
   public importExcelFile(
