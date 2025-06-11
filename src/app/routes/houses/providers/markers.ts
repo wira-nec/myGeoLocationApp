@@ -16,6 +16,9 @@ import Map from 'ol/Map';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import VectorLayer from 'ol/layer/Vector';
 import Vector from 'ol/source/Vector';
+import { Coordinate } from 'ol/coordinate';
+
+export const SEARCH_FOR_MARKER_ID = 'searchedFor';
 
 const style = (
   feature: Feature,
@@ -34,16 +37,18 @@ const style = (
 const getHouseStyle = (labelText: string): StyleLike | undefined => {
   return new Style({
     image: new Icon({
-      src: 'assets/icons8-house-30.png',
-      size: [50, 50],
-      anchor: [0, 0],
+      src: 'assets/icons8-house-48.png',
+      size: [48, 48],
+      anchor: [0.5, 48],
+      anchorXUnits: 'fraction',
+      anchorYUnits: 'pixels',
       opacity: 0.7,
       scale: 0.5,
     }),
     text: new Text({
       text: labelText,
       font: 'bold 12px Calibri,sans-serif',
-      offsetY: -5,
+      offsetY: -29,
       fill: new Fill({
         color: labelText === 'Unknown' ? 'red' : 'blue',
       }),
@@ -60,6 +65,32 @@ const getDotStyle = (radius: number, isRed: boolean): StyleLike | undefined => {
     image: new CircleStyle({
       radius: radius,
       fill: new Fill({ color: isRed ? 'red' : 'black' }),
+      stroke: new Stroke({
+        color: 'white',
+        width: 2,
+      }),
+    }),
+  });
+};
+
+const getLocatorStyle = (labelText: string): StyleLike | undefined => {
+  return new Style({
+    image: new Icon({
+      src: 'assets/icons8-marker-50.png',
+      size: [50, 50],
+      anchor: [0.5, 50],
+      anchorXUnits: 'fraction',
+      anchorYUnits: 'pixels',
+      opacity: 0.7,
+      scale: 0.5,
+    }),
+    text: new Text({
+      text: labelText,
+      font: 'bold 12px Calibri,sans-serif',
+      offsetY: -30,
+      fill: new Fill({
+        color: labelText === 'Unknown' ? 'red' : 'blue',
+      }),
       stroke: new Stroke({
         color: 'white',
         width: 2,
@@ -98,13 +129,15 @@ export class Markers {
 
   public updateMarkerStyle() {
     Object.keys(this.markers).forEach((key) => {
-      const geoPos = this.geoPositionService.getGeoPosition(key);
-      const labelText = this.getAddressLabel(
-        geoPos,
-        geoPos?.userName || 'Unknown'
-      );
-      style(this.markers[key], labelText, this.zoomLevelSingleMarker);
-      this.markers[key].changed();
+      if (key !== SEARCH_FOR_MARKER_ID) {
+        const geoPos = this.geoPositionService.getGeoPosition(key);
+        const labelText = this.getAddressLabel(
+          geoPos,
+          geoPos?.userName || 'Unknown'
+        );
+        style(this.markers[key], labelText, this.zoomLevelSingleMarker);
+        this.markers[key].changed();
+      }
     });
     this.refreshVectorLayer();
   }
@@ -143,6 +176,13 @@ export class Markers {
         this.zoomLevelSingleMarker
       );
     });
+    this.refreshVectorLayer();
+  }
+
+  public addMarker(id: string | number, coords: Coordinate, address: string) {
+    this.markers[id] = new Feature<Geometry>();
+    this.markers[id].setGeometry(new Point(fromLonLat(coords)));
+    this.markers[id].setStyle(getLocatorStyle(address));
     this.refreshVectorLayer();
   }
 

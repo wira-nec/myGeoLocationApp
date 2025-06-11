@@ -5,7 +5,6 @@ import {
   DataStoreService,
   StoreData,
 } from '../../../core/services/data-store.service';
-import { LoadPictureService } from '../../../core/services/load-picture.service';
 import { ImportProgressBarComponent } from '../import-progress-bar/import-progress-bar.component';
 import {
   PICTURES_IMPORT_PROGRESS_ID,
@@ -37,12 +36,8 @@ export class BottomFileSelectionSheetComponent implements OnInit {
   private isDataStoreLoaded: boolean | undefined = undefined;
   private arePicturesLoaded: boolean | undefined = undefined;
   private readonly destroyRef = inject(DestroyRef);
-  private importRunning = () =>
-    this.progressService.isProgressRunning(XSL_IMPORT_PROGRESS_ID) ||
-    this.progressService.isProgressRunning(PICTURES_IMPORT_PROGRESS_ID);
 
   constructor(
-    private readonly loadPictureService: LoadPictureService,
     private readonly dataStoreService: DataStoreService,
     private readonly progressService: ProgressService,
     private readonly excelService: ExcelService

@@ -4,6 +4,7 @@
   flex: 1 1 100%;
   width: 100%;
 }
+
 .main {
   display: flex;
   flex-direction: column;
@@ -54,4 +55,11 @@
 }
 ::ng-deep .ol-touch .center-map {
   top: 150px;
+}
+::ng-deep .magnifier {
+  top: 140px;
+  left: 0.5em;
+}
+::ng-deep .ol-touch .magnifier {
+  top: 185px;
 }
