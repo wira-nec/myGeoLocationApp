@@ -1,9 +1,4 @@
 import { Injectable } from '@angular/core';
-import {
-  ProgressService,
-  XSL_IMPORT_PROGRESS_ID,
-} from '../services/progress.service';
-import { ToasterService } from '../services/toaster.service';
 
 const URL = 'https://photon.komoot.io/api/';
 
@@ -26,11 +21,8 @@ interface FeatureCollection {
   };
 }
 
-export function photonProviderFactory(
-  toaster: ToasterService,
-  progressService: ProgressService
-) {
-  return new PhotonProvider(toaster, progressService);
+export function photonProviderFactory() {
+  return new PhotonProvider();
 }
 
 @Injectable({
@@ -40,10 +32,6 @@ export class PhotonProvider {
   responses: Record<string, FeatureCollection[]> = {};
   outstandingRequests: string[] = [];
 
-  constructor(
-    private readonly toaster: ToasterService,
-    private readonly progressService: ProgressService
-  ) {}
   /**
    * Get the url, query string parameters and optional JSONP callback
    * name to be used to perform a search.
@@ -98,9 +86,18 @@ export class PhotonProvider {
       }));
     }
     const errorMessage = `No address found for "${query}", please verify address in your excel sheet`;
-    this.toaster.show('error', errorMessage, [], 300000);
-    // Fire and forget, because handle response marked as async will not work.
-    this.progressService.increaseProgressByStep(XSL_IMPORT_PROGRESS_ID);
-    return [];
+    return [
+      {
+        lon: 0,
+        lat: 0,
+        address: {},
+        original: {
+          details: {
+            error: errorMessage,
+            ['query']: query,
+          },
+        },
+      },
+    ];
   }
 }

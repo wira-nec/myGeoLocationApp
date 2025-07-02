@@ -4,6 +4,7 @@
   bottom: 20px;
   width: 480px;
   height: fit-content;
+  max-height: calc(100vh - 40px);
   padding-bottom: 20px;
   z-index: 1000;
   position: absolute;

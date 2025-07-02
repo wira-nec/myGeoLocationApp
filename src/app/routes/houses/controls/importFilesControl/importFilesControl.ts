@@ -2,12 +2,14 @@ import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { Control } from 'ol/control';
 import { BottomFileSelectionSheetComponent } from '../../bottom-file-selection-sheet/bottom-file-selection-sheet.component';
 import { inject } from '@angular/core';
+import { SearchInputService } from '../../../../core/services/search-input.service';
 
 export class ImportFilesControl extends Control {
   /**
    * @param {Object} [opt_options] Control options.
    */
   constructor(opt_options: object = {}) {
+    const searchInputService = inject(SearchInputService);
     const button = document.createElement('button');
     button.innerHTML =
       '<img style="height: 1em;" src="assets/folder-plus-circle.svg" alt="^" title="Select your import files (excel/foto\'s) to show on the map" />';
@@ -20,8 +22,10 @@ export class ImportFilesControl extends Control {
       target: (opt_options as any).target,
     });
     const bottomSheet = inject(MatBottomSheet);
-    const handleImport = () =>
+    const handleImport = () => {
+      searchInputService.setVisibility(false);
       bottomSheet.open(BottomFileSelectionSheetComponent);
+    };
     button.addEventListener('click', handleImport.bind(this), false);
     handleImport();
   }
