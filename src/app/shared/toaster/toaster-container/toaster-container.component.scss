@@ -1,8 +1,10 @@
 .toaster-container {
   background-color: transparent;
   opacity: 1;
-  bottom: 10px;
+  bottom: 20px;
   width: 480px;
+  height: fit-content;
+  padding-bottom: 20px;
   z-index: 1000;
   position: absolute;
   top: 10px;
