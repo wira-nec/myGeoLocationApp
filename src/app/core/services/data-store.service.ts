@@ -155,13 +155,34 @@ export const getAllKeys = (data: StoreData[]) => {
 export class DataStoreService {
   private dataStore: StoreData[];
   private lastNumberOfDataRecordsAdded = 0;
+  private selectedData: StoreData | undefined;
+
+  // Flag to indicate if the data store is in edit mode
+  // This can be used to toggle between viewing and editing the data store.
+  editMode$ = new Subject<boolean>();
 
   // Observable to emit new data store updates
   // It does not emit the whole data store, but only the new data added.
   dataStore$ = new Subject<StoreData[]>();
-  keys = {};
+
   constructor() {
     this.dataStore = [];
+  }
+
+  public setEditMode(mode: boolean) {
+    this.editMode$.next(mode);
+  }
+
+  public isInEditMode() {
+    return this.editMode$.observed;
+  }
+
+  public setSelectedData(data: StoreData | undefined) {
+    this.selectedData = data;
+  }
+
+  public getSelectedData(): StoreData | undefined {
+    return this.selectedData;
   }
 
   public getIncreasedDataStoreSize() {
@@ -206,9 +227,17 @@ export class DataStoreService {
     console.log('Merged data added', mergedData);
     this.lastNumberOfDataRecordsAdded =
       mergedData.length - this.dataStore.length;
-    this.keys = getAllKeys(this.dataStore);
     this.dataStore = mergedData;
     this.dataStore$.next(newData);
+  }
+
+  public updateData(updatedData: StoreData) {
+    const { id, ...storeData } = updatedData;
+    this.dataStore[Number(id)] = mergeStoreData(
+      [storeData],
+      [this.dataStore[Number(id)]]
+    )[0];
+    this.dataStore$.next([this.dataStore[Number(id)]]);
   }
 
   public get(filter: StoreData): StoreData | undefined {

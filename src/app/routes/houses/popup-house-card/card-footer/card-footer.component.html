@@ -18,6 +18,19 @@
       class="upload-button"
       matIconButton
       aria-label="Photo icon"
+      (click)="editMode($event, details)"
+    >
+      <mat-icon
+        svgIcon="edit-mode"
+        aria-hidden="false"
+        aria-label="Edit excel data"
+      ></mat-icon>
+    </button>
+
+    <button
+      class="upload-button"
+      matIconButton
+      aria-label="Photo icon"
       (click)="uploadPicture()"
     >
       <input
