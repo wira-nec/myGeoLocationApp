@@ -51,7 +51,7 @@ export class ExcelGridComponent {
 
   defaultColDef: ColDef = {
     filter: true,
-    minWidth: 100,
+    minWidth: 60,
     flex: 1,
   };
   inEditMode = false;
@@ -118,7 +118,6 @@ export class ExcelGridComponent {
           this.colDefs = fieldNames.map((fieldName) => ({
             headerName: fieldName,
             field: fieldName,
-            filter: fieldName !== 'id',
             hide: fieldName === 'id',
             editable: true,
             cellEditor: 'agTextCellEditor',
@@ -126,9 +125,14 @@ export class ExcelGridComponent {
               maxLength: 20,
             },
           }));
+          if (this.selectedIndex !== undefined) {
+            // If data from DataStoreService is selected, set the filter model to null and select the row.
+            this.gridApi.setFilterModel(null); // Clear any existing filters
+          }
           this.gridApi.setGridOption('columnDefs', this.colDefs);
           this.gridApi.setGridOption('rowData', this.rowData);
           if (this.selectedIndex !== undefined) {
+            // Select the row based on the selected index.
             this.gridApi
               .getRowNode(this.selectedIndex?.toString())
               ?.setSelected(true);
