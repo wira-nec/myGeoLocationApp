@@ -71,14 +71,6 @@ export class ExcelGridComponent {
   ) {
     this.inEditMode = this.dataStoreService.isInEditMode();
   }
-  private transformDataKeys(obj: StoreData) {
-    return Object.keys(obj).reduce(function (o: StoreData, prop) {
-      const value = obj[prop];
-      const newProp = prop.replace('.', ' ');
-      o[newProp] = value;
-      return o;
-    }, {});
-  }
 
   rowSelection = (): RowSelectionOptions => ({
     mode: 'singleRow',
@@ -122,13 +114,12 @@ export class ExcelGridComponent {
             };
           });
           const fieldNames = getAllKeys(this.rowData);
-          this.rowData = this.rowData.map((data) =>
-            this.transformDataKeys(data)
-          );
           // Column Definitions: Defines & controls grid columns.
           this.colDefs = fieldNames.map((fieldName) => ({
             headerName: fieldName,
-            field: fieldName.replace('.', ' '),
+            field: fieldName,
+            filter: fieldName !== 'id',
+            hide: fieldName === 'id',
             editable: true,
             cellEditor: 'agTextCellEditor',
             cellEditorParams: {
@@ -137,27 +128,32 @@ export class ExcelGridComponent {
           }));
           this.gridApi.setGridOption('columnDefs', this.colDefs);
           this.gridApi.setGridOption('rowData', this.rowData);
-          if (this.selectedIndex) {
+          if (this.selectedIndex !== undefined) {
             this.gridApi
               .getRowNode(this.selectedIndex?.toString())
               ?.setSelected(true);
           }
           setTimeout(() => {
             this.gridApi.autoSizeAllColumns();
-          }, 10);
-          setTimeout(() => {
             if (this.selectedIndex !== undefined) {
-              // If a row is selected, scroll to that row and select it.
-              this.gridApi.ensureIndexVisible(this.selectedIndex, 'middle');
+              // Show the page for the selected row.
+              const pageSize = this.gridApi.paginationGetPageSize();
+              const page = Math.floor(this.selectedIndex / pageSize); // page is 0 based
+              console.log('pageSize', pageSize);
+              console.log('selectedIndex', this.selectedIndex);
+              console.log('page', page);
+              console.log('totalPages', this.gridApi.paginationGetTotalPages());
+              this.gridApi.paginationGoToPage(page);
+              this.gridApi.ensureIndexVisible(this.selectedIndex);
             }
-          }, 20);
+          }, 10);
         }
       });
   }
 
   onGetRowId(params: GetRowIdParams<StoreData, Context>): string {
     // Use the 'id' field from the data as the unique identifier for the row
-    return params.data['id'];
+    return params.data['id'] as string;
   }
 
   onCellValueChanged(event: CellValueChangedEvent<StoreData>): void {
@@ -191,17 +187,4 @@ export class ExcelGridComponent {
   onRowSelected(event: RowSelectedEvent<StoreData, ColDef>): void {
     this.dataStoreService.setSelectedData(event.data);
   }
-
-  onFirstDataRendered = () => {
-    if (this.inEditMode && this.selectedIndex !== undefined) {
-      setTimeout(() => {
-        const pageSize = this.gridApi.paginationGetPageSize();
-        const page = Math.floor(this.rowData.length / pageSize) - 1;
-        // Show the page for the selected row.
-        console.log('page', page);
-        console.log('totalPages', this.gridApi.paginationGetTotalPages());
-        this.gridApi.paginationGoToPage(page);
-      }, 100);
-    }
-  };
 }
