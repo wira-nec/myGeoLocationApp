@@ -25,6 +25,7 @@ export class BasicEventHandlers {
   private info!: HTMLElement;
   private overlay!: Overlay;
   private tooltipSwitchedOn = true;
+  private onClickHandler: OnClickHandler | null = null;
 
   constructor(
     private readonly geoPositionService: GeoPositionService,
@@ -62,6 +63,7 @@ export class BasicEventHandlers {
       this.map = map;
     }
     if (map && onClick) {
+      this.onClickHandler = onClick;
       this.overlay = new Overlay({
         element: nativeElement,
         autoPan: true,
@@ -73,49 +75,34 @@ export class BasicEventHandlers {
         },
         margin: 100,
       });
-      this.overlay.on('propertychange', () => this.switchTooltipOnOff());
-      map.on('click', (evt) => this.showPopUp(evt, map, this.overlay, onClick));
+      this.overlay.on('propertychange', this.switchTooltipOnOff.bind(this));
+      map.on('click', this.showPopUp.bind(this));
     }
   }
 
   public closePopup() {
     if (this.overlay) {
       this.overlay.setPosition(undefined);
-      this.map.on('pointermove', this.pointerMove);
-      this.tooltipSwitchedOn = true;
+      this.tooltipSwitchedOn = false;
+      this.switchTooltipOnOff();
+      this.map.removeOverlay(this.overlay);
     }
   }
 
   private showPopUp(
-    event: MapBrowserEvent<KeyboardEvent | WheelEvent | PointerEvent>,
-    map: Map,
-    overlay: Overlay,
-    callback: OnClickHandler
+    event: MapBrowserEvent<KeyboardEvent | WheelEvent | PointerEvent>
   ) {
-    if (map) {
-      if (overlay) {
-        map.removeOverlay(overlay);
+    if (this.map) {
+      if (this.overlay && this.onClickHandler) {
         if (this.currentFeature) {
-          this.handleFeature(
-            this.currentFeature,
-            callback,
-            overlay,
-            map,
-            this.currentCoordinates
-          );
+          this.handleFeature(this.currentFeature, this.currentCoordinates);
         } else {
-          const pixel = map.getEventPixel(event.originalEvent);
+          const pixel = this.map.getEventPixel(event.originalEvent);
           if (pixel) {
-            map.forEachFeatureAtPixel(
+            this.map.forEachFeatureAtPixel(
               pixel,
               (feature) => {
-                this.handleFeature(
-                  feature,
-                  callback,
-                  overlay,
-                  map,
-                  event.coordinate
-                );
+                this.handleFeature(feature, event.coordinate);
               },
               {
                 hitTolerance: this.fontSizeService.fontSize$.value < 3 ? 10 : 0,
@@ -129,14 +116,11 @@ export class BasicEventHandlers {
 
   private handleFeature(
     feature: FeatureLike,
-    callback: OnClickHandler,
-    overlay: Overlay,
-    map: Map,
     coordinate: Coordinate | undefined
   ) {
     const uid = getUid(feature);
     const geoPositionId = this.geoPositionService.getIdByUid(uid);
-    if (geoPositionId) {
+    if (geoPositionId && this.onClickHandler) {
       const selectedGeoPos =
         this.geoPositionService.getGeoPosition(geoPositionId);
       if (!selectedGeoPos?.details) {
@@ -152,7 +136,7 @@ export class BasicEventHandlers {
         const address_not_found = selectedGeoPos
           ? `Address "${geoInfo.street} ${geoInfo.housenumber}, ${geoInfo.postcode} ${geoInfo.city}" not found`
           : 'No address found';
-        callback({
+        this.onClickHandler({
           ['Error']: `${address_not_found}. Please verify address in excel sheet.`,
           [POSTCODE]: geoInfo.postcode,
           [CITY]: geoInfo.city,
@@ -160,11 +144,11 @@ export class BasicEventHandlers {
           [STREET]: geoInfo.street,
         });
       } else {
-        callback(selectedGeoPos.details);
+        this.onClickHandler(selectedGeoPos.details);
       }
-      if (overlay && map) {
-        overlay.setPosition(coordinate);
-        map.addOverlay(overlay);
+      if (this.overlay && this.map) {
+        this.overlay.setPosition(coordinate);
+        this.map.addOverlay(this.overlay);
         this.reset();
       }
     }
@@ -184,8 +168,7 @@ export class BasicEventHandlers {
     this.currentCoordinates = evt.coordinate;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private displayFeatureInfo(pixel: Pixel, target: any) {
+  private displayFeatureInfo(pixel: Pixel, target: EventTarget | null) {
     if (this.info && this.map && target) {
       const feature = this.map.forEachFeatureAtPixel(
         pixel,
@@ -218,8 +201,9 @@ export class BasicEventHandlers {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private pointerMove = (evt: any) => this.handlePointerMove(evt);
+  private pointerMove = (
+    evt: MapBrowserEvent<KeyboardEvent | WheelEvent | PointerEvent>
+  ) => this.handlePointerMove(evt);
 
   private switchTooltipOnOff(): void {
     setTimeout(() => {

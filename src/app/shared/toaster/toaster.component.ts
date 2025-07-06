@@ -13,4 +13,13 @@ export class ToasterComponent {
   @Input() index!: number;
 
   @Output() remove = new EventEmitter<number>();
+
+  stopPropagation(evt: Event) {
+    evt.stopPropagation();
+  }
+
+  close(evt: Event) {
+    evt.stopPropagation();
+    this.remove.emit(this.index);
+  }
 }

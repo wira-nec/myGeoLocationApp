@@ -11,6 +11,7 @@ import {
 import { DomSanitizer } from '@angular/platform-browser';
 import { LoadPictureService } from '../../../../core/services/load-picture.service';
 import { MapEventHandlers } from '../../providers/mapEventHandlers';
+import { BasicEventHandlers } from '../../providers/basicEventHandler';
 
 const ADD_PHOTO = `
   <svg
@@ -41,6 +42,13 @@ const EDIT = `
 @Component({
   selector: 'app-card-footer',
   imports: [CommonModule, MatIcon],
+  providers: [
+    MapEventHandlers,
+    {
+      provide: MapEventHandlers,
+      useExisting: BasicEventHandlers,
+    },
+  ],
   templateUrl: './card-footer.component.html',
   styleUrl: './card-footer.component.scss',
 })

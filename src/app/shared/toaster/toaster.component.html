@@ -1,12 +1,17 @@
-<div class="toast toast-{{ toast.type }}">
+<div
+  class="toast toast-{{ toast.type }}"
+  tabindex="0"
+  (click)="stopPropagation($event)"
+  (keyup.enter)="stopPropagation($event)"
+>
   <h4 class="toast-heading">{{ toast.title }}</h4>
   <ul class="body-container">
     <li class="body" *ngFor="let body of toast.body">{{ body }}</li>
   </ul>
   <a
     class="close"
-    (click)="remove.emit(index)"
-    (keypress)="remove.emit(index)"
+    (click)="close($event)"
+    (keypress)="close($event)"
     tabindex="{0}"
     role="button"
     >&times;</a

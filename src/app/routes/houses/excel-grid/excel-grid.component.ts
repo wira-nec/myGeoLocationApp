@@ -92,6 +92,8 @@ export class ExcelGridComponent {
             this.selectedIndex = this.dataStore.findIndex((data) =>
               isEqual(data, selectedData)
             );
+          } else {
+            this.selectedIndex = undefined;
           }
           // Row Data: The data to be displayed.
           this.rowData = this.dataStore.map((data, index) => {
@@ -136,19 +138,25 @@ export class ExcelGridComponent {
             this.gridApi
               .getRowNode(this.selectedIndex?.toString())
               ?.setSelected(true);
+          } else {
+            // deselect any previously selected row.
+            this.gridApi.deselectAll();
           }
           setTimeout(() => {
             this.gridApi.autoSizeAllColumns();
             if (this.selectedIndex !== undefined) {
               // Show the page for the selected row.
               const pageSize = this.gridApi.paginationGetPageSize();
-              const page = Math.floor(this.selectedIndex / pageSize); // page is 0 based
+              const page = Math.floor((this.selectedIndex || 0) / pageSize); // page is 0 based
               console.log('pageSize', pageSize);
               console.log('selectedIndex', this.selectedIndex);
               console.log('page', page);
               console.log('totalPages', this.gridApi.paginationGetTotalPages());
               this.gridApi.paginationGoToPage(page);
               this.gridApi.ensureIndexVisible(this.selectedIndex);
+            } else {
+              // If no row is selected, go to the first page.
+              this.gridApi.paginationGoToPage(0);
             }
           }, 10);
         }

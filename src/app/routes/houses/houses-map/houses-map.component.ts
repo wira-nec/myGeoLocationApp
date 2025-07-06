@@ -45,6 +45,9 @@ import { TooltipInfoComponentComponent } from '../tooltip-info-component/tooltip
 import { SearchControl } from '../controls/searchControl/search-control';
 import { GeoCoderService } from '../../../core/services/geo-coder.service';
 import { SearchInputService } from '../../../core/services/search-input.service';
+import { EditExcelControl } from '../controls/edit-excel-control/edit-excel-control.component';
+import { MapEventHandlers } from '../providers/mapEventHandlers';
+import { BasicEventHandlers } from '../providers/basicEventHandler';
 
 @Component({
   selector: 'app-houses-map',
@@ -56,7 +59,15 @@ import { SearchInputService } from '../../../core/services/search-input.service'
   ],
   templateUrl: './houses-map.component.html',
   styleUrl: './houses-map.component.scss',
-  providers: [Markers, GeoCoderService],
+  providers: [
+    Markers,
+    GeoCoderService,
+    MapEventHandlers,
+    {
+      provide: MapEventHandlers,
+      useExisting: BasicEventHandlers,
+    },
+  ],
 })
 export class HousesMapComponent implements OnInit, AfterViewInit {
   map!: Map;
@@ -68,6 +79,9 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   private readonly searchControl = new SearchControl({
     callback: () => this.showSearchControl(),
   });
+  private readonly editExcelControl = new EditExcelControl({
+    callback: (evt: Event) => this.showExcelGrid(evt),
+  });
   private readonly markers = inject(Markers);
   private readonly geoCoderService = inject(GeoCoderService);
 
@@ -78,7 +92,8 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
     private readonly toaster: ToasterService,
     private readonly progressService: ProgressService,
     private readonly renderer: Renderer2,
-    private readonly searchInputService: SearchInputService
+    private readonly searchInputService: SearchInputService,
+    private readonly mapEventHandlers: MapEventHandlers
   ) {
     this.destroyRef = inject(DestroyRef);
     effect(() => {
@@ -222,6 +237,13 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
     }
   }
 
+  private showExcelGrid(evt: Event) {
+    evt.stopPropagation();
+    this.dataStoreService.setSelectedData(undefined);
+    this.dataStoreService.setEditMode(true);
+    this.mapEventHandlers.closePopup();
+  }
+
   private initializeMap = () => {
     //
     // Create a map with an OpenStreetMap-layer,
@@ -239,6 +261,7 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
         this.exportFileControl,
         this.centerControl,
         this.searchControl,
+        this.editExcelControl,
       ]),
       target: 'map',
       view: new View({

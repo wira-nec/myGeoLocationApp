@@ -44,7 +44,8 @@ export class CardHeaderComponent {
     return '';
   }
 
-  closePopup() {
+  closePopup(evt: Event) {
+    evt.stopPropagation();
     this.mapEventHandlers.closePopup();
   }
 }
