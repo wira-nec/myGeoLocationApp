@@ -1,0 +1,39 @@
+section {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+}
+
+.button-row {
+  background: color-mix(in srgb, #fff, #181d1f 2%);
+  border: none;
+  border-radius: 8px;
+}
+
+.button-row .mat-mdc-button-base {
+  margin: 0;
+}
+
+.flex-container {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.flex-container button {
+  margin: 8px;
+  border-radius: 8px;
+  border-color: wheat;
+}
+
+.close-icon {
+  color: red;
+  float: right;
+  cursor: pointer;
+}
+
+.close-button {
+  border-style: hidden;
+  background-color: transparent;
+  margin: 4px !important;
+}

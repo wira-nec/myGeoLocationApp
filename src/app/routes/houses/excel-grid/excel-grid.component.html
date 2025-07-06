@@ -1,6 +1,7 @@
-<div appOverflowPane width="70%" [show]="inEditMode">
+<div appOverflowPane width="70%" offset="0" [show]="inEditMode">
+  <app-top-buttons [gridApi]="gridApi" />
   <ag-grid-angular
-    style="width: 100%; height: 100%"
+    style="width: 100%; height: calc(100% - 49px)"
     [defaultColDef]="defaultColDef"
     [paginationAutoPageSize]="true"
     [pagination]="true"

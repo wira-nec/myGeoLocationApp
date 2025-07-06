@@ -6,7 +6,7 @@ import { Directive, HostBinding, Input } from '@angular/core';
 export class OverflowPaneDirective {
   @Input() show = false;
   @Input() position: 'left' | 'right' = 'left';
-  @Input() offset = 10;
+  @Input() offset = '10';
   @HostBinding('class')
   className = 'overflow-pane-css-class';
   // change the display attribute of the class to 'none' or 'unset' based on the show property

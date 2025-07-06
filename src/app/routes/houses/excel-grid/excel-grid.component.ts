@@ -27,13 +27,19 @@ import { OverflowPaneDirective } from '../../../directives/overflow-pane.directi
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import { CommonModule } from '@angular/common';
 import { isEqual } from 'lodash';
+import { TopButtonsComponent } from './top-buttons/top-buttons.component';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 @Component({
   selector: 'app-excel-grid',
   standalone: true,
-  imports: [AgGridAngular, OverflowPaneDirective, CommonModule],
+  imports: [
+    AgGridAngular,
+    OverflowPaneDirective,
+    CommonModule,
+    TopButtonsComponent,
+  ],
   templateUrl: './excel-grid.component.html',
   styleUrl: './excel-grid.component.scss',
 })
