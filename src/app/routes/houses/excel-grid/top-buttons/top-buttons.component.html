@@ -1,8 +1,70 @@
 <div class="button-row">
   <div class="flex-container">
-    <button matMiniFab aria-label="Button with a filter off icon">
-      <mat-icon (click)="clearFilters()">filter_list_off</mat-icon>
-    </button>
+    <div>
+      <button
+        matMiniFab
+        aria-hidden="false"
+        aria-label="Button with a filter off icon"
+        matTooltip="Clear filters"
+      >
+        <mat-icon (click)="clearFilters()">filter_list_off</mat-icon>
+      </button>
+      <button
+        matMiniFab
+        aria-hidden="false"
+        aria-label="Button with a backup table icon"
+        matTooltip="Save grid settings"
+      >
+        <mat-icon (click)="saveSettings()">backup_table</mat-icon>
+      </button>
+      <button
+        matMiniFab
+        aria-hidden="false"
+        aria-label="Button with a table icon"
+        matTooltip="Restore grid settings"
+      >
+        <mat-icon
+          fontSet="material-symbols-outlined"
+          (click)="restoreSettings()"
+          >table</mat-icon
+        >
+      </button>
+      <button
+        matMiniFab
+        aria-label="Button with a reset icon"
+        matTooltip="Reset grid settings"
+      >
+        <mat-icon fontSet="material-symbols-outlined" (click)="resetSettings()"
+          >reset_settings</mat-icon
+        >
+      </button>
+      <button
+        matMiniFab
+        aria-label="Button with a undo icon"
+        matTooltip="Undo"
+        [disabled]="disableUndoButton"
+      >
+        <mat-icon
+          fontSet="material-symbols-outlined"
+          (click)="undo()"
+          [matBadge]="undoCounter"
+          >undo</mat-icon
+        >
+      </button>
+      <button
+        matMiniFab
+        aria-label="Button with a redo icon"
+        matTooltip="Redo"
+        [disabled]="disableRedoButton"
+      >
+        <mat-icon
+          fontSet="material-symbols-outlined"
+          (click)="redo()"
+          [matBadge]="redoCounter"
+          >redo</mat-icon
+        >
+      </button>
+    </div>
     <button
       class="close-button"
       mat-icon-button

@@ -1,16 +1,21 @@
 <div appOverflowPane width="70%" offset="0" [show]="inEditMode">
-  <app-top-buttons [gridApi]="gridApi" />
+  <app-top-buttons
+    [gridApi]="gridApi"
+    [firstDataRendered$]="firstDataRendered$"
+  />
   <ag-grid-angular
     style="width: 100%; height: calc(100% - 49px)"
     [defaultColDef]="defaultColDef"
     [paginationAutoPageSize]="true"
     [pagination]="true"
     [suppressFieldDotNotation]="true"
-    [rowSelection]="rowSelection()"
+    [undoRedoCellEditing]="true"
     [autoSizeStrategy]="autoSizeStrategy"
-    (gridReady)="onGridReady($event)"
     [getRowId]="onGetRowId"
+    [rowSelection]="rowSelection()"
+    (gridReady)="onGridReady($event)"
     (cellValueChanged)="onCellValueChanged($event)"
     (rowSelected)="onRowSelected($event)"
+    (firstDataRendered)="onFirstDataRendered($event)"
   />
 </div>

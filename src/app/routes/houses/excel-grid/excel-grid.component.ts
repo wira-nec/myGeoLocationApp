@@ -10,6 +10,7 @@ import {
   CellValueChangedEvent,
   ColDef,
   Context,
+  FirstDataRenderedEvent,
   GetRowIdParams,
   GridApi,
   GridReadyEvent,
@@ -28,6 +29,7 @@ import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import { CommonModule } from '@angular/common';
 import { isEqual } from 'lodash';
 import { TopButtonsComponent } from './top-buttons/top-buttons.component';
+import { Subject } from 'rxjs';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -67,6 +69,7 @@ export class ExcelGridComponent {
     type: 'fitCellContents',
   };
   gridApi!: GridApi<StoreData>;
+  firstDataRendered$ = new Subject<FirstDataRenderedEvent<StoreData, ColDef>>();
 
   private dataStore: StoreData[] = [];
   private selectedIndex: number | undefined;
@@ -130,7 +133,7 @@ export class ExcelGridComponent {
             editable: true,
             cellEditor: 'agTextCellEditor',
             cellEditorParams: {
-              maxLength: 20,
+              maxLength: 100,
             },
           }));
           if (this.selectedIndex !== undefined) {
@@ -167,6 +170,10 @@ export class ExcelGridComponent {
           }, 10);
         }
       });
+  }
+
+  onFirstDataRendered($event: FirstDataRenderedEvent<StoreData, ColDef>) {
+    this.firstDataRendered$.next($event);
   }
 
   onGetRowId(params: GetRowIdParams<StoreData, Context>): string {
