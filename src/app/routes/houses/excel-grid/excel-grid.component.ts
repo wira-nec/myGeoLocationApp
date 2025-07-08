@@ -14,6 +14,7 @@ import {
   GetRowIdParams,
   GridApi,
   GridReadyEvent,
+  ITooltipParams,
   RowSelectedEvent,
   RowSelectionOptions,
   SizeColumnsToContentStrategy,
@@ -138,6 +139,8 @@ export class ExcelGridComponent {
             cellEditorParams: {
               maxLength: 100,
             },
+            headerTooltip: fieldName,
+            tooltipValueGetter: (p: ITooltipParams) => p.value,
           }));
           if (this.selectedIndex !== undefined) {
             // If data from DataStoreService is selected, set the filter model to null and select the row.
