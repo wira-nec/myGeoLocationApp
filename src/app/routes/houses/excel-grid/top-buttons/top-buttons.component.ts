@@ -1,8 +1,17 @@
-import { Component, DestroyRef, inject, Input, OnInit } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  EventEmitter,
+  inject,
+  Input,
+  OnInit,
+  Output,
+} from '@angular/core';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import {
   CellValueChangedEvent,
   ColDef,
@@ -22,7 +31,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-top-buttons',
-  imports: [MatButtonModule, MatIconModule, MatTooltipModule, MatBadgeModule],
+  imports: [
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatBadgeModule,
+    MatCheckboxModule,
+  ],
   templateUrl: './top-buttons.component.html',
   styleUrl: './top-buttons.component.scss',
 })
@@ -32,6 +47,7 @@ export class TopButtonsComponent implements OnInit {
   @Input() firstDataRendered$!: Subject<
     FirstDataRenderedEvent<StoreData, ColDef>
   >;
+  @Output() gridStyleChange = new EventEmitter<string>();
 
   private readonly destroyRef = inject(DestroyRef);
 
@@ -39,6 +55,8 @@ export class TopButtonsComponent implements OnInit {
   redoCounter = 0;
   disableUndoButton = false;
   disableRedoButton = false;
+  isPrinting = false;
+  checkedAllPages = false;
 
   constructor(
     private readonly dataStoreService: DataStoreService,
@@ -121,6 +139,15 @@ export class TopButtonsComponent implements OnInit {
   redo() {
     this.gridApi.redoCellEditing();
   }
+  onCheckAllPages() {
+    this.checkedAllPages = !this.checkedAllPages;
+  }
+
+  onBtnExport() {
+    this.gridApi.exportDataAsCsv({
+      allColumns: false,
+    });
+  }
 
   onCellValueChanged(
     callback: ((event: CellValueChangedEvent<StoreData>) => void) | undefined,
@@ -162,10 +189,79 @@ export class TopButtonsComponent implements OnInit {
     this.updateRedoUndoSettings();
   }
 
+  onBtPrint() {
+    this.setPrinterFriendly();
+    setTimeout(() => {
+      print();
+      this.setNormal();
+    }, 2000);
+  }
+
   private updateRedoUndoSettings() {
     this.undoCounter = this.gridApi.getCurrentUndoSize();
     this.redoCounter = this.gridApi.getCurrentRedoSize();
     this.disableUndoButton = this.undoCounter < 1;
     this.disableRedoButton = this.redoCounter < 1;
+  }
+
+  private originalStyle: string | undefined;
+  private currentSelectedPage: number | undefined;
+
+  private setPrinterFriendly() {
+    this.currentSelectedPage = this.gridApi.paginationGetCurrentPage();
+    if (this.checkedAllPages) {
+      this.gridApi.updateGridOptions({ pagination: false });
+    } else {
+      this.gridApi.updateGridOptions({
+        paginationAutoPageSize: false,
+        paginationPageSize: this.gridApi.paginationGetPageSize(),
+      });
+      this.gridApi.paginationGoToPage(this.currentSelectedPage);
+    }
+    this.isPrinting = true;
+    const cssText = `
+      display: table !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-height: 100% !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      z-index: 99999 !important;
+      overflow: hidden !important;
+      background: white !important;
+    `;
+    this.gridStyleChange.emit(cssText);
+
+    setTimeout(() => {
+      // Ensure the grid is fully rendered before applying styles
+      const eGridDiv = document.querySelector<HTMLElement>(
+        '#section-to-print'
+      )! as HTMLElement;
+      this.originalStyle = eGridDiv.style.cssText;
+      eGridDiv.style.width = '';
+      eGridDiv.style.height = '';
+
+      this.gridApi.updateGridOptions({ domLayout: 'print' });
+    }, 100);
+  }
+  private setNormal() {
+    this.gridStyleChange.emit('');
+    this.gridApi.updateGridOptions({
+      pagination: true,
+      paginationAutoPageSize: true,
+    });
+    if (this.currentSelectedPage) {
+      this.gridApi.paginationGoToPage(this.currentSelectedPage);
+    }
+    setTimeout(() => {
+      // Ensure the grid is fully rendered before resetting styles
+      const eGridDiv = document.querySelector<HTMLElement>(
+        '#section-to-print'
+      )! as HTMLElement;
+      eGridDiv.style.cssText = this.originalStyle || '';
+      this.gridApi.setGridOption('domLayout', undefined);
+      this.isPrinting = false;
+    }, 100);
   }
 }

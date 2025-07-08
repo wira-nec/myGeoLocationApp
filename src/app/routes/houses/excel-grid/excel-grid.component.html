@@ -1,14 +1,23 @@
-<div appOverflowPane width="70%" offset="0" [show]="inEditMode">
+<div
+  appOverflowPane
+  width="70%"
+  offset="0"
+  [show]="inEditMode"
+  [style]="this.hostStyle"
+>
   <app-top-buttons
     [gridApi]="gridApi"
     [firstDataRendered$]="firstDataRendered$"
+    (gridStyleChange)="onGridStyleChange($event)"
   />
   <ag-grid-angular
+    id="section-to-print"
     style="width: 100%; height: calc(100% - 49px)"
     [defaultColDef]="defaultColDef"
     [paginationAutoPageSize]="true"
     [pagination]="true"
     [suppressFieldDotNotation]="true"
+    [suppressExcelExport]="true"
     [undoRedoCellEditing]="true"
     [autoSizeStrategy]="autoSizeStrategy"
     [getRowId]="onGetRowId"

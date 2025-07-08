@@ -1,4 +1,4 @@
-<div class="button-row">
+<div class="button-row" [hidden]="isPrinting">
   <div class="flex-container">
     <div>
       <button
@@ -64,6 +64,31 @@
           >redo</mat-icon
         >
       </button>
+      <button
+        matMiniFab
+        aria-label="Button with a export csv icon"
+        matTooltip="Export to csv file"
+      >
+        <mat-icon fontSet="material-symbols-outlined" (click)="onBtnExport()"
+          >csv</mat-icon
+        >
+      </button>
+      <button
+        matMiniFab
+        aria-label="Button with a print icon"
+        matTooltip="Print grid"
+      >
+        <mat-icon fontSet="material-symbols-outlined" (click)="onBtPrint()"
+          >print</mat-icon
+        >
+      </button>
+      <mat-checkbox
+        class="check-all-pages"
+        [checked]="checkedAllPages"
+        (change)="onCheckAllPages()"
+      >
+        All pages
+      </mat-checkbox>
     </div>
     <button
       class="close-button"

@@ -30,6 +30,7 @@ import { CommonModule } from '@angular/common';
 import { isEqual } from 'lodash';
 import { TopButtonsComponent } from './top-buttons/top-buttons.component';
 import { Subject } from 'rxjs';
+import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -70,13 +71,15 @@ export class ExcelGridComponent {
   };
   gridApi!: GridApi<StoreData>;
   firstDataRendered$ = new Subject<FirstDataRenderedEvent<StoreData, ColDef>>();
+  hostStyle: SafeStyle = '';
 
   private dataStore: StoreData[] = [];
   private selectedIndex: number | undefined;
 
   constructor(
     private readonly dataStoreService: DataStoreService,
-    private eRef: ElementRef
+    private eRef: ElementRef,
+    private doms: DomSanitizer
   ) {
     this.inEditMode = this.dataStoreService.isInEditMode();
   }
@@ -211,5 +214,8 @@ export class ExcelGridComponent {
 
   onRowSelected(event: RowSelectedEvent<StoreData, ColDef>): void {
     this.dataStoreService.setSelectedData(event.data);
+  }
+  onGridStyleChange($event: string) {
+    this.hostStyle = this.doms.bypassSecurityTrustStyle($event);
   }
 }

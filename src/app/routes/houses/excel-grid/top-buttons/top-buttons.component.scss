@@ -1,3 +1,9 @@
+@media print {
+  :host {
+    display: none;
+  }
+}
+
 section {
   display: flex;
   align-items: center;
@@ -36,6 +42,10 @@ section {
   border-style: hidden;
   background-color: transparent;
   margin: 4px !important;
+}
+
+.check-all-pages {
+  vertical-align: super;
 }
 
 button {
