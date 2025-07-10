@@ -43,7 +43,7 @@ export class ExportControl extends Control {
     this.jsonCreatorService = inject(JsonCreator);
     this.loadPictureService = inject(LoadPictureService);
 
-    const exportFiles = (): void => {
+    const exportFiles = async (): Promise<void> => {
       const dataStore = this.dataStoreService.getStore();
       if (dataStore.length > 0) {
         const sheet = dataStore.map((data) => {
@@ -82,7 +82,11 @@ export class ExportControl extends Control {
             };
           }
         });
-        this.excelService.generateExcel(sheet, EXPORTED_FILENAME + '.xlsx');
+        await this.excelService.generateExcel(
+          sheet,
+          EXPORTED_FILENAME + '.xlsx',
+          this.loadPictureService
+        );
         this.jsonCreatorService.saveJsonFile(
           this.jsonCreatorService.createJson(
             this.loadPictureService.getPicturesStore()

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import {
+  ERROR,
   INFO,
   LATITUDE,
   LONGITUDE,
@@ -48,6 +49,7 @@ export class ExcelContentComponent {
               LONGITUDE,
               LATITUDE,
               SHEET_NAME,
+              ERROR,
             ].includes(entry[0]) &&
             !imagesFilter(entry[1]) &&
             !blobsFilter(entry[1])

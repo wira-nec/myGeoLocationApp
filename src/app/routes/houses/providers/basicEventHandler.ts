@@ -4,6 +4,7 @@ import { GeoPositionService } from '../../../core/services/geo-position.service'
 import { FontSizeService } from '../../../core/services/font-size.service';
 import {
   CITY,
+  ERROR,
   HOUSE_NUMBER,
   POSTCODE,
   StoreData,
@@ -137,7 +138,7 @@ export class BasicEventHandlers {
           ? `Address "${geoInfo.street} ${geoInfo.housenumber}, ${geoInfo.postcode} ${geoInfo.city}" not found`
           : 'No address found';
         this.onClickHandler({
-          ['Error']: `${address_not_found}. Please verify address in excel sheet.`,
+          [ERROR]: `${address_not_found}. Please verify address in excel sheet.`,
           [POSTCODE]: geoInfo.postcode,
           [CITY]: geoInfo.city,
           [HOUSE_NUMBER]: geoInfo.housenumber,

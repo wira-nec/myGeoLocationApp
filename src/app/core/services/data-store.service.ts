@@ -10,6 +10,7 @@ export const POSTCODE = 'postcode';
 export const CITY = 'city';
 export const HOUSE_NUMBER = 'housenumber';
 export const INFO = 'geoPositionInfo';
+export const ERROR = 'error';
 export const STREET = 'street';
 export const LONGITUDE = 'longitude';
 export const LATITUDE = 'latitude';
@@ -17,7 +18,7 @@ export const FIRST_NAME = 'firstName';
 export const SHEET_NAME = 'sheetName';
 export const COORDINATE_KEYS: string[] = [LONGITUDE, LATITUDE];
 
-const ADDRESS_KEYS: string[] = ['adres', 'Adres', 'address', 'Address'];
+export const ADDRESS_KEYS: string[] = ['adres', 'Adres', 'address', 'Address'];
 const POSTCODE_KEYS: string[] = [
   'postcode',
   'Postcode',
@@ -112,14 +113,20 @@ export const getAddress = (data: StoreData) => {
   }
 };
 
-export const getImageNames = (details: StoreData) => {
+export const getImageName = (details: StoreData) => {
   const addressKey = getKey(details, ADDRESS_KEYS, '');
   if (details[addressKey]) {
     const [street, houseNumber, city] =
       details[addressKey].split(HOUSE_NUMBER_REGEX);
-    return [
-      `${street.trim()} ${houseNumber.trim()} ${city.trim()}.jpg`.toLowerCase(),
-    ];
+    return `${street.trim()} ${houseNumber.trim()} ${city.trim()}.jpg`.toLowerCase();
+  }
+  return undefined;
+};
+
+export const getImageNames = (details: StoreData) => {
+  const imageName = getImageName(details);
+  if (imageName) {
+    return [imageName];
   }
   return Object.values(details).filter((value) => imagesFilter(value));
 };

@@ -14,6 +14,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ExcelService } from '../../../core/services/excel.service';
+import { LoadPictureService } from '../../../core/services/load-picture.service';
 
 @Component({
   selector: 'app-bottom-file-selection-sheet',
@@ -40,7 +41,8 @@ export class BottomFileSelectionSheetComponent implements OnInit {
   constructor(
     private readonly dataStoreService: DataStoreService,
     private readonly progressService: ProgressService,
-    private readonly excelService: ExcelService
+    private readonly excelService: ExcelService,
+    private readonly pictureService: LoadPictureService
   ) {}
 
   ngOnInit(): void {
@@ -88,18 +90,15 @@ export class BottomFileSelectionSheetComponent implements OnInit {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onFileChange(event: any) {
     const file = event.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (e: ProgressEvent<FileReader>) => {
-      if (e.target?.result) {
-        this.excelData = this.excelService.importExcelFile(
-          e.target.result,
-          this.excelData
-        );
-        this.progressService.setMaxCount(XSL_IMPORT_PROGRESS_ID, 1); // Reset progress bar
-        this.dataStoreService.store(this.excelData);
-      }
-    };
-
-    reader.readAsArrayBuffer(file);
+    this.excelService
+      .importExcelFile(file, this.excelData, this.pictureService)
+      .then(
+        (excelData) => {
+          this.excelData = excelData;
+          this.progressService.setMaxCount(XSL_IMPORT_PROGRESS_ID, 1); // Reset progress bar
+          this.dataStoreService.store(this.excelData);
+        },
+        (error) => console.log(error)
+      );
   }
 }
