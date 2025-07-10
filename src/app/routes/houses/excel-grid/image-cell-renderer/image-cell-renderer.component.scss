@@ -1,0 +1,15 @@
+.picture {
+  display: block;
+  width: 90px;
+  height: auto;
+  margin-right: 12px;
+  filter: brightness(1.1);
+}
+
+.imgSpanPicture {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}

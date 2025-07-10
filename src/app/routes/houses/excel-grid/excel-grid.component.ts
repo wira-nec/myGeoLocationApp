@@ -32,6 +32,8 @@ import { isEqual } from 'lodash';
 import { TopButtonsComponent } from './top-buttons/top-buttons.component';
 import { Subject } from 'rxjs';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
+import { ImageCellRendererComponent } from './image-cell-renderer/image-cell-renderer.component';
+import { LoadPictureService } from '../../../core/services/load-picture.service';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -78,6 +80,7 @@ export class ExcelGridComponent {
   private selectedIndex: number | undefined;
 
   constructor(
+    private readonly pictureService: LoadPictureService,
     private readonly dataStoreService: DataStoreService,
     private eRef: ElementRef,
     private doms: DomSanitizer
@@ -109,39 +112,36 @@ export class ExcelGridComponent {
             this.selectedIndex = undefined;
           }
           // Row Data: The data to be displayed.
-          this.rowData = this.dataStore.map((data, index) => {
-            const {
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              geoPositionInfo,
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              longitude,
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              latitude,
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              error,
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              sheetName,
-              ...restAll
-            } = data;
-            return {
-              id: index.toString(),
-              ...restAll,
-            };
-          });
+          this.createRowData();
           const fieldNames = getAllKeys(this.rowData);
           // Column Definitions: Defines & controls grid columns.
-          this.colDefs = fieldNames.map((fieldName) => ({
-            headerName: fieldName,
-            field: fieldName,
-            hide: fieldName === 'id',
-            editable: true,
-            cellEditor: 'agTextCellEditor',
-            cellEditorParams: {
-              maxLength: 100,
-            },
-            headerTooltip: fieldName,
-            tooltipValueGetter: (p: ITooltipParams) => p.value,
-          }));
+          this.colDefs = fieldNames.map((fieldName) => {
+            if (!fieldName.startsWith('foto')) {
+              return {
+                headerName: fieldName,
+                field: fieldName,
+                hide: fieldName === 'id',
+                editable: true,
+                cellEditor: 'agTextCellEditor',
+                cellEditorParams: {
+                  maxLength: 100,
+                },
+                headerTooltip: fieldName,
+                tooltipValueGetter: (p: ITooltipParams) => p.value,
+              };
+            } else {
+              return {
+                headerName: fieldName,
+                field: fieldName,
+                editable: false,
+                headerTooltip: fieldName,
+                tooltipValueGetter: (p: ITooltipParams) => p.value,
+                cellRenderer: ImageCellRendererComponent,
+                cellClass: 'pictureCell',
+                minWidth: 20,
+              };
+            }
+          });
           if (this.selectedIndex !== undefined) {
             // If data from DataStoreService is selected, set the filter model to null and select the row.
             this.gridApi.setFilterModel(null); // Clear any existing filters
@@ -176,6 +176,36 @@ export class ExcelGridComponent {
           }, 10);
         }
       });
+    this.pictureService.pictureStore$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.createRowData();
+        this.gridApi.updateGridOptions({ rowData: this.rowData });
+      });
+  }
+
+  private createRowData() {
+    this.rowData = this.dataStore.map((data, index) => {
+      const {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        geoPositionInfo,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        longitude,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        latitude,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        error,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        sheetName,
+        foto,
+        ...restAll
+      } = data;
+      return {
+        id: index.toString(),
+        ...restAll,
+        foto: this.pictureService.getPicture(foto?.toLowerCase()),
+      };
+    });
   }
 
   onFirstDataRendered($event: FirstDataRenderedEvent<StoreData, ColDef>) {
@@ -190,7 +220,7 @@ export class ExcelGridComponent {
   onCellValueChanged(event: CellValueChangedEvent<StoreData>): void {
     const updatedData = event.data;
     // Update the data store with the modified data
-    this.dataStoreService.updateData(updatedData);
+    this.dataStoreService.changeDataBySelectedData(updatedData);
     // If in edit mode, update the rowData to reflect changes
     if (this.inEditMode) {
       this.rowData = this.dataStoreService.getStore().map((data, index) => {

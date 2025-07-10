@@ -99,6 +99,10 @@ export class CardFooterComponent {
     const input = document.querySelector('#uploadPicture') as HTMLInputElement;
     if (input.files && images.length) {
       this.pictureService.loadPicture(input.files[0], images[0]);
+      this.dataStoreService.changeDataByAddress({
+        ...details,
+        ['foto']: images[0],
+      });
     }
   }
 }

@@ -238,6 +238,34 @@ export class DataStoreService {
     this.dataStore$.next(newData);
   }
 
+  public changeDataByAddress(data: StoreData) {
+    const addressKey = getKey(data, ADDRESS_KEYS, '');
+    if (addressKey.length) {
+      const address = data[addressKey];
+      const index = this.dataStore.findIndex(
+        (data) => data[addressKey] === address
+      );
+      if (index >= 0) {
+        this.dataStore[index] = {
+          ...data,
+        };
+        this.dataStore$.next([data]);
+        return;
+      }
+    }
+    console.error('setStoreData failed');
+  }
+
+  public changeDataBySelectedData(data: StoreData) {
+    const { id, ...storeData } = data;
+    if (id) {
+      this.dataStore[Number(id)] = storeData;
+      this.dataStore$.next([this.dataStore[Number(id)]]);
+      return;
+    }
+    console.error('setStoreData failed');
+  }
+
   public updateData(updatedData: StoreData) {
     const { id, ...storeData } = updatedData;
     this.dataStore[Number(id)] = mergeStoreData(
