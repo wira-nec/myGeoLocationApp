@@ -34,6 +34,7 @@ export class PicturesContentComponent implements OnInit {
       const blobs = getBlobs(details);
       getImageNames(details).forEach((imageName) => {
         const blob = this.pictureService.getPicture(
+          // eslint-disable-next-line no-useless-escape
           imageName.replace(/^.*[\\\/]/, '')
         );
         if (!blobs.includes(blob)) {
