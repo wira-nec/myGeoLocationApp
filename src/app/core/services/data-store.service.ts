@@ -144,16 +144,17 @@ export function hasPictures(details: StoreData) {
   return false;
 }
 
-export const getAllKeys = (data: StoreData[]) => {
+export const getAllKeyInfo = (data: StoreData[]) => {
   return data.reduce((acc, item) => {
     const keys = Object.keys(item);
     keys.forEach((key) => {
-      if (!acc.includes(key)) {
-        acc.push(key);
+      const containsImage = imagesFilter(item[key]);
+      if (!acc.find((info) => info[0].includes(key))) {
+        acc.push([key, containsImage]);
       }
     });
     return acc;
-  }, [] as string[]);
+  }, [] as [string, boolean][]);
 };
 
 @Injectable({

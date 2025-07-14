@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
   ADDRESS_KEYS,
-  getAllKeys,
+  getAllKeyInfo,
   getDataStoreKeys,
   getImageName,
   getImageNames,
@@ -20,10 +20,33 @@ interface IWorkbookMediaImageInfo {
   height: number;
 }
 
+interface IWorkSheet {
+  name: string;
+  autoFilter?: Excel.AutoFilter;
+  headerFooter: Partial<Excel.HeaderFooter>;
+  pageSetup: Partial<Excel.PageSetup>;
+  properties: Excel.WorksheetProperties;
+  state: Excel.WorksheetState;
+  tables: Excel.Table[];
+  views: Partial<Excel.WorksheetView>[];
+  header: Excel.Row;
+}
+
+const HIDDEN_SPACES = '   ';
+const LOCATION_SHEET_NAME = 'LocationInfo';
 @Injectable({
   providedIn: 'root',
 })
 export class ExcelService {
+  private workbook_creator = 'MyGeoLocation';
+  private workbook_lastModifiedBy = 'MyGeoLocation';
+  private workbook_created = new Date();
+  private workbook_modified = new Date();
+  private workbook_lastPrinted = new Date();
+  private workbook_views: Excel.WorkbookView[] = [];
+  private workbook_properties_date1904 = true;
+  private sheet_properties: IWorkSheet[] = [];
+
   constructor(private readonly toaster: ToasterService) {}
 
   /**
@@ -48,10 +71,12 @@ export class ExcelService {
       pictureService
     );
 
+    this.setWorkbookProperties(workbook);
+
     // Add locationInfo sheet
     await this.addSheetToWorkbook(
       workbook,
-      'LocationInfo',
+      LOCATION_SHEET_NAME,
       locationInfoData,
       []
     );
@@ -70,6 +95,7 @@ export class ExcelService {
     await workbook.xlsx.load(arrayBuffer);
 
     const allImagesInWorkBook = this.readAllImagesFromWorkbook(workbook);
+    this.getWorkbookProperties(workbook);
 
     workbook.eachSheet((worksheet) => {
       if (!worksheet.getRow(1).cellCount) return;
@@ -157,10 +183,11 @@ export class ExcelService {
     pictureService: LoadPictureService
   ) {
     const sheetData: StoreData[] = [];
-    const headers = worksheet.getRow(1);
-    const keys = Array.isArray(headers.values)
-      ? headers.values.map((val) => val?.toString?.() ?? '').filter(Boolean)
-      : [];
+    const header = worksheet.getRow(1);
+    const keys: string[] = [];
+    header.eachCell((cell) => {
+      keys.push(cell.text);
+    });
 
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber == 1) return;
@@ -169,7 +196,10 @@ export class ExcelService {
         : [];
       const obj = {} as StoreData;
       for (let i = 0; i < keys.length; i++) {
-        if (values[i + 1] === '[object Object]' || values[i + 1] === '^') {
+        if (
+          values[i + 1] === '[object Object]' ||
+          values[i + 1] === HIDDEN_SPACES
+        ) {
           let filename = 'image corrupted?';
           const addressIndex = keys.findIndex((key) =>
             ADDRESS_KEYS.includes(key)
@@ -233,7 +263,7 @@ export class ExcelService {
     images: Record<string, IWorkbookMediaImageInfo>[]
   ) {
     const sheet = workbook.addWorksheet(sheetName);
-    const headers = getAllKeys(sheetData);
+    const headers = getAllKeyInfo(sheetData).map((key) => key[0]);
     sheet.addRow(headers);
     sheet.columns = headers.map((header) => ({
       header: header,
@@ -381,7 +411,7 @@ export class ExcelService {
           const imageInfo = Object.values(imageId)[0];
           const pictureCell = worksheet.getCell(rowNumber + 2, colNum + 1);
           console.log('pictureCell', pictureCell.value);
-          pictureCell.value = '^';
+          pictureCell.value = HIDDEN_SPACES;
           worksheet.addImage(imageInfo.index, {
             tl: { col: colNum, row: rowNumber + 1 },
             ext: {
@@ -391,6 +421,72 @@ export class ExcelService {
               height: worksheet.properties.defaultRowHeight,
             },
             editAs: undefined,
+          });
+        }
+      }
+    });
+  }
+
+  private getWorkbookProperties(workbook: Excel.Workbook) {
+    this.workbook_creator = workbook.creator;
+    this.workbook_lastModifiedBy = workbook.lastModifiedBy;
+    this.workbook_created = workbook.created;
+    this.workbook_modified = workbook.modified;
+    this.workbook_lastPrinted = workbook.lastPrinted;
+    this.workbook_views = workbook.views;
+    this.workbook_properties_date1904 = workbook.properties.date1904;
+    this.sheet_properties = [];
+    workbook.eachSheet((sheet) => {
+      if (sheet.name !== LOCATION_SHEET_NAME) {
+        this.sheet_properties.push({
+          name: sheet.name,
+          autoFilter: sheet.autoFilter,
+          headerFooter: sheet.headerFooter,
+          pageSetup: sheet.pageSetup,
+          properties: sheet.properties,
+          state: sheet.state,
+          tables: sheet.getTables().map((tab) => tab[0]),
+          views: sheet.views,
+          header: sheet.getRow(1),
+        });
+      }
+    });
+  }
+
+  private setWorkbookProperties(workbook: Excel.Workbook) {
+    workbook.creator = this.workbook_creator;
+    workbook.lastModifiedBy = this.workbook_lastModifiedBy;
+    workbook.created = this.workbook_created;
+    workbook.modified = this.workbook_modified;
+    workbook.lastPrinted = this.workbook_lastPrinted;
+    workbook.properties.date1904 = this.workbook_properties_date1904;
+    workbook.views = [
+      {
+        ...this.workbook_views[0],
+        firstSheet: 0,
+        activeTab: 0,
+        visibility: 'visible',
+      },
+    ];
+    this.sheet_properties.forEach((sheet, index) => {
+      if (sheet.name !== LOCATION_SHEET_NAME) {
+        const workbookSheet = workbook.worksheets[index];
+        if (sheet.autoFilter) {
+          workbookSheet.autoFilter = sheet.autoFilter;
+        }
+        workbookSheet.headerFooter = sheet.headerFooter;
+        workbookSheet.pageSetup = sheet.pageSetup;
+        workbookSheet.properties = sheet.properties;
+        workbookSheet.state = sheet.state;
+        sheet.tables.forEach((table) => workbookSheet.addTable(table));
+        workbookSheet.views = sheet.views;
+        // Overwrite header to get correctly formatted headers
+        const headerRow = workbookSheet.getRow(1);
+        if (headerRow) {
+          headerRow.eachCell((cell, index) => {
+            cell.value = sheet.header.getCell(index).value;
+            cell.style = sheet.header.getCell(index).style;
+            cell.font = sheet.header.getCell(index).font;
           });
         }
       }

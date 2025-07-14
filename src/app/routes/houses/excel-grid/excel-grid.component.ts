@@ -21,7 +21,7 @@ import {
 } from 'ag-grid-community';
 import {
   DataStoreService,
-  getAllKeys,
+  getAllKeyInfo,
   StoreData,
 } from '../../../core/services/data-store.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -36,6 +36,9 @@ import { ImageCellRendererComponent } from './image-cell-renderer/image-cell-ren
 import { LoadPictureService } from '../../../core/services/load-picture.service';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
+
+const CLASS_FOR_PICTURE_CELL = 'picture-cell';
+const COLUMN_CLASS = 'column-class';
 
 @Component({
   selector: 'app-excel-grid',
@@ -113,35 +116,6 @@ export class ExcelGridComponent {
           }
           // Row Data: The data to be displayed.
           this.createRowData();
-          const fieldNames = getAllKeys(this.rowData);
-          // Column Definitions: Defines & controls grid columns.
-          this.colDefs = fieldNames.map((fieldName) => {
-            if (!fieldName.startsWith('foto')) {
-              return {
-                headerName: fieldName,
-                field: fieldName,
-                hide: fieldName === 'id',
-                editable: true,
-                cellEditor: 'agTextCellEditor',
-                cellEditorParams: {
-                  maxLength: 100,
-                },
-                headerTooltip: fieldName,
-                tooltipValueGetter: (p: ITooltipParams) => p.value,
-              };
-            } else {
-              return {
-                headerName: fieldName,
-                field: fieldName,
-                editable: false,
-                headerTooltip: fieldName,
-                tooltipValueGetter: (p: ITooltipParams) => p.value,
-                cellRenderer: ImageCellRendererComponent,
-                cellClass: 'pictureCell',
-                minWidth: 20,
-              };
-            }
-          });
           if (this.selectedIndex !== undefined) {
             // If data from DataStoreService is selected, set the filter model to null and select the row.
             this.gridApi.setFilterModel(null); // Clear any existing filters
@@ -178,34 +152,83 @@ export class ExcelGridComponent {
       });
     this.pictureService.pictureStore$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.createRowData();
-        this.gridApi.updateGridOptions({ rowData: this.rowData });
+      .subscribe((pictureStore) => {
+        if (Object.keys(pictureStore).length && this.inEditMode) {
+          this.createRowData();
+          this.gridApi.updateGridOptions({ rowData: this.rowData });
+        }
       });
   }
 
-  private createRowData() {
-    this.rowData = this.dataStore.map((data, index) => {
-      const {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        geoPositionInfo,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        longitude,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        latitude,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        error,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        sheetName,
-        foto,
-        ...restAll
-      } = data;
-      return {
-        id: index.toString(),
-        ...restAll,
-        foto: this.pictureService.getPicture(foto?.toLowerCase()),
-      };
+  private createColDefs(rowData: StoreData[] | { id: string }[]) {
+    const fieldInfo = getAllKeyInfo(rowData);
+    // Column Definitions: Defines & controls grid columns.
+    this.colDefs = fieldInfo.map((info) => {
+      if (!info[1]) {
+        return {
+          headerName: info[0],
+          field: info[0],
+          hide: info[0] === 'id',
+          editable: true,
+          cellEditor: 'agTextCellEditor',
+          cellEditorParams: {
+            maxLength: 100,
+          },
+          headerTooltip: info[0],
+          tooltipValueGetter: (p: ITooltipParams) => p.value,
+          cellClass: COLUMN_CLASS,
+        };
+      } else {
+        return {
+          headerName: info[0],
+          field: info[0],
+          editable: false,
+          headerTooltip: info[0],
+          tooltipValueGetter: (p: ITooltipParams) => p.value,
+          cellRenderer: ImageCellRendererComponent,
+          cellClass: CLASS_FOR_PICTURE_CELL,
+          minWidth: 20,
+        };
+      }
     });
+  }
+
+  private createRowData() {
+    const rowData: StoreData[] | { id: string }[] = this.dataStore.map(
+      (data, index) => {
+        // how to extend the list of constants of the next line for the fields mentioned in pictureColumnNames
+        const {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          geoPositionInfo,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          longitude,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          latitude,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          error,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          sheetName,
+          ...restAll
+        } = data;
+        return {
+          id: index.toString(),
+          ...restAll,
+        };
+      }
+    );
+    this.createColDefs(rowData);
+    const pictureColumns = (row: StoreData) =>
+      this.colDefs
+        .filter((colDef) => colDef.cellClass === CLASS_FOR_PICTURE_CELL)
+        .map((col) => ({
+          [col.headerName as string]: this.pictureService.getPicture(
+            row[col.headerName as string].toLowerCase()
+          ),
+        }));
+    this.rowData = rowData.map((row) => ({
+      ...row,
+      ...Object.assign({}, ...pictureColumns(row)),
+    }));
   }
 
   onFirstDataRendered($event: FirstDataRenderedEvent<StoreData, ColDef>) {

@@ -3,7 +3,7 @@ import { Component, inject, Input } from '@angular/core';
 import { MatIcon, MatIconRegistry } from '@angular/material/icon';
 import {
   DataStoreService,
-  getImageNames,
+  getAllKeyInfo,
   LATITUDE,
   LONGITUDE,
   StoreData,
@@ -94,15 +94,22 @@ export class CardFooterComponent {
     this.mapEventHandlers.closePopup();
   }
 
-  selectPicture(details: StoreData) {
-    const images = getImageNames(details);
-    const input = document.querySelector('#uploadPicture') as HTMLInputElement;
-    if (input.files && images.length) {
-      this.pictureService.loadPicture(input.files[0], images[0]);
-      this.dataStoreService.changeDataByAddress({
-        ...details,
-        ['foto']: images[0],
+  setNewPicture(details: StoreData) {
+    const pictureColumns = getAllKeyInfo(this.dataStoreService.getStore());
+    pictureColumns
+      .filter((col) => col[1])
+      .forEach((col) => {
+        const image = details[col[0]];
+        const input = document.querySelector(
+          '#uploadPicture'
+        ) as HTMLInputElement;
+        if (input.files && image.length) {
+          this.pictureService.loadPicture(input.files[0], image);
+          this.dataStoreService.changeDataByAddress({
+            ...details,
+            [col[0]]: image,
+          });
+        }
       });
-    }
   }
 }
