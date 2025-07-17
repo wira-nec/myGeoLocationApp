@@ -227,7 +227,7 @@ export class TopButtonsComponent implements OnInit {
       position: absolute !important;
       top: 0 !important;
       left: 0 !important;
-      z-index: 99999 !important;
+      z-index: 2000 !important;
       overflow: hidden !important;
       background: white !important;
     `;

@@ -87,9 +87,7 @@ export class ExcelGridComponent {
     private readonly dataStoreService: DataStoreService,
     private eRef: ElementRef,
     private doms: DomSanitizer
-  ) {
-    this.inEditMode = this.dataStoreService.isInEditMode();
-  }
+  ) {}
 
   rowSelection = (): RowSelectionOptions => ({
     mode: 'singleRow',
@@ -99,63 +97,111 @@ export class ExcelGridComponent {
 
   onGridReady(params: GridReadyEvent) {
     this.gridApi = params.api;
-    this.dataStoreService.editMode$
+    this.watchOnFirstGridRender();
+    this.watchEditMode();
+    this.watchDataUpdates();
+    this.watchPictureUpdates();
+  }
+
+  private watchOnFirstGridRender() {
+    this.firstDataRendered$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(async (editMode) => {
-        this.inEditMode = editMode;
-        if (editMode) {
-          this.dataStore = this.dataStoreService.getStore();
-          const selectedData = this.dataStoreService.getSelectedData();
-          if (selectedData) {
-            // If data is selected, filter the data store to only include the selected data.
-            this.selectedIndex = this.dataStore.findIndex((data) =>
-              isEqual(data, selectedData)
-            );
-          } else {
-            this.selectedIndex = undefined;
-          }
-          // Row Data: The data to be displayed.
+      .subscribe(() => {
+        if (!this.rowData.length) {
           this.createRowData();
-          if (this.selectedIndex !== undefined) {
-            // If data from DataStoreService is selected, set the filter model to null and select the row.
-            this.gridApi.setFilterModel(null); // Clear any existing filters
-          }
-          this.gridApi.updateGridOptions({
-            columnDefs: this.colDefs,
-            rowData: this.rowData,
-          });
-          if (this.selectedIndex !== undefined) {
-            // Select the row based on the selected index.
-            this.gridApi
-              .getRowNode(this.selectedIndex?.toString())
-              ?.setSelected(true);
-          } else {
-            // deselect any previously selected row.
-            this.gridApi.deselectAll();
-          }
-          setTimeout(() => {
-            this.gridApi.autoSizeAllColumns();
-            if (this.selectedIndex !== undefined) {
-              // Show the page for the selected row.
-              const pageSize = this.gridApi.paginationGetPageSize();
-              const page = Math.floor((this.selectedIndex || 0) / pageSize); // page is 0 based
-              this.gridApi.paginationGoToPage(page);
-              this.gridApi.ensureIndexVisible(this.selectedIndex);
-            } else {
-              // If no row is selected, go to the first page.
-              this.gridApi.paginationGoToPage(0);
-            }
-          }, 10);
+        } else {
+          this.loadDataInGrid();
         }
       });
+  }
+
+  private watchPictureUpdates() {
     this.pictureService.pictureStore$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((pictureStore) => {
-        if (Object.keys(pictureStore).length && this.inEditMode) {
+        if (Object.keys(pictureStore).length) {
           this.createRowData();
           this.gridApi.updateGridOptions({ rowData: this.rowData });
         }
       });
+  }
+
+  private watchDataUpdates() {
+    this.dataStoreService.dataStore$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(async (data) => {
+        if (data.length) {
+          this.createGridData();
+        }
+      });
+  }
+
+  private watchEditMode() {
+    this.dataStoreService.editMode$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((editMode) => {
+        this.inEditMode = editMode && this.dataStore.length > 0;
+        if (this.inEditMode) {
+          const selectedIndex = this.handleSelection();
+          if (selectedIndex !== undefined) {
+            // If row is selected, set the filter model to null and select the row.
+            this.gridApi.setFilterModel(null); // Clear any existing filters
+          }
+          this.autoSizeColumnsAndPaging(selectedIndex);
+        }
+      });
+  }
+
+  private createGridData() {
+    this.dataStore = this.dataStoreService.getStore();
+    // Row Data: The data to be displayed.
+    this.createRowData();
+    // Load grid with new data.
+    this.loadDataInGrid();
+  }
+
+  private loadDataInGrid() {
+    this.gridApi.updateGridOptions({
+      columnDefs: this.colDefs,
+      rowData: this.rowData,
+    });
+  }
+
+  private handleSelection() {
+    let selectedIndex;
+    const selectedData = this.dataStoreService.getSelectedData();
+    if (selectedData) {
+      // If data is selected, filter the data store to only include the selected data.
+      selectedIndex = this.dataStore.findIndex((data) =>
+        isEqual(data, selectedData)
+      );
+    } else {
+      selectedIndex = undefined;
+    }
+    if (selectedIndex !== undefined) {
+      // Select the row based on the selected index.
+      this.gridApi.getRowNode(selectedIndex?.toString())?.setSelected(true);
+    } else {
+      // deselect any previously selected row.
+      this.gridApi.deselectAll();
+    }
+    return selectedIndex;
+  }
+
+  private autoSizeColumnsAndPaging(selectedIndex?: number) {
+    setTimeout(() => {
+      this.gridApi.autoSizeAllColumns();
+      if (selectedIndex !== undefined) {
+        // Show the page for the selected row.
+        const pageSize = this.gridApi.paginationGetPageSize();
+        const page = Math.floor((selectedIndex || 0) / pageSize); // page is 0 based
+        this.gridApi.paginationGoToPage(page);
+        this.gridApi.ensureIndexVisible(selectedIndex);
+      } else {
+        // If no row is selected, go to the first page.
+        this.gridApi.paginationGoToPage(0);
+      }
+    }, 10);
   }
 
   private createColDefs(rowData: StoreData[] | { id: string }[]) {
@@ -163,62 +209,49 @@ export class ExcelGridComponent {
     // Column Definitions: Defines & controls grid columns.
     this.colDefs = fieldInfo.map((info) => {
       if (!info[1]) {
-        return {
-          headerName: info[0],
-          field: info[0],
-          hide: info[0] === 'id',
-          editable: true,
-          cellEditor: 'agTextCellEditor',
-          cellEditorParams: {
-            maxLength: 100,
-          },
-          headerTooltip: info[0],
-          tooltipValueGetter: (p: ITooltipParams) => p.value,
-          cellClass: COLUMN_CLASS,
-        };
+        return this.createDefaultColDef(info);
       } else {
-        return {
-          headerName: info[0],
-          field: info[0],
-          editable: false,
-          filter: false,
-          headerTooltip: info[0],
-          tooltipValueGetter: (p: ITooltipParams) => {
-            return (
-              this.pictureService.getPictureName(p.value) || 'No picture found'
-            );
-          },
-          cellRenderer: ImageCellRendererComponent,
-          cellClass: CLASS_FOR_PICTURE_CELL,
-          minWidth: 20,
-        };
+        return this.createPictureColDef(info);
       }
     });
   }
 
+  private createPictureColDef(info: [string, boolean]): ColDef {
+    return {
+      headerName: info[0],
+      field: info[0],
+      editable: false,
+      filter: false,
+      headerTooltip: info[0],
+      tooltipValueGetter: (p: ITooltipParams) => {
+        return (
+          this.pictureService.getPictureName(p.value) || 'No picture found'
+        );
+      },
+      cellRenderer: ImageCellRendererComponent,
+      cellClass: CLASS_FOR_PICTURE_CELL,
+      minWidth: 20,
+    };
+  }
+
+  private createDefaultColDef(info: [string, boolean]): ColDef {
+    return {
+      headerName: info[0],
+      field: info[0],
+      hide: info[0] === 'id',
+      editable: true,
+      cellEditor: 'agTextCellEditor',
+      cellEditorParams: {
+        maxLength: 100,
+      },
+      headerTooltip: info[0],
+      tooltipValueGetter: (p: ITooltipParams) => p.value,
+      cellClass: COLUMN_CLASS,
+    };
+  }
+
   private createRowData() {
-    const rowData: StoreData[] | { id: string }[] = this.dataStore.map(
-      (data, index) => {
-        // how to extend the list of constants of the next line for the fields mentioned in pictureColumnNames
-        const {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          geoPositionInfo,
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          longitude,
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          latitude,
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          error,
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          sheetName,
-          ...restAll
-        } = data;
-        return {
-          id: index.toString(),
-          ...restAll,
-        };
-      }
-    );
+    const rowData = this.getRowDataForGrid();
     this.createColDefs(rowData);
     const pictureColumns = (row: StoreData) =>
       this.colDefs
@@ -232,6 +265,32 @@ export class ExcelGridComponent {
       ...row,
       ...Object.assign({}, ...pictureColumns(row)),
     }));
+  }
+
+  private convertToGridRowData(data: StoreData, index: number) {
+    const {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      geoPositionInfo,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      longitude,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      latitude,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      error,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      sheetName,
+      ...restAll
+    } = data;
+    return {
+      id: index.toString(),
+      ...restAll,
+    };
+  }
+
+  private getRowDataForGrid(): StoreData[] | { id: string }[] {
+    return this.dataStore.map((data, index) =>
+      this.convertToGridRowData(data, index)
+    );
   }
 
   onFirstDataRendered($event: FirstDataRenderedEvent<StoreData, ColDef>) {
@@ -250,23 +309,7 @@ export class ExcelGridComponent {
     // If in edit mode, update the rowData to reflect changes
     if (this.inEditMode) {
       this.rowData = this.dataStoreService.getStore().map((data, index) => {
-        const {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          geoPositionInfo,
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          longitude,
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          latitude,
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          error,
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          sheetName,
-          ...restAll
-        } = data;
-        return {
-          id: index.toString(),
-          ...restAll,
-        };
+        return this.convertToGridRowData(data, index);
       });
     }
   }
