@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, take } from 'rxjs';
-import { CompressImageService } from './compress-image.service';
+import { BehaviorSubject } from 'rxjs';
 
 export type PictureStore = Record<string, string | ArrayBuffer>;
 
@@ -10,8 +9,6 @@ export type PictureStore = Record<string, string | ArrayBuffer>;
 export class LoadPictureService {
   private pictureStore: PictureStore = {};
   pictureStore$ = new BehaviorSubject<PictureStore>({});
-
-  constructor(private compressImage: CompressImageService) {}
 
   public loadPicture(file: File, filename: string) {
     const reader = new FileReader();
@@ -30,17 +27,7 @@ export class LoadPictureService {
         }
       }
     };
-    if (file.type.toLowerCase() === 'application/json') {
-      reader.readAsText(file);
-    } else {
-      this.compressImage
-        .compress(file)
-        .pipe(take(1))
-        .subscribe((compressedImage) => {
-          // now you can do upload the compressed image
-          this.storePicture(compressedImage, filename.toLowerCase());
-        });
-    }
+    reader.readAsDataURL(file);
   }
 
   // Store the picture in the pictureStore and emit the change
@@ -53,6 +40,14 @@ export class LoadPictureService {
     if (Object.keys(this.pictureStore).includes(key)) {
       return this.pictureStore[key] as string;
     }
+    return key;
+  }
+
+  public getPictureName(blob: string) {
+    // find the key in the pictureStore that matches the blob
+    const key = Object.keys(this.pictureStore).find(
+      (k) => this.pictureStore[k] === blob
+    );
     return key;
   }
 

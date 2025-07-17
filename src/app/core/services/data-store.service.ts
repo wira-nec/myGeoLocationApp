@@ -144,13 +144,16 @@ export function hasPictures(details: StoreData) {
   return false;
 }
 
-export const getAllKeyInfo = (data: StoreData[]) => {
+export const getAllHeaderInfo = (data: StoreData[]) => {
   return data.reduce((acc, item) => {
     const keys = Object.keys(item);
     keys.forEach((key) => {
       const containsImage = imagesFilter(item[key]);
-      if (!acc.find((info) => info[0].includes(key))) {
+      const keyIndex = acc.findIndex((info) => info[0].includes(key));
+      if (keyIndex === -1) {
         acc.push([key, containsImage]);
+      } else if (containsImage) {
+        acc[keyIndex] = [key, true];
       }
     });
     return acc;
@@ -260,7 +263,16 @@ export class DataStoreService {
   public changeDataBySelectedData(data: StoreData) {
     const { id, ...storeData } = data;
     if (id) {
-      this.dataStore[Number(id)] = storeData;
+      const pictureColumnNames = Object.keys(storeData).filter((key) =>
+        blobsFilter(storeData[key])
+      );
+      pictureColumnNames.forEach((colName) => {
+        storeData[colName] = getImageName(storeData) ?? 'unknown picture.jpg';
+      });
+      this.dataStore[Number(id)] = {
+        ...this.dataStore[Number(id)],
+        ...storeData,
+      };
       this.dataStore$.next([this.dataStore[Number(id)]]);
       return;
     }

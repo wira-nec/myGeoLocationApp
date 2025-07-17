@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
   ADDRESS_KEYS,
-  getAllKeyInfo,
+  getAllHeaderInfo,
   getDataStoreKeys,
   getImageName,
   getImageNames,
@@ -15,7 +15,7 @@ import * as FileSaver from 'file-saver';
 import { LoadPictureService } from './load-picture.service';
 
 interface IWorkbookMediaImageInfo {
-  index: number;
+  imageId: number;
   width: number;
   height: number;
 }
@@ -32,8 +32,12 @@ interface IWorkSheet {
   header: Excel.Row;
 }
 
-const HIDDEN_SPACES = '   ';
+interface ExtendedImageRange extends Excel.ImageRange {
+  ext: { width: number; height: number };
+}
+
 const LOCATION_SHEET_NAME = 'LocationInfo';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -131,7 +135,7 @@ export class ExcelService {
     }
     const base64String = btoa(binary);
     // You may want to prepend the correct MIME type:
-    const mimeType = 'image/jpg';
+    const mimeType = 'image/jpeg';
     const imageData = `data:${mimeType};base64,${base64String}`;
     return imageData;
   }
@@ -171,9 +175,11 @@ export class ExcelService {
 
   private readAllImagesFromWorkbook(workbook: Excel.Workbook) {
     const images: string[] = [];
-    for (const image of workbook.model.media) {
-      images.unshift(this.convertImageToBase64(image));
-    }
+    workbook.model.media.forEach((image) => {
+      if (image.buffer) {
+        images.push(this.convertImageToBase64(image));
+      }
+    });
     return images;
   }
 
@@ -182,43 +188,89 @@ export class ExcelService {
     allImagesInWorkBook: string[],
     pictureService: LoadPictureService
   ) {
-    const sheetData: StoreData[] = [];
+    const storeData: StoreData[] = [];
     const header = worksheet.getRow(1);
-    const keys: string[] = [];
+    const headers: string[] = [];
     header.eachCell((cell) => {
-      keys.push(cell.text);
+      headers.push(cell.text);
     });
+    const addressIndex = headers.findIndex((key) => ADDRESS_KEYS.includes(key));
+
+    const sheetImages = worksheet.getImages().map((image) => ({
+      imageId: image.imageId,
+      nativeRow: image.range.tl.nativeRow,
+      nativeCol: image.range.tl.nativeCol,
+      ext: (image.range as ExtendedImageRange).ext,
+    }));
+
+    if (!sheetImages.length) {
+      // if there are no images in the sheet then images are only included in the workbook
+      // In that case we need to reverse the order of the workbook images
+      allImagesInWorkBook.reverse();
+    }
 
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber == 1) return;
-      const values = Array.isArray(row.values)
-        ? row.values.map((val) => val?.toString?.() ?? '')
-        : [];
       const obj = {} as StoreData;
-      for (let i = 0; i < keys.length; i++) {
+      row.eachCell((cell, colNumber) => {
+        const cellText = cell.text;
+        let imageData = undefined;
+        let filename = 'image corrupted?';
         if (
-          values[i + 1] === '[object Object]' ||
-          values[i + 1] === HIDDEN_SPACES
+          cellText.toUpperCase() === '#VALUE!' ||
+          (cell.model.type === Excel.ValueType.RichText &&
+            typeof cell.value === 'object' &&
+            cell.value !== null &&
+            'richText' in cell.value &&
+            Array.isArray((cell.value as Excel.CellRichTextValue).richText) &&
+            (cell.value as Excel.CellRichTextValue).richText.find(
+              (t) => t.font?.color?.argb === 'FFFFFFFF'
+            ))
         ) {
-          let filename = 'image corrupted?';
-          const addressIndex = keys.findIndex((key) =>
-            ADDRESS_KEYS.includes(key)
-          );
-          if (addressIndex >= 0) {
-            const imageData = allImagesInWorkBook.pop();
-            if (imageData) {
-              filename = values[addressIndex + 1] + '.jpg';
-              pictureService.storePicture(imageData, filename);
+          if (sheetImages.length) {
+            const rowImage = sheetImages.find(
+              (image) =>
+                image.nativeRow === rowNumber - 1 &&
+                image.nativeCol === colNumber - 1
+            );
+            if (rowImage && addressIndex >= 0) {
+              imageData = allImagesInWorkBook[Number(rowImage.imageId)];
+            } else if (addressIndex >= 0) {
+              // search for imageId in allImagesInWorkBook that is not present in sheetImages
+              const imageId = allImagesInWorkBook.findIndex(
+                (_image, index) =>
+                  !sheetImages.some((img) => img.imageId === index.toString())
+              );
+              if (imageId >= 0) {
+                // get the image for imageId from allImagesInWorkBook and remove it from the array
+                imageData = allImagesInWorkBook[imageId];
+                // remove the image from allImagesInWorkBook because we have used it
+                // and we don't want to use it again
+                allImagesInWorkBook.splice(imageId, 1);
+                // lower all imageId's greater than imageId in sheetImages by 1
+                // to keep the imageId's in sync with the images in the workbook
+                sheetImages.forEach((image) => {
+                  if (Number(image.imageId) > imageId) {
+                    image.imageId = (Number(image.imageId) - 1).toString();
+                  }
+                });
+              }
             }
+          } else {
+            imageData = allImagesInWorkBook.pop();
           }
-          obj[keys[i]] = filename;
-        } else {
-          obj[keys[i]] = values[i + 1];
         }
-      }
-      sheetData.push(obj);
+        if (imageData) {
+          filename = row.getCell(addressIndex + 1) + '.jpg';
+          pictureService.storePicture(imageData, filename);
+          obj[headers[colNumber - 1]] = filename;
+        } else {
+          obj[headers[colNumber - 1]] = cellText;
+        }
+      });
+      storeData.push(obj);
     });
-    return sheetData;
+    return storeData;
   }
 
   private validateHeaders(sheetData: StoreData[]) {
@@ -263,7 +315,7 @@ export class ExcelService {
     images: Record<string, IWorkbookMediaImageInfo>[]
   ) {
     const sheet = workbook.addWorksheet(sheetName);
-    const headers = getAllKeyInfo(sheetData).map((key) => key[0]);
+    const headers = getAllHeaderInfo(sheetData).map((key) => key[0]);
     sheet.addRow(headers);
     sheet.columns = headers.map((header) => ({
       header: header,
@@ -376,7 +428,7 @@ export class ExcelService {
       // add image to workbook by base64
       imageIds.push({
         [key]: {
-          index: workbook.addImage({
+          imageId: workbook.addImage({
             base64: images[key] as string,
             extension: 'jpeg',
           }),
@@ -390,29 +442,39 @@ export class ExcelService {
 
   private addImagesToSheet(
     worksheet: Excel.Worksheet,
-    sheetData: StoreData[],
+    storeData: StoreData[],
     imageIds: Record<string, IWorkbookMediaImageInfo>[]
   ) {
-    if (worksheet.rowCount !== sheetData.length + 1) {
+    if (worksheet.rowCount !== storeData.length + 1) {
       // +1 for header row
       return;
     }
 
-    sheetData.forEach((dataStoreItem, rowNumber) => {
-      const rowImageName = getImageName(dataStoreItem);
-      if (rowImageName) {
-        const colNum = Object.keys(dataStoreItem).findIndex(
-          (key) => dataStoreItem[key]?.toLowerCase() === rowImageName
+    storeData.forEach((data, rowNumber) => {
+      const imageName = getImageName(data);
+      if (imageName) {
+        const colNum = Object.keys(data).findIndex(
+          (key) => data[key]?.toLowerCase() === imageName
         );
         const imageId = imageIds.find(
-          (image) => Object.keys(image)[0] === rowImageName
+          (image) => Object.keys(image)[0] === imageName
         );
         if (imageId && colNum >= 0) {
           const imageInfo = Object.values(imageId)[0];
           const pictureCell = worksheet.getCell(rowNumber + 2, colNum + 1);
-          console.log('pictureCell', pictureCell.value);
-          pictureCell.value = HIDDEN_SPACES;
-          worksheet.addImage(imageInfo.index, {
+          pictureCell.value = {
+            richText: [
+              {
+                text: imageName,
+                font: { size: 1, color: { argb: 'FFFFFFFF' } },
+              },
+            ],
+          };
+          pictureCell.style = {
+            ...pictureCell.style,
+            numFmt: ';;;', // Hide the cell content
+          };
+          worksheet.addImage(imageInfo.imageId, {
             tl: { col: colNum, row: rowNumber + 1 },
             ext: {
               width:

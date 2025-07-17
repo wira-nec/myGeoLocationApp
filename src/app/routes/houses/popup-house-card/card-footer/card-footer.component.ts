@@ -3,7 +3,8 @@ import { Component, inject, Input } from '@angular/core';
 import { MatIcon, MatIconRegistry } from '@angular/material/icon';
 import {
   DataStoreService,
-  getAllKeyInfo,
+  getAllHeaderInfo,
+  getImageName,
   LATITUDE,
   LONGITUDE,
   StoreData,
@@ -95,19 +96,22 @@ export class CardFooterComponent {
   }
 
   setNewPicture(details: StoreData) {
-    const pictureColumns = getAllKeyInfo(this.dataStoreService.getStore());
-    pictureColumns
+    const headerInfo = getAllHeaderInfo(this.dataStoreService.getStore());
+    headerInfo
       .filter((col) => col[1])
       .forEach((col) => {
-        const image = details[col[0]];
+        let filename = details[col[0]];
+        if (!filename || !filename.length) {
+          filename = getImageName(details) || '';
+        }
         const input = document.querySelector(
           '#uploadPicture'
         ) as HTMLInputElement;
-        if (input.files && image.length) {
-          this.pictureService.loadPicture(input.files[0], image);
+        if (input.files && filename.length) {
+          this.pictureService.loadPicture(input.files[0], filename);
           this.dataStoreService.changeDataByAddress({
             ...details,
-            [col[0]]: image,
+            [col[0]]: filename,
           });
         }
       });
