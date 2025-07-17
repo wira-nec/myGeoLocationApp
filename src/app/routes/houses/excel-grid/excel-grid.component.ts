@@ -21,7 +21,7 @@ import {
 } from 'ag-grid-community';
 import {
   DataStoreService,
-  getAllKeyInfo,
+  getAllHeaderInfo,
   StoreData,
 } from '../../../core/services/data-store.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -120,8 +120,10 @@ export class ExcelGridComponent {
             // If data from DataStoreService is selected, set the filter model to null and select the row.
             this.gridApi.setFilterModel(null); // Clear any existing filters
           }
-          this.gridApi.setGridOption('columnDefs', this.colDefs);
-          this.gridApi.setGridOption('rowData', this.rowData);
+          this.gridApi.updateGridOptions({
+            columnDefs: this.colDefs,
+            rowData: this.rowData,
+          });
           if (this.selectedIndex !== undefined) {
             // Select the row based on the selected index.
             this.gridApi
@@ -137,10 +139,6 @@ export class ExcelGridComponent {
               // Show the page for the selected row.
               const pageSize = this.gridApi.paginationGetPageSize();
               const page = Math.floor((this.selectedIndex || 0) / pageSize); // page is 0 based
-              console.log('pageSize', pageSize);
-              console.log('selectedIndex', this.selectedIndex);
-              console.log('page', page);
-              console.log('totalPages', this.gridApi.paginationGetTotalPages());
               this.gridApi.paginationGoToPage(page);
               this.gridApi.ensureIndexVisible(this.selectedIndex);
             } else {
@@ -161,7 +159,7 @@ export class ExcelGridComponent {
   }
 
   private createColDefs(rowData: StoreData[] | { id: string }[]) {
-    const fieldInfo = getAllKeyInfo(rowData);
+    const fieldInfo = getAllHeaderInfo(rowData);
     // Column Definitions: Defines & controls grid columns.
     this.colDefs = fieldInfo.map((info) => {
       if (!info[1]) {
@@ -183,8 +181,13 @@ export class ExcelGridComponent {
           headerName: info[0],
           field: info[0],
           editable: false,
+          filter: false,
           headerTooltip: info[0],
-          tooltipValueGetter: (p: ITooltipParams) => p.value,
+          tooltipValueGetter: (p: ITooltipParams) => {
+            return (
+              this.pictureService.getPictureName(p.value) || 'No picture found'
+            );
+          },
           cellRenderer: ImageCellRendererComponent,
           cellClass: CLASS_FOR_PICTURE_CELL,
           minWidth: 20,
@@ -222,7 +225,7 @@ export class ExcelGridComponent {
         .filter((colDef) => colDef.cellClass === CLASS_FOR_PICTURE_CELL)
         .map((col) => ({
           [col.headerName as string]: this.pictureService.getPicture(
-            row[col.headerName as string].toLowerCase()
+            (row[col.headerName as string] || '').toLowerCase()
           ),
         }));
     this.rowData = rowData.map((row) => ({
