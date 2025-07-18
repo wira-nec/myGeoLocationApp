@@ -7,7 +7,9 @@
         aria-label="Button with a filter off icon"
         matTooltip="Clear filters"
       >
-        <mat-icon (click)="clearFilters()">filter_list_off</mat-icon>
+        <mat-icon aria-hidden="false" (click)="clearFilters()">
+          filter_list_off
+        </mat-icon>
       </button>
       <button
         matMiniFab
@@ -15,7 +17,9 @@
         aria-label="Button with a backup table icon"
         matTooltip="Save grid settings"
       >
-        <mat-icon (click)="saveSettings()">backup_table</mat-icon>
+        <mat-icon aria-hidden="false" (click)="saveSettings()">
+          backup_table
+        </mat-icon>
       </button>
       <button
         matMiniFab
@@ -24,19 +28,25 @@
         matTooltip="Restore grid settings"
       >
         <mat-icon
+          aria-hidden="false"
           fontSet="material-symbols-outlined"
           (click)="restoreSettings()"
-          >table</mat-icon
         >
+          table
+        </mat-icon>
       </button>
       <button
         matMiniFab
         aria-label="Button with a reset icon"
         matTooltip="Reset grid settings"
       >
-        <mat-icon fontSet="material-symbols-outlined" (click)="resetSettings()"
-          >reset_settings</mat-icon
+        <mat-icon
+          aria-hidden="false"
+          fontSet="material-symbols-outlined"
+          (click)="resetSettings()"
         >
+          reset_settings
+        </mat-icon>
       </button>
       <button
         matMiniFab
@@ -45,11 +55,13 @@
         [disabled]="disableUndoButton"
       >
         <mat-icon
+          aria-hidden="false"
           fontSet="material-symbols-outlined"
           (click)="undo()"
           [matBadge]="undoCounter"
-          >undo</mat-icon
         >
+          undo
+        </mat-icon>
       </button>
       <button
         matMiniFab
@@ -58,29 +70,39 @@
         [disabled]="disableRedoButton"
       >
         <mat-icon
+          aria-hidden="false"
           fontSet="material-symbols-outlined"
           (click)="redo()"
           [matBadge]="redoCounter"
-          >redo</mat-icon
         >
+          redo
+        </mat-icon>
       </button>
       <button
         matMiniFab
         aria-label="Button with a export csv icon"
         matTooltip="Export to csv file"
       >
-        <mat-icon fontSet="material-symbols-outlined" (click)="onBtnExport()"
-          >csv</mat-icon
+        <mat-icon
+          aria-hidden="false"
+          fontSet="material-symbols-outlined"
+          (click)="onBtnExport()"
         >
+          csv
+        </mat-icon>
       </button>
       <button
         matMiniFab
         aria-label="Button with a print icon"
         matTooltip="Print grid"
       >
-        <mat-icon fontSet="material-symbols-outlined" (click)="onBtPrint()"
-          >print</mat-icon
+        <mat-icon
+          aria-hidden="false"
+          fontSet="material-symbols-outlined"
+          (click)="onBtPrint()"
         >
+          print
+        </mat-icon>
       </button>
       <mat-checkbox
         matTooltip="Print all pages"
@@ -96,7 +118,9 @@
       mat-icon-button
       aria-label="Button with a close icon"
     >
-      <mat-icon class="close-icon" (click)="close()">close</mat-icon>
+      <mat-icon aria-hidden="false" class="close-icon" (click)="close()">
+        close
+      </mat-icon>
     </button>
   </div>
 </div>

@@ -28,6 +28,7 @@ import {
 import { StorageService } from '../../../../core/services/storage-service.service';
 import { Subject } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ZOOM_IN_COLUMN_NAME } from '../excel-grid.component';
 
 @Component({
   selector: 'app-top-buttons',
@@ -209,6 +210,7 @@ export class TopButtonsComponent implements OnInit {
 
   private setPrinterFriendly() {
     this.currentSelectedPage = this.gridApi.paginationGetCurrentPage();
+    this.gridApi.setColumnsVisible([ZOOM_IN_COLUMN_NAME], false);
     if (this.checkedAllPages) {
       this.gridApi.updateGridOptions({ pagination: false });
     } else {
@@ -247,6 +249,7 @@ export class TopButtonsComponent implements OnInit {
   }
   private setNormal() {
     this.gridStyleChange.emit('');
+    this.gridApi.setColumnsVisible([ZOOM_IN_COLUMN_NAME], true);
     this.gridApi.updateGridOptions({
       pagination: true,
       paginationAutoPageSize: true,

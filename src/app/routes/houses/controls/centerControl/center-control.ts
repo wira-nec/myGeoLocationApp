@@ -9,7 +9,7 @@ export class CenterControl extends Control {
     const options = opt_options;
     const button = document.createElement('button');
     button.innerHTML =
-      '<img style="height: 20px;" src="assets/icons8-center-of-gravity-50.png" alt="v" title="Center map on Nijkerk" />';
+      '<img style="height: 20px;" src="assets/location_searching_24dp.png" alt="v" title="Center map on Nijkerk" />';
     const centerElement = document.createElement('div');
     centerElement.className = 'center-map ol-unselectable ol-control';
     centerElement.appendChild(button);

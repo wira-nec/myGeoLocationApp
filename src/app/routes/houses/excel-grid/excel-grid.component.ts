@@ -34,11 +34,16 @@ import { Subject } from 'rxjs';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import { ImageCellRendererComponent } from './image-cell-renderer/image-cell-renderer.component';
 import { LoadPictureService } from '../../../core/services/load-picture.service';
+import { ZoomInButtonCellRendererComponent } from './zoom-in-button-cell-renderer/zoom-in-button-cell-renderer.component';
+import { GeoCoderService } from '../../../core/services/geo-coder.service';
+import { Markers } from '../providers/markers';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 const CLASS_FOR_PICTURE_CELL = 'picture-cell';
 const COLUMN_CLASS = 'column-class';
+
+export const ZOOM_IN_COLUMN_NAME = 'zoomIn';
 
 @Component({
   selector: 'app-excel-grid',
@@ -49,6 +54,7 @@ const COLUMN_CLASS = 'column-class';
     CommonModule,
     TopButtonsComponent,
   ],
+  providers: [Markers],
   templateUrl: './excel-grid.component.html',
   styleUrl: './excel-grid.component.scss',
 })
@@ -80,11 +86,11 @@ export class ExcelGridComponent {
   hostStyle: SafeStyle = '';
 
   private dataStore: StoreData[] = [];
-  private selectedIndex: number | undefined;
 
   constructor(
     private readonly pictureService: LoadPictureService,
     private readonly dataStoreService: DataStoreService,
+    private readonly geoDecoderService: GeoCoderService,
     private eRef: ElementRef,
     private doms: DomSanitizer
   ) {}
@@ -119,7 +125,7 @@ export class ExcelGridComponent {
     this.pictureService.pictureStore$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((pictureStore) => {
-        if (Object.keys(pictureStore).length) {
+        if (Object.keys(pictureStore).length && this.rowData.length) {
           this.createRowData();
           this.gridApi.updateGridOptions({ rowData: this.rowData });
         }
@@ -164,6 +170,10 @@ export class ExcelGridComponent {
     this.gridApi.updateGridOptions({
       columnDefs: this.colDefs,
       rowData: this.rowData,
+      context: {
+        geoDecoderService: this.geoDecoderService,
+        dataStoreService: this.dataStoreService,
+      },
     });
   }
 
@@ -208,12 +218,26 @@ export class ExcelGridComponent {
     const fieldInfo = getAllHeaderInfo(rowData);
     // Column Definitions: Defines & controls grid columns.
     this.colDefs = fieldInfo.map((info) => {
-      if (!info[1]) {
+      if (info[0] === ZOOM_IN_COLUMN_NAME) {
+        return this.createZoomInColDef();
+      } else if (!info[1]) {
         return this.createDefaultColDef(info);
       } else {
         return this.createPictureColDef(info);
       }
     });
+  }
+
+  private createZoomInColDef(): ColDef {
+    return {
+      field: ZOOM_IN_COLUMN_NAME,
+      headerName: 'Goto',
+      editable: false,
+      filter: false,
+      sortable: false,
+      cellRenderer: ZoomInButtonCellRendererComponent,
+      width: 50,
+    };
   }
 
   private createPictureColDef(info: [string, boolean]): ColDef {
@@ -222,6 +246,7 @@ export class ExcelGridComponent {
       field: info[0],
       editable: false,
       filter: false,
+      sortable: false,
       headerTooltip: info[0],
       tooltipValueGetter: (p: ITooltipParams) => {
         return (
@@ -271,9 +296,7 @@ export class ExcelGridComponent {
     const {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       geoPositionInfo,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       longitude,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       latitude,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       error,
@@ -283,6 +306,7 @@ export class ExcelGridComponent {
     } = data;
     return {
       id: index.toString(),
+      [ZOOM_IN_COLUMN_NAME]: [longitude, latitude].join(','),
       ...restAll,
     };
   }

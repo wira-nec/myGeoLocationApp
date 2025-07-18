@@ -25,6 +25,7 @@ import {
 import { SearchInputService } from './search-input.service';
 import { filter, fromEvent } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Coordinate } from 'ol/coordinate';
 
 interface FeatureCollection {
   type: string;
@@ -76,6 +77,7 @@ export class GeoCoderService {
     this.keyboardInput$.subscribe(() =>
       this.switchAddressChosenHandler(this.searchInputService.getVisibility())
     );
+    console.log('GeoCoderService initialized');
   }
 
   geocoderCreator(map: Map, zoomLevelSingleMarker: number) {
@@ -175,6 +177,7 @@ export class GeoCoderService {
       } else {
         const { postcode, street, housenumber, city } =
           evt.address.original.details;
+        const coords = [evt.place.lon, evt.place.lat];
         if (
           !this.dataStoreService.get({
             [STREET]: street,
@@ -185,21 +188,28 @@ export class GeoCoderService {
         ) {
           this.markers.addMarker(
             SEARCH_FOR_MARKER_ID,
-            [evt.place.lon, evt.place.lat],
+            coords,
             `${
               street?.length ? street + ' ' : ''
             }${housenumber} ${city}, ${postcode}`
           );
         }
-        this.map.getView().animate({
-          center: fromLonLat([evt.place.lon, evt.place.lat]),
-          zoom: 15,
-        });
+        this.zoomInOnCoordinates(coords);
       }
     };
   }
 
+  zoomInOnCoordinates(coords: Coordinate) {
+    this.map.getView().animate({
+      center: fromLonLat(coords),
+      zoom: 15,
+    });
+  }
+
   switchAddressChosenHandler(switchToSearchAddress: boolean) {
+    if (!this.geoCoder) {
+      return;
+    }
     this.geoCoder.un(ADDRESS_CHOSEN, this.activeAddressHandler);
     if (switchToSearchAddress) {
       this.activeAddressHandler = this.searchAddressChosen();

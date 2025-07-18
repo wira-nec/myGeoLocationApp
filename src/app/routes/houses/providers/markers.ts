@@ -99,7 +99,9 @@ const getLocatorStyle = (labelText: string): StyleLike | undefined => {
   });
 };
 
-@Injectable()
+@Injectable({
+  providedIn: 'root',
+})
 export class Markers {
   private zoomInput = new Subject<ObjectEvent>();
   public zoomLevelSingleMarker = 11;

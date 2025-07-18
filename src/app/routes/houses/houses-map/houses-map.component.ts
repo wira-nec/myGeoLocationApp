@@ -61,7 +61,6 @@ import { BasicEventHandlers } from '../providers/basicEventHandler';
   styleUrl: './houses-map.component.scss',
   providers: [
     Markers,
-    GeoCoderService,
     MapEventHandlers,
     {
       provide: MapEventHandlers,
@@ -82,8 +81,6 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   private readonly editExcelControl = new EditExcelControl({
     callback: (evt: Event) => this.showExcelGrid(evt),
   });
-  private readonly markers = inject(Markers);
-  private readonly geoCoderService = inject(GeoCoderService);
 
   constructor(
     private readonly geoPositionService: GeoPositionService,
@@ -93,7 +90,9 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
     private readonly progressService: ProgressService,
     private readonly renderer: Renderer2,
     private readonly searchInputService: SearchInputService,
-    private readonly mapEventHandlers: MapEventHandlers
+    private readonly mapEventHandlers: MapEventHandlers,
+    private readonly markers: Markers,
+    private readonly geoCoderService: GeoCoderService
   ) {
     this.destroyRef = inject(DestroyRef);
     effect(() => {
