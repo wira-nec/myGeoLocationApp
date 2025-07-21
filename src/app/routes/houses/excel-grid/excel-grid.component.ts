@@ -23,12 +23,12 @@ import {
   DataStoreService,
   getAllHeaderInfo,
   StoreData,
+  UNIQUE_ID,
 } from '../../../core/services/data-store.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { OverflowPaneDirective } from '../../../directives/overflow-pane.directive';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import { CommonModule } from '@angular/common';
-import { isEqual } from 'lodash';
 import { TopButtonsComponent } from './top-buttons/top-buttons.component';
 import { Subject } from 'rxjs';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
@@ -147,7 +147,7 @@ export class ExcelGridComponent {
             // If row is selected, set the filter model to null and select the row.
             this.gridApi.setFilterModel(null); // Clear any existing filters
           }
-          this.autoSizeColumnsAndPaging(selectedIndex);
+          this.autoSizeColumnsAndPaging(Number(selectedIndex || 0));
         }
       });
   }
@@ -172,16 +172,7 @@ export class ExcelGridComponent {
   }
 
   private handleSelection() {
-    let selectedIndex;
-    const selectedData = this.dataStoreService.getSelectedData();
-    if (selectedData) {
-      // If data is selected, filter the data store to only include the selected data.
-      selectedIndex = this.dataStore.findIndex((data) =>
-        isEqual(data, selectedData)
-      );
-    } else {
-      selectedIndex = undefined;
-    }
+    const selectedIndex = this.dataStoreService.getSelectedData();
     if (selectedIndex !== undefined) {
       // Select the row based on the selected index.
       this.gridApi.getRowNode(selectedIndex?.toString())?.setSelected(true);
@@ -208,7 +199,7 @@ export class ExcelGridComponent {
     }, 10);
   }
 
-  private createColDefs(rowData: StoreData[] | { id: string }[]) {
+  private createColDefs(rowData: StoreData[]) {
     const fieldInfo = getAllHeaderInfo(rowData);
     // Column Definitions: Defines & controls grid columns.
     this.colDefs = fieldInfo.map((info) => {
@@ -257,7 +248,7 @@ export class ExcelGridComponent {
     return {
       headerName: info[0],
       field: info[0],
-      hide: info[0] === 'id',
+      hide: info[0] === UNIQUE_ID,
       editable: true,
       cellEditor: 'agTextCellEditor',
       cellEditorParams: {
@@ -286,7 +277,7 @@ export class ExcelGridComponent {
     }));
   }
 
-  private convertToGridRowData(data: StoreData, index: number) {
+  private convertToGridRowData(data: StoreData) {
     const {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       geoPositionInfo,
@@ -299,16 +290,13 @@ export class ExcelGridComponent {
       ...restAll
     } = data;
     return {
-      id: index.toString(),
       [ZOOM_IN_COLUMN_NAME]: [longitude, latitude].join(','),
       ...restAll,
     };
   }
 
-  private getRowDataForGrid(): StoreData[] | { id: string }[] {
-    return this.dataStore.map((data, index) =>
-      this.convertToGridRowData(data, index)
-    );
+  private getRowDataForGrid(): StoreData[] {
+    return this.dataStore.map((data) => this.convertToGridRowData(data));
   }
 
   onFirstDataRendered($event: FirstDataRenderedEvent<StoreData, ColDef>) {
@@ -317,7 +305,7 @@ export class ExcelGridComponent {
 
   onGetRowId(params: GetRowIdParams<StoreData, Context>): string {
     // Use the 'id' field from the data as the unique identifier for the row
-    return params.data['id'] as string;
+    return params.data[UNIQUE_ID] as string;
   }
 
   onCellValueChanged(event: CellValueChangedEvent<StoreData>): void {
@@ -326,8 +314,8 @@ export class ExcelGridComponent {
     this.dataStoreService.changeDataBySelectedData(updatedData);
     // If in edit mode, update the rowData to reflect changes
     if (this.inEditMode) {
-      this.rowData = this.dataStoreService.getStore().map((data, index) => {
-        return this.convertToGridRowData(data, index);
+      this.rowData = this.dataStoreService.getStore().map((data) => {
+        return this.convertToGridRowData(data);
       });
     }
   }

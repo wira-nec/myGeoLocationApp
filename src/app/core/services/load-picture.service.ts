@@ -14,24 +14,30 @@ export class LoadPictureService {
   private pictureStore: PictureStore = {};
   pictureStore$ = new Subject<PictureStore>();
 
-  public loadPicture(file: File, filename: string) {
-    const reader = new FileReader();
-    reader.onload = (e: ProgressEvent<FileReader>) => {
-      if (e.target?.result) {
-        if (file.type.toLowerCase() === 'application/json') {
-          const jsonData = JSON.parse(e.target?.result as string);
-          Object.keys(jsonData).forEach((filename) => {
+  public loadPictureAsync(file: File, filename: string) {
+    return new Promise<void>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        if (e.target?.result) {
+          if (file.type.toLowerCase() === 'application/json') {
+            const jsonData = JSON.parse(e.target?.result as string);
+            Object.keys(jsonData).forEach((filename) => {
+              this.storePicture(
+                jsonData[filename.toLowerCase()],
+                filename.toLowerCase()
+              );
+            });
+          } else {
             this.storePicture(
-              jsonData[filename.toLowerCase()],
+              e.target?.result as string,
               filename.toLowerCase()
             );
-          });
-        } else {
-          this.storePicture(e.target?.result as string, filename.toLowerCase());
+          }
         }
-      }
-    };
-    reader.readAsDataURL(file);
+        resolve();
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   public async loadPictures(files: File[], progressService: ProgressService) {

@@ -6,6 +6,7 @@ import { PictureStore } from './load-picture.service';
 
 export type StoreData = Record<string, string>;
 
+export const UNIQUE_ID = 'id';
 export const ADDRESS = 'address';
 export const POSTCODE = 'postcode';
 export const CITY = 'city';
@@ -168,7 +169,7 @@ export const getAllHeaderInfo = (data: StoreData[]) => {
 export class DataStoreService {
   private dataStore: StoreData[];
   private lastNumberOfDataRecordsAdded = 0;
-  private selectedData: StoreData | undefined;
+  private selectedData: string | undefined;
 
   // Flag to indicate if the data store is in edit mode
   // This can be used to toggle between viewing and editing the data store.
@@ -191,10 +192,10 @@ export class DataStoreService {
   }
 
   public setSelectedData(data: StoreData | undefined) {
-    this.selectedData = data;
+    this.selectedData = data ? data[UNIQUE_ID] : undefined;
   }
 
-  public getSelectedData(): StoreData | undefined {
+  public getSelectedData(): string | undefined {
     return this.selectedData;
   }
 
@@ -339,11 +340,20 @@ export class DataStoreService {
         postcode === addressInfo[3]
       );
     });
-    if (dataItem) {
+    let dataChanged = false;
+    if (dataItem && dataItem[LONGITUDE] !== longitude.toString()) {
       dataItem[LONGITUDE] = longitude.toString();
-      dataItem[LATITUDE] = latitude.toString();
-      dataItem[INFO] = geoPositionInfo;
+      dataChanged = true;
     }
+    if (dataItem && dataItem[LATITUDE] !== latitude.toString()) {
+      dataItem[LATITUDE] = latitude.toString();
+      dataChanged = true;
+    }
+    if (dataItem && dataItem[INFO] !== geoPositionInfo) {
+      dataItem[INFO] = geoPositionInfo;
+      dataChanged = true;
+    }
+    return dataChanged;
   }
 
   public get(filter: StoreData): StoreData | undefined {

@@ -8,6 +8,7 @@ import {
   LATITUDE,
   LONGITUDE,
   StoreData,
+  VOORAANZICHT,
 } from '../../../../core/services/data-store.service';
 import { DomSanitizer } from '@angular/platform-browser';
 import { LoadPictureService } from '../../../../core/services/load-picture.service';
@@ -95,25 +96,41 @@ export class CardFooterComponent {
     this.mapEventHandlers.closePopup();
   }
 
-  setNewPicture(details: StoreData) {
-    const headerInfo = getAllHeaderInfo(this.dataStoreService.getStore());
-    headerInfo
-      .filter((col) => col[1])
-      .forEach((col) => {
-        let filename = details[col[0]];
+  async setNewPictureAsync(details: StoreData) {
+    const headerInfo = getAllHeaderInfo(
+      this.dataStoreService.getStore()
+    ).filter((col) => col[1]);
+    let filename = getImageName(details);
+    if (!filename) {
+      return; // No filename available, exit early
+    }
+    if (headerInfo.length === 0) {
+      // If no header info, use the default column name for pictures
+      await this.uploadNewPicture(filename, details, VOORAANZICHT);
+    } else {
+      for (const col of headerInfo) {
+        const pictureColName = col[0];
+        filename = details[pictureColName];
         if (!filename || !filename.length) {
           filename = getImageName(details) || '';
         }
-        const input = document.querySelector(
-          '#uploadPicture'
-        ) as HTMLInputElement;
-        if (input.files && filename.length) {
-          this.pictureService.loadPicture(input.files[0], filename);
-          this.dataStoreService.changeDataByAddress({
-            ...details,
-            [col[0]]: filename,
-          });
-        }
+        await this.uploadNewPicture(filename, details, pictureColName);
+      }
+    }
+  }
+
+  private async uploadNewPicture(
+    filename: string,
+    details: StoreData,
+    pictureColName: string
+  ) {
+    const input = document.querySelector('#uploadPicture') as HTMLInputElement;
+    if (input.files && filename.length) {
+      await this.pictureService.loadPictureAsync(input.files[0], filename);
+      this.dataStoreService.changeDataByAddress({
+        ...details,
+        [pictureColName]: filename,
       });
+    }
   }
 }

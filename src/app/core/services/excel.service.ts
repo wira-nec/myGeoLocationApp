@@ -7,6 +7,7 @@ import {
   getImageNames,
   SHEET_NAME,
   StoreData,
+  UNIQUE_ID,
 } from './data-store.service';
 import { mergeStoreData } from '../helpers/dataManipulations';
 import { ToasterService } from './toaster.service';
@@ -211,7 +212,7 @@ export class ExcelService {
 
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber == 1) return;
-      const obj = {} as StoreData;
+      const obj = { [UNIQUE_ID]: rowNumber.toString() } as StoreData;
       row.eachCell((cell, colNumber) => {
         const cellText = cell.text;
         let imageData = undefined;
@@ -362,7 +363,7 @@ export class ExcelService {
       (acc, item) => {
         const pictureNames = getImageNames(item);
         // Destructure geoPositionInfo, longitude, latitude, error, and all pictureNames from item
-        const { geoPositionInfo, longitude, latitude, error, ...restAll } =
+        const { id, geoPositionInfo, longitude, latitude, error, ...restAll } =
           item;
         // Extract picture fields and remove them from restAll
         const pictureFields: Record<string, string> = {};
@@ -378,6 +379,7 @@ export class ExcelService {
         const [address, street, postcode, houseNumber, city] =
           getDataStoreKeys(rest);
         acc[1].push({
+          id,
           ...(rest[postcode] ? { [postcode]: rest[postcode] } : {}),
           ...(rest[city] ? { [city]: rest[city] } : {}),
           ...(rest[houseNumber] ? { [houseNumber]: rest[houseNumber] } : {}),
@@ -546,9 +548,11 @@ export class ExcelService {
         const headerRow = workbookSheet.getRow(1);
         if (headerRow) {
           headerRow.eachCell((cell, index) => {
-            cell.value = sheet.header.getCell(index).value;
-            cell.style = sheet.header.getCell(index).style;
-            cell.font = sheet.header.getCell(index).font;
+            if (index <= sheet.header.cellCount) {
+              cell.value = sheet.header.getCell(index).value ?? cell.value;
+              cell.style = sheet.header.getCell(index).style;
+              cell.font = sheet.header.getCell(index).font;
+            }
           });
         }
       }

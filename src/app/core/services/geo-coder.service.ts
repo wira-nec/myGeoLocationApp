@@ -59,6 +59,7 @@ export class GeoCoderService {
   responses: Record<string, FeatureCollection[]> = {};
 
   isGeocodeHandlingFinished: boolean | undefined = undefined;
+  isPositionUpdated = false;
   geoCoder!: typeof olGeocoder;
   photonProvider: PhotonProvider;
 
@@ -142,12 +143,15 @@ export class GeoCoderService {
           JSON.stringify({ postcode, street, housenumber, city, query })
         );
         if (storeData) {
-          this.dataStoreService.updateGeoPosition(
+          const isUpdate = this.dataStoreService.updateGeoPosition(
             storeData,
             evt.place.lon,
             evt.place.lat,
             JSON.stringify({ postcode, street, housenumber, city, query })
           );
+          if (isUpdate) {
+            this.isPositionUpdated = true;
+          }
         }
         await this.progressService.increaseProgressByStep(
           XSL_IMPORT_PROGRESS_ID
@@ -159,6 +163,10 @@ export class GeoCoderService {
             'isGeocodeHandlingFinished',
             this.isGeocodeHandlingFinished
           );
+          // Recommit the data store if the position was updated
+          if (this.isPositionUpdated) {
+            this.dataStoreService.syncDataStoreWithPictures({}, true);
+          }
           map.getView().animate({
             center: fromLonLat([5.4808, 52.2211]),
             zoom: zoomLevelSingleMarker,
