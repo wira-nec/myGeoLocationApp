@@ -26,14 +26,6 @@ export class UploadMultipleFilesComponent {
   async uploadFiles(e: any) {
     const files = Array.from(e.target.files as FileList);
     this.progressService.setMaxCount(PICTURES_IMPORT_PROGRESS_ID, files.length);
-    // use for loop because of async function, which will not wait in a foreach
-    // eslint-disable-next-line @typescript-eslint/prefer-for-of
-    for (let index = 0; index < files.length; index++) {
-      const file = files[index];
-      this.pictureService.loadPicture(file, file.name);
-      await this.progressService.increaseProgressByStep(
-        PICTURES_IMPORT_PROGRESS_ID
-      );
-    }
+    await this.pictureService.loadPictures(files, this.progressService);
   }
 }

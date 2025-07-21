@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import { blobsFilter, mergeStoreData } from '../helpers/dataManipulations';
 import { isEqual } from 'lodash';
+import { PictureStore } from './load-picture.service';
 
 export type StoreData = Record<string, string>;
 
@@ -9,6 +10,7 @@ export const ADDRESS = 'address';
 export const POSTCODE = 'postcode';
 export const CITY = 'city';
 export const HOUSE_NUMBER = 'housenumber';
+export const VOORAANZICHT = 'Vooraanzicht';
 export const INFO = 'geoPositionInfo';
 export const ERROR = 'error';
 export const STREET = 'street';
@@ -232,13 +234,14 @@ export class DataStoreService {
     ];
   }
 
-  public store(data: StoreData[]) {
+  public store(data: StoreData[], pictures: PictureStore) {
     const [mergedData, newData] = this.getMergedDataAndNewUniqueData(data);
     console.log('New data added', newData);
     console.log('Merged data added', mergedData);
     this.lastNumberOfDataRecordsAdded =
       mergedData.length - this.dataStore.length;
     this.dataStore = mergedData;
+    this.syncDataStoreWithPictures(pictures);
     this.dataStore$.next(newData);
   }
 
@@ -257,7 +260,39 @@ export class DataStoreService {
         return;
       }
     }
-    console.error('setStoreData failed');
+    console.error('changeDataByAddress failed');
+  }
+
+  public syncDataStoreWithPictures(pictures: PictureStore, commit = false) {
+    // lookup columns in dataStore that have pictures
+    this.dataStore.forEach((dataStore) => {
+      let pictureColumnName = VOORAANZICHT;
+      const addressColumnName = getKey(dataStore, ADDRESS_KEYS, '');
+      const pictureColumnNames = Object.keys(dataStore).filter(
+        (key) => blobsFilter(dataStore[key]) || imagesFilter(dataStore[key])
+      );
+      // Currently only one picture column is supported
+      if (pictureColumnNames.length > 0) {
+        pictureColumnName = pictureColumnNames[0];
+      }
+      Object.keys(pictures).forEach((filename) => {
+        // remove .jpg or .jpeg from filename to get the address
+        const address = filename
+          .replace(/\.jpg|.jpeg$/, '')
+          .toLocaleLowerCase();
+        if (
+          addressColumnName &&
+          dataStore[addressColumnName].toLowerCase() === address
+        ) {
+          dataStore[pictureColumnName] = filename;
+        } else {
+          dataStore[pictureColumnName] = dataStore[pictureColumnName] || '';
+        }
+      });
+    });
+    if (commit) {
+      this.dataStore$.next(this.dataStore);
+    }
   }
 
   public changeDataBySelectedData(data: StoreData) {
@@ -288,6 +323,29 @@ export class DataStoreService {
     this.dataStore$.next([this.dataStore[Number(id)]]);
   }
 
+  public updateGeoPosition(
+    storeData: StoreData,
+    longitude: number,
+    latitude: number,
+    geoPositionInfo: string
+  ) {
+    const addressInfo = getAddress(storeData);
+    const dataItem = this.dataStore.find((data) => {
+      const [street, houseNumber, city, postcode] = getAddress(data);
+      return (
+        street === addressInfo[0] &&
+        houseNumber === addressInfo[1] &&
+        city === addressInfo[2] &&
+        postcode === addressInfo[3]
+      );
+    });
+    if (dataItem) {
+      dataItem[LONGITUDE] = longitude.toString();
+      dataItem[LATITUDE] = latitude.toString();
+      dataItem[INFO] = geoPositionInfo;
+    }
+  }
+
   public get(filter: StoreData): StoreData | undefined {
     const filterKeys = Object.keys(filter);
     const foundData = this.dataStore.find((data) => {
@@ -310,7 +368,15 @@ export class DataStoreService {
   }
 
   public getByAddr(address: string): StoreData | undefined {
-    const foundData = this.dataStore.find((data) => {
+    const foundData = this.findDataByAddress(address);
+    if (foundData) {
+      return Object.assign({}, foundData) as StoreData;
+    }
+    return undefined;
+  }
+
+  private findDataByAddress(address: string) {
+    return this.dataStore.find((data) => {
       const addressKey = ADDRESS_KEYS.find((key) =>
         Object.keys(data).includes(key)
       );
@@ -321,10 +387,6 @@ export class DataStoreService {
           address.replaceAll(/(,|-|\s)/g, '').toLowerCase()
       );
     });
-    if (foundData) {
-      return Object.assign({}, foundData) as StoreData;
-    }
-    return undefined;
   }
 
   public findByApproach(

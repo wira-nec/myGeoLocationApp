@@ -1,5 +1,9 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Subject } from 'rxjs';
+import {
+  PICTURES_IMPORT_PROGRESS_ID,
+  ProgressService,
+} from './progress.service';
 
 export type PictureStore = Record<string, string | ArrayBuffer>;
 
@@ -8,7 +12,7 @@ export type PictureStore = Record<string, string | ArrayBuffer>;
 })
 export class LoadPictureService {
   private pictureStore: PictureStore = {};
-  pictureStore$ = new BehaviorSubject<PictureStore>({});
+  pictureStore$ = new Subject<PictureStore>();
 
   public loadPicture(file: File, filename: string) {
     const reader = new FileReader();
@@ -28,6 +32,28 @@ export class LoadPictureService {
       }
     };
     reader.readAsDataURL(file);
+  }
+
+  public async loadPictures(files: File[], progressService: ProgressService) {
+    const pictures: PictureStore = {};
+    for (const file of files) {
+      // make onload async to ensure all files are read before proceeding
+      await new Promise<void>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e: ProgressEvent<FileReader>) => {
+          if (e.target?.result) {
+            Object.assign(pictures, {
+              [file.name.toLowerCase()]: e.target?.result as string,
+            });
+          }
+          resolve();
+        };
+        reader.readAsDataURL(file);
+      });
+      await progressService.increaseProgressByStep(PICTURES_IMPORT_PROGRESS_ID);
+    }
+    this.pictureStore = { ...this.pictureStore, ...pictures };
+    this.pictureStore$.next(pictures);
   }
 
   // Store the picture in the pictureStore and emit the change

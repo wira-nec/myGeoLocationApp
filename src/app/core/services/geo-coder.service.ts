@@ -141,6 +141,14 @@ export class GeoCoderService {
           storeData,
           JSON.stringify({ postcode, street, housenumber, city, query })
         );
+        if (storeData) {
+          this.dataStoreService.updateGeoPosition(
+            storeData,
+            evt.place.lon,
+            evt.place.lat,
+            JSON.stringify({ postcode, street, housenumber, city, query })
+          );
+        }
         await this.progressService.increaseProgressByStep(
           XSL_IMPORT_PROGRESS_ID
         );

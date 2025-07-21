@@ -75,12 +75,24 @@ export class BottomFileSelectionSheetComponent implements OnInit {
           progressSubscription.unsubscribe();
         }
       });
+    const pictureServiceSubscription = this.watchForPictureChanges();
 
     this.destroyRef.onDestroy(() => {
       progressSubscription.unsubscribe();
+      pictureServiceSubscription.unsubscribe();
     });
   }
 
+  watchForPictureChanges() {
+    return this.pictureService.pictureStore$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((pictures) => {
+        if (Object.keys(pictures).length > 0) {
+          this.dataStoreService.syncDataStoreWithPictures(pictures, true);
+          // this.progressService.setMaxCount(PICTURES_IMPORT_PROGRESS_ID, 1); // Reset progress bar
+        }
+      });
+  }
   closeLink(): void {
     setTimeout(() => {
       this._bottomSheetRef.dismiss();
@@ -96,7 +108,10 @@ export class BottomFileSelectionSheetComponent implements OnInit {
         (excelData) => {
           this.excelData = excelData;
           this.progressService.setMaxCount(XSL_IMPORT_PROGRESS_ID, 1); // Reset progress bar
-          this.dataStoreService.store(this.excelData);
+          this.dataStoreService.store(
+            this.excelData,
+            this.pictureService.getPicturesStore()
+          );
         },
         (error) => console.log(error)
       );

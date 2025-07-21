@@ -103,14 +103,18 @@ export class ExcelGridComponent {
 
   onGridReady(params: GridReadyEvent) {
     this.gridApi = params.api;
-    this.watchOnFirstGridRender();
-    this.watchEditMode();
-    this.watchDataUpdates();
-    this.watchPictureUpdates();
+    const gridRendererSubscription = this.watchOnFirstGridRender();
+    const editModeSubscription = this.watchEditMode();
+    const dataStoreServiceSubscription = this.watchDataUpdates();
+    this.destroyRef.onDestroy(() => {
+      gridRendererSubscription.unsubscribe();
+      editModeSubscription.unsubscribe();
+      dataStoreServiceSubscription.unsubscribe();
+    });
   }
 
   private watchOnFirstGridRender() {
-    this.firstDataRendered$
+    return this.firstDataRendered$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         if (!this.rowData.length) {
@@ -121,29 +125,19 @@ export class ExcelGridComponent {
       });
   }
 
-  private watchPictureUpdates() {
-    this.pictureService.pictureStore$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((pictureStore) => {
-        if (Object.keys(pictureStore).length && this.rowData.length) {
-          this.createRowData();
-          this.gridApi.updateGridOptions({ rowData: this.rowData });
-        }
-      });
-  }
-
   private watchDataUpdates() {
-    this.dataStoreService.dataStore$
+    return this.dataStoreService.dataStore$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(async (data) => {
         if (data.length) {
           this.createGridData();
+          this.loadDataInGrid();
         }
       });
   }
 
   private watchEditMode() {
-    this.dataStoreService.editMode$
+    return this.dataStoreService.editMode$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((editMode) => {
         this.inEditMode = editMode && this.dataStore.length > 0;
