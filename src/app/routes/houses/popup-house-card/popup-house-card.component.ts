@@ -22,7 +22,6 @@ import { CardHeaderComponent } from './cardHeader/card-header.component';
 import { ExcelContentComponent } from './excel-content/excel-content.component';
 import { PicturesContentComponent } from './pictures-content/pictures-content.component';
 import { MapEventHandlers } from '../providers/mapEventHandlers';
-import { BasicEventHandlers } from '../providers/basicEventHandler';
 import { CardFooterComponent } from './card-footer/card-footer.component';
 
 @Component({
@@ -39,13 +38,6 @@ import { CardFooterComponent } from './card-footer/card-footer.component';
     ExcelContentComponent,
     PicturesContentComponent,
     CardFooterComponent,
-  ],
-  providers: [
-    MapEventHandlers,
-    {
-      provide: MapEventHandlers,
-      useExisting: BasicEventHandlers,
-    },
   ],
   hostDirectives: [NgClass],
   templateUrl: './popup-house-card.component.html',

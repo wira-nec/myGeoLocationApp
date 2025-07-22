@@ -6,19 +6,11 @@ import {
   StoreData,
 } from '../../../../core/services/data-store.service';
 import { Map } from 'ol';
-import { BasicEventHandlers } from '../../providers/basicEventHandler';
 import { MapEventHandlers } from '../../providers/mapEventHandlers';
 
 @Component({
   selector: 'app-card-header',
   imports: [MatCardModule, MatIconModule],
-  providers: [
-    MapEventHandlers,
-    {
-      provide: MapEventHandlers,
-      useExisting: BasicEventHandlers,
-    },
-  ],
   templateUrl: './card-header.component.html',
   styleUrl: './card-header.component.scss',
 })

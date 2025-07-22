@@ -7,18 +7,10 @@ import {
 } from '@angular/core';
 import { Map } from 'ol';
 import { MapEventHandlers } from '../providers/mapEventHandlers';
-import { BasicEventHandlers } from '../providers/basicEventHandler';
 
 @Component({
   selector: 'app-tooltip-info-component',
   imports: [],
-  providers: [
-    MapEventHandlers,
-    {
-      provide: MapEventHandlers,
-      useExisting: BasicEventHandlers,
-    },
-  ],
   templateUrl: './tooltip-info-component.component.html',
   styleUrl: './tooltip-info-component.component.scss',
 })

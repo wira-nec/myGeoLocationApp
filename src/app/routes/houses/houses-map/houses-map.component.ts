@@ -46,7 +46,6 @@ import { GeoCoderService } from '../../../core/services/geo-coder.service';
 import { SearchInputService } from '../../../core/services/search-input.service';
 import { EditExcelControl } from '../controls/edit-excel-control/edit-excel-control.component';
 import { MapEventHandlers } from '../providers/mapEventHandlers';
-import { BasicEventHandlers } from '../providers/basicEventHandler';
 import { getAddress as getFullAddress } from '../../../core/helpers/dataManipulations';
 
 @Component({
@@ -59,13 +58,6 @@ import { getAddress as getFullAddress } from '../../../core/helpers/dataManipula
   ],
   templateUrl: './houses-map.component.html',
   styleUrl: './houses-map.component.scss',
-  providers: [
-    MapEventHandlers,
-    {
-      provide: MapEventHandlers,
-      useExisting: BasicEventHandlers,
-    },
-  ],
 })
 export class HousesMapComponent implements OnInit, AfterViewInit {
   map!: Map;
