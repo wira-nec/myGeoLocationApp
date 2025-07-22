@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1752507336589,
+  "timestamp": 1753178253936,
   "index": "/myGeoLocationApp/index.html",
   "assetGroups": [
     {
@@ -24,11 +24,11 @@
         "/myGeoLocationApp/chunk-XPYLUDOQ.js",
         "/myGeoLocationApp/favicon.ico",
         "/myGeoLocationApp/index.html",
-        "/myGeoLocationApp/main-4X3D6BKU.js",
+        "/myGeoLocationApp/main-AEBN3JJM.js",
         "/myGeoLocationApp/manifest.webmanifest",
         "/myGeoLocationApp/polyfills-FFHMD2TL.js",
         "/myGeoLocationApp/scripts-KTX5TRIF.js",
-        "/myGeoLocationApp/styles-ON6ZWNV6.css"
+        "/myGeoLocationApp/styles-PUZLESU3.css"
       ],
       "patterns": []
     },
@@ -43,7 +43,6 @@
         "/myGeoLocationApp/assets/account_circle_50.png",
         "/myGeoLocationApp/assets/add_a_photo.svg",
         "/myGeoLocationApp/assets/folder-plus-circle.svg",
-        "/myGeoLocationApp/assets/icons8-center-of-gravity-50.png",
         "/myGeoLocationApp/assets/icons8-export-excel-24.png",
         "/myGeoLocationApp/assets/icons8-export-excel-50.png",
         "/myGeoLocationApp/assets/icons8-house-20.png",
@@ -55,6 +54,7 @@
         "/myGeoLocationApp/assets/icons8-marker-30.png",
         "/myGeoLocationApp/assets/icons8-marker-40.png",
         "/myGeoLocationApp/assets/icons8-marker-50.png",
+        "/myGeoLocationApp/assets/location_searching_24dp.png",
         "/myGeoLocationApp/assets/position_marker.png",
         "/myGeoLocationApp/assets/table_edit_24dp.png",
         "/myGeoLocationApp/assets/table_edit_24dp.svg",
@@ -75,7 +75,6 @@
     "/myGeoLocationApp/assets/account_circle_50.png": "d2e95b9175ede75cd4d1ae02e6d71a336d6caef3",
     "/myGeoLocationApp/assets/add_a_photo.svg": "41fe23b05298b7b4e0efa8cfd93b82fbdbfbe90f",
     "/myGeoLocationApp/assets/folder-plus-circle.svg": "2aac72e40b8c9e634a8bdc00adfd72b0170a7043",
-    "/myGeoLocationApp/assets/icons8-center-of-gravity-50.png": "4edcfbd16f7e0a49e412b39c957bbee25d2af2c9",
     "/myGeoLocationApp/assets/icons8-export-excel-24.png": "14224aa76f14367ea0e35d1ee10fe33cf77d004b",
     "/myGeoLocationApp/assets/icons8-export-excel-50.png": "80552af441930db7ad3bc1e8a7c7bca1274d96be",
     "/myGeoLocationApp/assets/icons8-house-20.png": "ea33feb4b08d20154ce8491b0a0725a6c2910f90",
@@ -87,6 +86,7 @@
     "/myGeoLocationApp/assets/icons8-marker-30.png": "025f01cfce714b6f7e8f2281a97c9ea5e209423e",
     "/myGeoLocationApp/assets/icons8-marker-40.png": "c798e7d20d721447164b87d319bf90fd802e97df",
     "/myGeoLocationApp/assets/icons8-marker-50.png": "6803c37f29076e70f5e41e8e79bce33da0dbeecc",
+    "/myGeoLocationApp/assets/location_searching_24dp.png": "252cca899f44da633b9b0623f10dadcd01b7435f",
     "/myGeoLocationApp/assets/position_marker.png": "d037573af2e756305b831b4d62c094aa38cddece",
     "/myGeoLocationApp/assets/table_edit_24dp.png": "c0bab0504f2b6475d707a04bb2717a67b3f16b46",
     "/myGeoLocationApp/assets/table_edit_24dp.svg": "3b6cd692150a910e78e99453a0c3d2650992b536",
@@ -110,12 +110,12 @@
     "/myGeoLocationApp/icons/icon-512x512.png": "1de182f76f7329dfa8f9fcdd1fdcdd695bea6a99",
     "/myGeoLocationApp/icons/icon-72x72.png": "aa88a6096bd973be7f6d7a5489bfa6bc2463f8c4",
     "/myGeoLocationApp/icons/icon-96x96.png": "7fb8f59c30ce2ff12c700321a0b39e14b3dc8f95",
-    "/myGeoLocationApp/index.html": "c7c25fd0dbe619ab5a404010e5533d1993815b4b",
-    "/myGeoLocationApp/main-4X3D6BKU.js": "6e96df2a2e2bcbc35ee8ba0d8dcf6ec90594a89d",
+    "/myGeoLocationApp/index.html": "ea01d8516b44c433c4fd1e56eb1aedcd02c3f4d9",
+    "/myGeoLocationApp/main-AEBN3JJM.js": "6aa7d81c28cda432f62c9e73ca71decf6cbac0bb",
     "/myGeoLocationApp/manifest.webmanifest": "104955563b660ae2c6ec21a79043f9f15567f0fe",
     "/myGeoLocationApp/polyfills-FFHMD2TL.js": "f49b49a155bc7d192db62a4c15d0a612b460a667",
     "/myGeoLocationApp/scripts-KTX5TRIF.js": "11a8a4a79946462e265a2bcec1e9990c92492ed9",
-    "/myGeoLocationApp/styles-ON6ZWNV6.css": "de05e9974fcd5aa4e1eed6c1b3e9fd3125e7373a"
+    "/myGeoLocationApp/styles-PUZLESU3.css": "b3487f87f7eed83cd3c21ae9cbc7fa145ed6d964"
   },
   "navigationUrls": [
     {
