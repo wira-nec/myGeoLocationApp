@@ -1,18 +1,26 @@
 import { Injectable } from '@angular/core';
-import { getUid, Map, MapBrowserEvent, Overlay } from 'ol';
-import { GeoPositionService } from '../../../core/services/geo-position.service';
+import { Map, MapBrowserEvent, Overlay } from 'ol';
 import { FontSizeService } from '../../../core/services/font-size.service';
 import {
   CITY,
+  DataStoreService,
   ERROR,
   HOUSE_NUMBER,
   POSTCODE,
   StoreData,
   STREET,
 } from '../../../core/services/data-store.service';
-import { FeatureLike } from 'ol/Feature';
+import Feature, { FeatureLike } from 'ol/Feature';
 import { Pixel } from 'ol/pixel';
 import { Coordinate } from 'ol/coordinate';
+import {
+  ADDRESS_PROPERTY,
+  GEO_INFORMATION_PROPERTY,
+  SEARCH_FOR_MARKER_ID,
+  STORE_DATA_ID_PROPERTY,
+} from './markers';
+import { Geometry } from 'ol/geom';
+import { Style } from 'ol/style';
 
 export type OnClickHandler = (data: StoreData) => void;
 
@@ -29,8 +37,8 @@ export class BasicEventHandlers {
   private onClickHandler: OnClickHandler | null = null;
 
   constructor(
-    private readonly geoPositionService: GeoPositionService,
-    private readonly fontSizeService: FontSizeService
+    private readonly fontSizeService: FontSizeService,
+    private readonly dataStoreService: DataStoreService
   ) {}
 
   public assignTooltipHandlers(
@@ -119,22 +127,26 @@ export class BasicEventHandlers {
     feature: FeatureLike,
     coordinate: Coordinate | undefined
   ) {
-    const uid = getUid(feature);
-    const geoPositionId = this.geoPositionService.getIdByUid(uid);
-    if (geoPositionId && this.onClickHandler) {
-      const selectedGeoPos =
-        this.geoPositionService.getGeoPosition(geoPositionId);
-      if (!selectedGeoPos?.details) {
+    if (feature.getId() === SEARCH_FOR_MARKER_ID) {
+      // Hide the search marker
+      (feature as Feature<Geometry>).setStyle(new Style({}));
+      return;
+    }
+    const storeDataId = feature.get(STORE_DATA_ID_PROPERTY);
+    const details = feature.get(GEO_INFORMATION_PROPERTY) as string | undefined;
+    if (storeDataId && this.onClickHandler) {
+      const storeData = this.dataStoreService.getById(storeDataId);
+      if (!storeData) {
         const geoInfo = JSON.parse(
-          selectedGeoPos
-            ? selectedGeoPos.geoPositionInfo
+          details
+            ? details
             : `{
                   "postcode": "column 'postcode' not found",
                   "city": "column 'city' not found",
                   "housenumber": "column 'housenumber' not found"
                 }`
         );
-        const address_not_found = selectedGeoPos
+        const address_not_found = details
           ? `Address "${geoInfo.street} ${geoInfo.housenumber}, ${geoInfo.postcode} ${geoInfo.city}" not found`
           : 'No address found';
         this.onClickHandler({
@@ -145,7 +157,7 @@ export class BasicEventHandlers {
           [STREET]: geoInfo.street,
         });
       } else {
-        this.onClickHandler(selectedGeoPos.details);
+        this.onClickHandler(storeData);
       }
       if (this.overlay && this.map) {
         this.overlay.setPosition(coordinate);
@@ -185,7 +197,7 @@ export class BasicEventHandlers {
         this.info.style.top = pixel[1] + 'px';
         if (feature !== this.currentFeature) {
           this.info.style.visibility = 'visible';
-          this.info.innerText = feature.get('Address');
+          this.info.innerText = feature.get(ADDRESS_PROPERTY);
         }
       } else {
         this.info.style.visibility = 'hidden';

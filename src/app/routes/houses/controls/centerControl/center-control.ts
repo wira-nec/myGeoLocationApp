@@ -1,7 +1,7 @@
-import { Control } from 'ol/control';
 import { fromLonLat } from 'ol/proj';
+import { CloseSearchControlComponent } from '../close-search-control/close-search-control.component';
 
-export class CenterControl extends Control {
+export class CenterControl extends CloseSearchControlComponent {
   /**
    * @param {Object} [opt_options] Control options.
    */

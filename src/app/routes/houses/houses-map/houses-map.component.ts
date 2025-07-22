@@ -12,11 +12,10 @@ import { OlMapComponent } from '../../../shared/map/map.component';
 import { View } from 'ol';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { OSM } from 'ol/source';
-import { GeoPositionService } from '../../../core/services/geo-position.service';
 import {
   DataStoreService,
-  getAddress,
   StoreData,
+  UNIQUE_ID,
 } from '../../../core/services/data-store.service';
 import { Attribution, defaults as defaultControls } from 'ol/control';
 import TileLayer from 'ol/layer/Tile';
@@ -27,9 +26,9 @@ import { ExportControl } from '../controls/exportControl/export-control';
 import { LoadPictureService } from '../../../core/services/load-picture.service';
 import {
   COORDINATE_KEYS,
-  FIRST_NAME,
+  getAddress,
   imagesFilter,
-  INFO,
+  GEO_INFO,
   LATITUDE,
   LONGITUDE,
 } from '../../../core/services/data-store.service';
@@ -48,6 +47,7 @@ import { SearchInputService } from '../../../core/services/search-input.service'
 import { EditExcelControl } from '../controls/edit-excel-control/edit-excel-control.component';
 import { MapEventHandlers } from '../providers/mapEventHandlers';
 import { BasicEventHandlers } from '../providers/basicEventHandler';
+import { getAddress as getFullAddress } from '../../../core/helpers/dataManipulations';
 
 @Component({
   selector: 'app-houses-map',
@@ -60,7 +60,6 @@ import { BasicEventHandlers } from '../providers/basicEventHandler';
   templateUrl: './houses-map.component.html',
   styleUrl: './houses-map.component.scss',
   providers: [
-    Markers,
     MapEventHandlers,
     {
       provide: MapEventHandlers,
@@ -83,7 +82,6 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   });
 
   constructor(
-    private readonly geoPositionService: GeoPositionService,
     private readonly dataStoreService: DataStoreService,
     private readonly pictureStore: LoadPictureService,
     private readonly toaster: ToasterService,
@@ -108,14 +106,6 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    const geoPositionSubscription = this.geoPositionService.geoPositions$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        filter((geoPositions) => !!geoPositions.length)
-      )
-      .subscribe((geoPositions) => {
-        this.markers.setupMap(geoPositions, this.map.getView());
-      });
     this.progressService
       .getProgress()
       .pipe(
@@ -153,13 +143,15 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
           if (this.dataContainsLocation(item)) {
             longitude = Number(item[LONGITUDE]);
             latitude = Number(item[LATITUDE]);
-            this.geoPositionService.updateGeoPosition(
+            this.markers.setupMap(
+              item[UNIQUE_ID],
               longitude,
               latitude,
-              item[FIRST_NAME],
-              item,
-              item[INFO]
+              getFullAddress(item),
+              item[GEO_INFO],
+              this.map.getView()
             );
+
             const pictureColumns = Object.keys(item).filter((columnName) =>
               imagesFilter(columnName)
             );
@@ -170,39 +162,17 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
               XSL_IMPORT_PROGRESS_ID
             );
           } else {
-            const [street, houseNumber, city, postcode] = getAddress(item);
-            const geoPos = this.geoPositionService.getGeoPositionByAddress(
-              city,
-              postcode,
-              houseNumber,
-              street
-            );
-            if (geoPos) {
-              // Is data for existing geoPosition,
-              // only update the geoPosition data,
-              // location is already requested on creation.
-              this.geoPositionService.updateGeoPosition(
-                0,
-                0,
-                geoPos.userName,
-                item,
-                geoPos.geoPositionInfo
-              );
-              await this.progressService.increaseProgressByStep(
-                XSL_IMPORT_PROGRESS_ID
-              );
-            } else {
-              try {
-                this.geoCoderService.requestLocation(item);
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              } catch (e) {
-                errorMessage.push(`${postcode}, ${houseNumber}, ${city}`);
-              }
+            const [houseNumber, city, postcode] = getAddress(item);
+            try {
+              this.geoCoderService.requestLocation(item);
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            } catch (e) {
+              errorMessage.push(`${postcode}, ${houseNumber}, ${city}`);
             }
           }
         }
         if (longitude && latitude) {
-          // Give it some time to process last geoPosition update
+          // Give it some time to process last geo information update
           // before moving the map
           setTimeout(() => {
             this.map.getView().animate({
@@ -221,7 +191,6 @@ export class HousesMapComponent implements OnInit, AfterViewInit {
         }
       });
     this.destroyRef.onDestroy(() => {
-      geoPositionSubscription.unsubscribe();
       dataStoreServiceSubscription.unsubscribe();
     });
   }

@@ -4,7 +4,6 @@ import { HousesMapComponent } from './houses-map.component';
 import { DataStoreService } from '../../../core/services/data-store.service';
 import { Map } from 'ol';
 import { DestroyRef } from '@angular/core';
-import { GeoPositionService } from '../../../core/services/geo-position.service';
 import { setUpMockedServices } from '../../../../test/setUpMockedServices';
 import * as olProj from 'ol/proj';
 import * as geocoderCreator from '../helpers/geocoderCreator';
@@ -41,7 +40,6 @@ function createComponent(
   progressServiceMock: any
 ) {
   const component = new HousesMapComponent(
-    geoPositionServiceMock,
     dataStoreServiceMock,
     pictureStoreMock,
     toasterMock,
@@ -383,10 +381,6 @@ describe('HousesMapComponent ngAfterViewInit', () => {
       imports: [HousesMapComponent],
       providers: [
         { provide: DestroyRef, useValue: destroyRefMock }, // Mock the DestroyRef
-        {
-          provide: GeoPositionService, // Mock the GeoPositionService
-          useValue: geoPositionServiceMock,
-        },
         {
           provide: DataStoreService, // Mock the DataStoreService
           useValue: dataStoreServiceMock,

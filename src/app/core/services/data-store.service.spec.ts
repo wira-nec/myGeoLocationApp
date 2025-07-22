@@ -2,7 +2,7 @@ import {
   CITY,
   DataStoreService,
   HOUSE_NUMBER,
-  INFO,
+  GEO_INFO,
   LATITUDE,
   LONGITUDE,
   POSTCODE,
@@ -56,7 +56,7 @@ describe('DataStoreService', () => {
           [HOUSE_NUMBER]: '1',
           [LONGITUDE]: '1',
           [LATITUDE]: '2',
-          [INFO]: 'x',
+          [GEO_INFO]: 'x',
         },
         { [CITY]: 'B', [POSTCODE]: '2', [HOUSE_NUMBER]: '2' },
       ]);
@@ -70,7 +70,7 @@ describe('DataStoreService', () => {
           [HOUSE_NUMBER]: '1',
           [LONGITUDE]: '1',
           [LATITUDE]: '2',
-          [INFO]: 'x',
+          [GEO_INFO]: 'x',
         },
       ]);
       service.store([
@@ -80,7 +80,7 @@ describe('DataStoreService', () => {
           [HOUSE_NUMBER]: '1',
           [LONGITUDE]: '1',
           [LATITUDE]: '2',
-          [INFO]: 'x',
+          [GEO_INFO]: 'x',
         },
       ]);
       expect(service.getIncreasedDataStoreSize()).toBe(0);

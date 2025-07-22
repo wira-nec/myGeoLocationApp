@@ -12,7 +12,7 @@ export const POSTCODE = 'postcode';
 export const CITY = 'city';
 export const HOUSE_NUMBER = 'housenumber';
 export const VOORAANZICHT = 'Vooraanzicht';
-export const INFO = 'geoPositionInfo';
+export const GEO_INFO = 'geoPositionInfo';
 export const ERROR = 'error';
 export const STREET = 'street';
 export const LONGITUDE = 'longitude';
@@ -212,7 +212,7 @@ export class DataStoreService {
         return (
           dataKeys.includes(LONGITUDE) &&
           dataKeys.includes(LATITUDE) &&
-          dataKeys.includes(INFO)
+          dataKeys.includes(GEO_INFO)
         );
       }).length;
   }
@@ -349,11 +349,15 @@ export class DataStoreService {
       dataItem[LATITUDE] = latitude.toString();
       dataChanged = true;
     }
-    if (dataItem && dataItem[INFO] !== geoPositionInfo) {
-      dataItem[INFO] = geoPositionInfo;
+    if (dataItem && dataItem[GEO_INFO] !== geoPositionInfo) {
+      dataItem[GEO_INFO] = geoPositionInfo;
       dataChanged = true;
     }
     return dataChanged;
+  }
+
+  public getById(id: string): StoreData | undefined {
+    return this.dataStore.find((data) => data[UNIQUE_ID] === id);
   }
 
   public get(filter: StoreData): StoreData | undefined {

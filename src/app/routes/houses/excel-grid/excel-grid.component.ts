@@ -36,7 +36,6 @@ import { ImageCellRendererComponent } from './image-cell-renderer/image-cell-ren
 import { LoadPictureService } from '../../../core/services/load-picture.service';
 import { ZoomInButtonCellRendererComponent } from './zoom-in-button-cell-renderer/zoom-in-button-cell-renderer.component';
 import { GeoCoderService } from '../../../core/services/geo-coder.service';
-import { Markers } from '../providers/markers';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -54,7 +53,6 @@ export const ZOOM_IN_COLUMN_NAME = 'zoomIn';
     CommonModule,
     TopButtonsComponent,
   ],
-  providers: [Markers],
   templateUrl: './excel-grid.component.html',
   styleUrl: './excel-grid.component.scss',
 })

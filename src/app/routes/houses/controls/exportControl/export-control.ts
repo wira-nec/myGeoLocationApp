@@ -1,10 +1,8 @@
 import { Control } from 'ol/control';
 import {
   DataStoreService,
-  getAddress,
   getImageNames,
 } from '../../../../core/services/data-store.service';
-import { GeoPositionService } from '../../../../core/services/geo-position.service';
 import { ExcelService } from '../../../../core/services/excel.service';
 import { JsonCreator } from '../../../../core/providers/json-creator';
 import { LoadPictureService } from '../../../../core/services/load-picture.service';
@@ -14,7 +12,6 @@ const EXPORTED_FILENAME = 'exportedMap';
 
 export class ExportControl extends Control {
   private dataStoreService!: DataStoreService;
-  private geoPositionService!: GeoPositionService;
   private excelService!: ExcelService;
   private jsonCreatorService!: JsonCreator;
   private loadPictureService!: LoadPictureService;
@@ -38,7 +35,6 @@ export class ExportControl extends Control {
     });
 
     this.dataStoreService = inject(DataStoreService);
-    this.geoPositionService = inject(GeoPositionService);
     this.excelService = inject(ExcelService);
     this.jsonCreatorService = inject(JsonCreator);
     this.loadPictureService = inject(LoadPictureService);
@@ -47,7 +43,6 @@ export class ExportControl extends Control {
       const dataStore = this.dataStoreService.getStore();
       if (dataStore.length > 0) {
         const sheet = dataStore.map((data) => {
-          const [street, houseNumber, city, postcode] = getAddress(data);
           const pictureNames = getImageNames(data);
           let pictureBlobs = {};
           if (pictureNames.length > 0) {
@@ -61,26 +56,10 @@ export class ExportControl extends Control {
               }
             });
           }
-          const geoPos = this.geoPositionService.getGeoPositionByAddress(
-            city,
-            postcode,
-            houseNumber,
-            street
-          );
-          if (geoPos) {
-            return {
-              ...data,
-              longitude: geoPos.coords.longitude.toString(),
-              latitude: geoPos.coords.latitude.toString(),
-              geoPositionInfo: geoPos.geoPositionInfo,
-              ...pictureBlobs,
-            };
-          } else {
-            return {
-              ...data,
-              error: `Different address was found for ${postcode} ${houseNumber}, ${city}, please verify the address in the excel sheet`,
-            };
-          }
+          return {
+            ...data,
+            ...pictureBlobs,
+          };
         });
         await this.excelService.generateExcel(
           sheet,

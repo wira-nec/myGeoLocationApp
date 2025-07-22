@@ -2,13 +2,11 @@ import { inject, Injectable } from '@angular/core';
 import {
   CITY,
   DataStoreService,
-  FIRST_NAME,
   getAddress,
   HOUSE_NUMBER,
   StoreData,
   STREET,
 } from './data-store.service';
-import { GeoPositionService } from './geo-position.service';
 import { ProgressService, XSL_IMPORT_PROGRESS_ID } from './progress.service';
 import { ToasterService } from './toaster.service';
 import { Map } from 'ol';
@@ -69,7 +67,6 @@ export class GeoCoderService {
 
   constructor(
     private readonly dataStoreService: DataStoreService,
-    private readonly geoPositionService: GeoPositionService,
     private readonly toaster: ToasterService,
     private readonly progressService: ProgressService,
     private readonly markers: Markers
@@ -135,13 +132,6 @@ export class GeoCoderService {
         if (errorMessage) {
           this.toaster.show('warning', errorMessage, [], 0);
         }
-        this.geoPositionService.updateGeoPosition(
-          evt.place.lon,
-          evt.place.lat,
-          storeData ? storeData[FIRST_NAME] : undefined,
-          storeData,
-          JSON.stringify({ postcode, street, housenumber, city, query })
-        );
         if (storeData) {
           const isUpdate = this.dataStoreService.updateGeoPosition(
             storeData,

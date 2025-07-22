@@ -2,13 +2,9 @@ import Feature from 'ol/Feature';
 import { StyleLike } from 'ol/style/Style';
 import { Fill, Icon, Text, Stroke, Style } from 'ol/style';
 import CircleStyle from 'ol/style/Circle';
-import { getAddress } from '../../../core/services/data-store.service';
 import { Geometry, Point } from 'ol/geom';
-import { GeoPositionService } from '../../../core/services/geo-position.service';
-import { GeoPosition } from '../../../shared/view-models/geoPosition';
 import View from 'ol/View';
 import { fromLonLat } from 'ol/proj';
-import { getUid } from 'ol/util';
 import { Injectable } from '@angular/core';
 import { debounceTime, Subject } from 'rxjs';
 import { ObjectEvent } from 'ol/Object';
@@ -19,6 +15,9 @@ import Vector from 'ol/source/Vector';
 import { Coordinate } from 'ol/coordinate';
 
 export const SEARCH_FOR_MARKER_ID = 'searchedFor';
+export const STORE_DATA_ID_PROPERTY = 'StoreDataId';
+export const ADDRESS_PROPERTY = 'Address';
+export const GEO_INFORMATION_PROPERTY = 'GeoInformation';
 
 const style = (
   feature: Feature,
@@ -112,7 +111,7 @@ export class Markers {
   >();
   private map!: Map;
 
-  constructor(private readonly geoPositionService: GeoPositionService) {
+  constructor() {
     this.zoomInput
       .pipe(takeUntilDestroyed())
       .pipe(debounceTime(300))
@@ -129,13 +128,12 @@ export class Markers {
     }
   }
 
-  public updateMarkerStyle() {
+  private updateMarkerStyle() {
     Object.keys(this.markers).forEach((key) => {
       if (key !== SEARCH_FOR_MARKER_ID) {
-        const geoPos = this.geoPositionService.getGeoPosition(key);
         const labelText = this.getAddressLabel(
-          geoPos,
-          geoPos?.userName || 'Unknown'
+          this.markers[key].get(GEO_INFORMATION_PROPERTY) as string | undefined,
+          this.markers[key].get(ADDRESS_PROPERTY) || ''
         );
         style(this.markers[key], labelText, this.zoomLevelSingleMarker);
         this.markers[key].changed();
@@ -145,11 +143,13 @@ export class Markers {
   }
 
   private getAddressLabel(
-    geoPos: GeoPosition | undefined,
+    geoInformation: string | undefined,
     defaultText: string
   ) {
-    if (geoPos?.details) {
-      const [street, houseNumber, city, postcode] = getAddress(geoPos.details);
+    if (geoInformation) {
+      // Assuming geoInformation is a JSON string with address information
+      const [street, houseNumber, city, postcode] =
+        this.getAddress(geoInformation);
       return `${
         street?.length ? street + ' ' : ''
       }${houseNumber} ${city}, ${postcode}`;
@@ -157,32 +157,47 @@ export class Markers {
     return defaultText;
   }
 
-  public setupMap(geoPositions: GeoPosition[], view: View) {
+  private getAddress(geoInformation: string): string[] {
+    const address = JSON.parse(geoInformation);
+    return [
+      address.street || '',
+      address.houseNumber || '',
+      address.city || '',
+      address.postcode || '',
+    ];
+  }
+
+  public setupMap(
+    id: string,
+    longitude: number,
+    latitude: number,
+    labelText: string,
+    geoInformation: string,
+    view: View
+  ) {
     view?.setZoom(this.zoomLevelSingleMarker);
-    geoPositions.forEach((geoPosition) => {
-      if (!Object.keys(this.markers).includes(geoPosition.id)) {
-        this.markers[geoPosition.id] = new Feature<Geometry>();
-        this.geoPositionService.setGeoPositionIdUid(
-          geoPosition.id,
-          getUid(this.markers[geoPosition.id])
-        );
-      }
-      const coords = [
-        geoPosition.coords.longitude,
-        geoPosition.coords.latitude,
-      ];
-      this.markers[geoPosition.id].setGeometry(new Point(fromLonLat(coords)));
-      style(
-        this.markers[geoPosition.id],
-        this.getAddressLabel(geoPosition, geoPosition.userName),
-        this.zoomLevelSingleMarker
-      );
+    if (!Object.keys(this.markers).includes(id)) {
+      this.markers[id] = new Feature<Geometry>();
+      this.markers[id].set(STORE_DATA_ID_PROPERTY, id);
+    }
+    this.markers[id].setProperties({
+      [ADDRESS_PROPERTY]: labelText,
+      [GEO_INFORMATION_PROPERTY]: geoInformation,
     });
+    const coords = [longitude, latitude];
+    this.markers[id].setGeometry(new Point(fromLonLat(coords)));
+    style(
+      this.markers[id],
+      this.getAddressLabel(geoInformation, labelText),
+      this.zoomLevelSingleMarker
+    );
     this.refreshVectorLayer();
   }
 
   public addMarker(id: string | number, coords: Coordinate, address: string) {
     this.markers[id] = new Feature<Geometry>();
+    this.markers[id].setId(id);
+    this.markers[id].set(ADDRESS_PROPERTY, address);
     this.markers[id].setGeometry(new Point(fromLonLat(coords)));
     this.markers[id].setStyle(getLocatorStyle(address));
     this.refreshVectorLayer();

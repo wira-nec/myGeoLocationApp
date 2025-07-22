@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import {
   ERROR,
-  INFO,
+  GEO_INFO,
   LATITUDE,
   LONGITUDE,
   SHEET_NAME,
@@ -44,7 +44,7 @@ export class ExcelContentComponent {
               address,
               city,
               houseNumber,
-              INFO,
+              GEO_INFO,
               street,
               LONGITUDE,
               LATITUDE,
