@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1753178253936,
+  "timestamp": 1753180805593,
   "index": "/myGeoLocationApp/index.html",
   "assetGroups": [
     {
@@ -24,7 +24,7 @@
         "/myGeoLocationApp/chunk-XPYLUDOQ.js",
         "/myGeoLocationApp/favicon.ico",
         "/myGeoLocationApp/index.html",
-        "/myGeoLocationApp/main-AEBN3JJM.js",
+        "/myGeoLocationApp/main-AXE6VFCG.js",
         "/myGeoLocationApp/manifest.webmanifest",
         "/myGeoLocationApp/polyfills-FFHMD2TL.js",
         "/myGeoLocationApp/scripts-KTX5TRIF.js",
@@ -110,8 +110,8 @@
     "/myGeoLocationApp/icons/icon-512x512.png": "1de182f76f7329dfa8f9fcdd1fdcdd695bea6a99",
     "/myGeoLocationApp/icons/icon-72x72.png": "aa88a6096bd973be7f6d7a5489bfa6bc2463f8c4",
     "/myGeoLocationApp/icons/icon-96x96.png": "7fb8f59c30ce2ff12c700321a0b39e14b3dc8f95",
-    "/myGeoLocationApp/index.html": "ea01d8516b44c433c4fd1e56eb1aedcd02c3f4d9",
-    "/myGeoLocationApp/main-AEBN3JJM.js": "6aa7d81c28cda432f62c9e73ca71decf6cbac0bb",
+    "/myGeoLocationApp/index.html": "dafdfd2c8aff5a6b0bbed69cc8c25927378fd92d",
+    "/myGeoLocationApp/main-AXE6VFCG.js": "d70107fce49eba7b80a6a05e4a2798f39ac1f85f",
     "/myGeoLocationApp/manifest.webmanifest": "104955563b660ae2c6ec21a79043f9f15567f0fe",
     "/myGeoLocationApp/polyfills-FFHMD2TL.js": "f49b49a155bc7d192db62a4c15d0a612b460a667",
     "/myGeoLocationApp/scripts-KTX5TRIF.js": "11a8a4a79946462e265a2bcec1e9990c92492ed9",
