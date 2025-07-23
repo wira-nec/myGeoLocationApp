@@ -135,7 +135,7 @@ export class MapEventHandlers {
     const storeDataId = feature.get(STORE_DATA_ID_PROPERTY);
     const details = feature.get(GEO_INFORMATION_PROPERTY) as string | undefined;
     if (storeDataId && this.onClickHandler) {
-      const storeData = this.dataStoreService.getById(storeDataId);
+      const storeData = this.dataStoreService.findById(storeDataId);
       if (!storeData) {
         const geoInfo = JSON.parse(
           details

@@ -2,10 +2,12 @@ import { inject, Injectable } from '@angular/core';
 import {
   CITY,
   DataStoreService,
+  GEO_INFO,
   getAddress,
   HOUSE_NUMBER,
   StoreData,
   STREET,
+  UNIQUE_ID,
 } from './data-store.service';
 import { ProgressService, XSL_IMPORT_PROGRESS_ID } from './progress.service';
 import { ToasterService } from './toaster.service';
@@ -24,6 +26,7 @@ import { SearchInputService } from './search-input.service';
 import { filter, fromEvent } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Coordinate } from 'ol/coordinate';
+import { getAddress as getFullAddress } from '../../core/helpers/dataManipulations';
 
 interface FeatureCollection {
   type: string;
@@ -42,7 +45,10 @@ interface FeatureCollection {
   };
 }
 
+type ProgressCallbackFunction = () => Promise<void> | undefined;
+
 export const ADDRESS_CHOSEN = 'addresschosen';
+export const NIJKERK_COORDINATES = [5.4808, 52.2211] as Coordinate;
 
 @Injectable({
   providedIn: 'root',
@@ -56,14 +62,13 @@ export class GeoCoderService {
   zoomLevelSingleMarker!: number;
   responses: Record<string, FeatureCollection[]> = {};
 
-  isGeocodeHandlingFinished: boolean | undefined = undefined;
-  isPositionUpdated = false;
   geoCoder!: typeof olGeocoder;
   photonProvider: PhotonProvider;
 
   defaultAddressHandler: unknown;
   activeAddressHandler: unknown;
   searchInputService = inject(SearchInputService);
+  progressCallback!: ProgressCallbackFunction;
 
   constructor(
     private readonly dataStoreService: DataStoreService,
@@ -81,11 +86,7 @@ export class GeoCoderService {
   geocoderCreator(map: Map, zoomLevelSingleMarker: number) {
     this.map = map;
     this.zoomLevelSingleMarker = zoomLevelSingleMarker;
-    this.defaultAddressHandler = this.handleAddressChosen(
-      this.responses,
-      this.map,
-      this.zoomLevelSingleMarker
-    );
+    this.defaultAddressHandler = this.handleAddressChosen(this.responses);
     this.activeAddressHandler = this.defaultAddressHandler;
     this.geoCoder = new olGeocoder('nominatim', {
       provider: this.photonProvider, //'photon',
@@ -101,11 +102,11 @@ export class GeoCoderService {
     return this.geoCoder;
   }
 
-  handleAddressChosen(
-    responses: Record<string, FeatureCollection[]>,
-    map: Map,
-    zoomLevelSingleMarker: number
-  ): unknown {
+  setProgressCallback(callback: ProgressCallbackFunction) {
+    this.progressCallback = callback;
+  }
+
+  handleAddressChosen(responses: Record<string, FeatureCollection[]>): unknown {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return async (evt: any) => {
       if (evt.address.original.details.error) {
@@ -115,9 +116,9 @@ export class GeoCoderService {
           [],
           300000
         );
-        await this.progressService.increaseProgressByStep(
-          XSL_IMPORT_PROGRESS_ID
-        );
+        if (this.progressCallback !== undefined) {
+          await this.progressCallback();
+        }
       } else {
         const { postcode, street, housenumber, city, query } =
           evt.address.original.details;
@@ -133,36 +134,25 @@ export class GeoCoderService {
           this.toaster.show('warning', errorMessage, [], 0);
         }
         if (storeData) {
-          const isUpdate = this.dataStoreService.updateGeoPosition(
-            storeData,
+          this.dataStoreService.updateGeoPosition(
+            storeData[UNIQUE_ID],
             evt.place.lon,
             evt.place.lat,
             JSON.stringify({ postcode, street, housenumber, city, query })
           );
-          if (isUpdate) {
-            this.isPositionUpdated = true;
-          }
-        }
-        await this.progressService.increaseProgressByStep(
-          XSL_IMPORT_PROGRESS_ID
-        );
-        console.log('responses', responses);
-        // do only once a position view animation on first time last received address
-        if (this.isGeocodeHandlingFinished) {
-          console.log(
-            'isGeocodeHandlingFinished',
-            this.isGeocodeHandlingFinished
+          this.markers.setupMap(
+            storeData[UNIQUE_ID],
+            evt.place.lon,
+            evt.place.lat,
+            getFullAddress(storeData),
+            storeData[GEO_INFO],
+            this.map.getView()
           );
-          // Recommit the data store if the position was updated
-          if (this.isPositionUpdated) {
-            this.dataStoreService.syncDataStoreWithPictures({}, true);
-          }
-          map.getView().animate({
-            center: fromLonLat([5.4808, 52.2211]),
-            zoom: zoomLevelSingleMarker,
-          });
-          this.isGeocodeHandlingFinished = false;
         }
+        if (this.progressCallback !== undefined) {
+          await this.progressCallback();
+        }
+        console.log('responses', responses);
       }
     };
   }
@@ -205,11 +195,32 @@ export class GeoCoderService {
     };
   }
 
+  showLoadingSpinner(show: boolean) {
+    if (show) {
+      this.map.getTargetElement().classList.add('spinner');
+    } else {
+      this.map.getTargetElement().classList.remove('spinner');
+    }
+  }
+
+  delayedZoomInOnCoordinates(coords: Coordinate) {
+    setTimeout(() => {
+      this.map.getView().animate({
+        center: fromLonLat(coords),
+        zoom: this.markers.zoomLevelSingleMarker,
+      });
+    }, 1000);
+  }
+
   zoomInOnCoordinates(coords: Coordinate) {
     this.map.getView().animate({
       center: fromLonLat(coords),
       zoom: 15,
     });
+  }
+
+  getView() {
+    return this.map.getView();
   }
 
   switchAddressChosenHandler(switchToSearchAddress: boolean) {
@@ -227,26 +238,29 @@ export class GeoCoderService {
     this.geoCoder.on(ADDRESS_CHOSEN, this.activeAddressHandler);
   }
 
-  geocodeHandlingFinished() {
-    if (this.isGeocodeHandlingFinished === undefined) {
-      this.isGeocodeHandlingFinished = true;
-    }
-  }
-
-  requestLocation(data: StoreData) {
-    const textInput = document.querySelector(
-      '.gcd-txt-input'
-    ) as HTMLInputElement;
-    const sendTextInput = document.querySelector(
-      '.gcd-txt-search'
-    ) as HTMLButtonElement;
-    if (textInput && sendTextInput) {
-      const [street, houseNumber, city, postcode] = getAddress(data);
-      textInput.value = `${street ?? ''} ${houseNumber}, ${city}, ${postcode}`
-        .replaceAll(',,', ',')
-        .replaceAll('  ', ' ');
-      console.log('search street map for', textInput.value);
-      sendTextInput.click();
-    }
+  requestLocationAsync(data: StoreData) {
+    return new Promise<void>((resolve, reject) => {
+      const textInput = document.querySelector(
+        '.gcd-txt-input'
+      ) as HTMLInputElement;
+      const sendTextInput = document.querySelector(
+        '.gcd-txt-search'
+      ) as HTMLButtonElement;
+      if (textInput && sendTextInput) {
+        const [street, houseNumber, city, postcode] = getAddress(data);
+        textInput.value = `${street ?? ''} ${houseNumber}, ${city}, ${postcode}`
+          .replaceAll(',,', ',')
+          .replaceAll('  ', ' ');
+        console.log('search street map for', textInput.value);
+        try {
+          sendTextInput.click();
+          resolve();
+        } catch (e: unknown) {
+          reject(e instanceof Error ? e.message : String(e));
+        }
+        return;
+      }
+      reject('No input element found');
+    });
   }
 }

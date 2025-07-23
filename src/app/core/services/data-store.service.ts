@@ -163,13 +163,19 @@ export const getAllHeaderInfo = (data: StoreData[]) => {
   }, [] as [string, boolean][]);
 };
 
+export const dataContainsLocation = (data: StoreData) => {
+  return Object.keys(data).some(
+    (key) => COORDINATE_KEYS.includes(key) && !!data[key]
+  );
+};
+
 @Injectable({
   providedIn: 'root',
 })
 export class DataStoreService {
   private dataStore: StoreData[];
-  private lastNumberOfDataRecordsAdded = 0;
   private selectedData: string | undefined;
+  private isPristine = true;
 
   // Flag to indicate if the data store is in edit mode
   // This can be used to toggle between viewing and editing the data store.
@@ -199,24 +205,6 @@ export class DataStoreService {
     return this.selectedData;
   }
 
-  public getIncreasedDataStoreSize() {
-    console.log('Increased data store size', this.lastNumberOfDataRecordsAdded);
-    return this.lastNumberOfDataRecordsAdded;
-  }
-
-  public getNumberOfAddedLocationRecords() {
-    return this.dataStore
-      .slice(-this.lastNumberOfDataRecordsAdded)
-      .filter((data) => {
-        const dataKeys = Object.keys(data);
-        return (
-          dataKeys.includes(LONGITUDE) &&
-          dataKeys.includes(LATITUDE) &&
-          dataKeys.includes(GEO_INFO)
-        );
-      }).length;
-  }
-
   public getStore() {
     return [...this.dataStore];
   }
@@ -239,124 +227,128 @@ export class DataStoreService {
     const [mergedData, newData] = this.getMergedDataAndNewUniqueData(data);
     console.log('New data added', newData);
     console.log('Merged data added', mergedData);
-    this.lastNumberOfDataRecordsAdded =
-      mergedData.length - this.dataStore.length;
     this.dataStore = mergedData;
-    this.syncDataStoreWithPictures(pictures);
-    this.dataStore$.next(newData);
+    this.isPristine = newData.length === 0;
+    this.syncDataStoreWithPictures(pictures, newData);
   }
 
-  public changeDataByAddress(data: StoreData) {
-    const addressKey = getKey(data, ADDRESS_KEYS, '');
-    if (addressKey.length) {
-      const address = data[addressKey];
-      const index = this.dataStore.findIndex(
-        (data) => data[addressKey] === address
-      );
-      if (index >= 0) {
-        this.dataStore[index] = {
-          ...data,
-        };
-        this.dataStore$.next([data]);
-        return;
-      }
-    }
-    console.error('changeDataByAddress failed');
-  }
-
-  public syncDataStoreWithPictures(pictures: PictureStore, commit = false) {
-    // lookup columns in dataStore that have pictures
-    this.dataStore.forEach((dataStore) => {
-      let pictureColumnName = VOORAANZICHT;
-      const addressColumnName = getKey(dataStore, ADDRESS_KEYS, '');
-      const pictureColumnNames = Object.keys(dataStore).filter(
-        (key) => blobsFilter(dataStore[key]) || imagesFilter(dataStore[key])
-      );
-      // Currently only one picture column is supported
-      if (pictureColumnNames.length > 0) {
-        pictureColumnName = pictureColumnNames[0];
-      }
-      Object.keys(pictures).forEach((filename) => {
-        // remove .jpg or .jpeg from filename to get the address
-        const address = filename
-          .replace(/\.jpg|.jpeg$/, '')
-          .toLocaleLowerCase();
-        if (
-          addressColumnName &&
-          dataStore[addressColumnName].toLowerCase() === address
-        ) {
-          dataStore[pictureColumnName] = filename;
-        } else {
-          dataStore[pictureColumnName] = dataStore[pictureColumnName] || '';
-        }
-      });
-    });
-    if (commit) {
+  public commit() {
+    if (!this.isPristine) {
       this.dataStore$.next(this.dataStore);
     }
   }
 
-  public changeDataBySelectedData(data: StoreData) {
-    const { id, ...storeData } = data;
-    if (id) {
-      const pictureColumnNames = Object.keys(storeData).filter((key) =>
-        blobsFilter(storeData[key])
-      );
-      pictureColumnNames.forEach((colName) => {
-        storeData[colName] = getImageName(storeData) ?? 'unknown picture.jpg';
-      });
-      this.dataStore[Number(id)] = {
-        ...this.dataStore[Number(id)],
-        ...storeData,
+  public changeStoreData(storeData: StoreData) {
+    const { id, ...data } = storeData;
+    const itemIndex = this.dataStore.findIndex(
+      (data) => data[UNIQUE_ID] === id
+    );
+    if (itemIndex >= 0) {
+      this.dataStore[itemIndex] = {
+        ...this.dataStore[itemIndex],
+        ...data,
       };
-      this.dataStore$.next([this.dataStore[Number(id)]]);
+      this.isPristine = false;
+      this.dataStore$.next([this.dataStore[itemIndex]]);
       return;
     }
-    console.error('setStoreData failed');
+    console.error('changeStoreData failed');
   }
 
-  public updateData(updatedData: StoreData) {
-    const { id, ...storeData } = updatedData;
-    this.dataStore[Number(id)] = mergeStoreData(
-      [storeData],
-      [this.dataStore[Number(id)]]
-    )[0];
-    this.dataStore$.next([this.dataStore[Number(id)]]);
+  public syncDataStoreWithPictures(
+    pictures: PictureStore,
+    dataStore: StoreData[]
+  ) {
+    dataStore.forEach((data) => {
+      const dataSnapShot = {
+        ...data,
+      };
+      this.updateDataStoreWithPicture(data, pictures);
+      this.isPristine = this.isPristine && isEqual(dataSnapShot, data);
+    });
+  }
+
+  private updateDataStoreWithPicture(
+    dataStore: StoreData,
+    pictures: PictureStore
+  ) {
+    // Set default column name for picture column incase non exists
+    let pictureColumnName = VOORAANZICHT;
+    // lookup columns in dataStore that have pictures
+    const addressColumnName = getKey(dataStore, ADDRESS_KEYS, '');
+    const pictureColumnNames = Object.keys(dataStore).filter(
+      (key) => blobsFilter(dataStore[key]) || imagesFilter(dataStore[key])
+    );
+    // Currently only one picture column is supported
+    if (pictureColumnNames.length > 0) {
+      pictureColumnName = pictureColumnNames[0];
+    }
+    Object.keys(pictures).forEach((filename) => {
+      // remove .jpg or .jpeg from filename to get the address
+      const address = filename.replace(/\.jpg|.jpeg$/, '').toLocaleLowerCase();
+      if (
+        addressColumnName &&
+        dataStore[addressColumnName].toLowerCase() === address
+      ) {
+        dataStore[pictureColumnName] = filename;
+      } else {
+        dataStore[pictureColumnName] = dataStore[pictureColumnName] || '';
+      }
+    });
+  }
+
+  public storeGridData(gridData: StoreData) {
+    const { id, ...storeData } = gridData;
+    const pictureColumnNames = Object.keys(storeData).filter((key) =>
+      blobsFilter(storeData[key])
+    );
+    pictureColumnNames.forEach((colName) => {
+      storeData[colName] = getImageName(storeData) ?? 'unknown picture.jpg';
+    });
+    const itemIndex = this.dataStore.findIndex(
+      (data) => data[UNIQUE_ID] === id
+    );
+    if (itemIndex >= 0) {
+      this.dataStore[itemIndex] = {
+        ...this.dataStore[itemIndex],
+        ...storeData,
+      };
+      this.isPristine = false;
+      this.dataStore$.next([this.dataStore[itemIndex]]);
+      return;
+    }
+    console.error('storeGridData failed');
   }
 
   public updateGeoPosition(
-    storeData: StoreData,
+    id: string,
     longitude: number,
     latitude: number,
     geoPositionInfo: string
   ) {
-    const addressInfo = getAddress(storeData);
-    const dataItem = this.dataStore.find((data) => {
-      const [street, houseNumber, city, postcode] = getAddress(data);
-      return (
-        street === addressInfo[0] &&
-        houseNumber === addressInfo[1] &&
-        city === addressInfo[2] &&
-        postcode === addressInfo[3]
-      );
-    });
     let dataChanged = false;
-    if (dataItem && dataItem[LONGITUDE] !== longitude.toString()) {
-      dataItem[LONGITUDE] = longitude.toString();
-      dataChanged = true;
+    const itemIndex = this.dataStore.findIndex(
+      (data) => data[UNIQUE_ID] === id
+    );
+    if (itemIndex >= 0) {
+      if (this.dataStore[itemIndex][LONGITUDE] !== longitude.toString()) {
+        this.dataStore[itemIndex][LONGITUDE] = longitude.toString();
+        dataChanged = true;
+      }
+      if (this.dataStore[itemIndex][LATITUDE] !== latitude.toString()) {
+        this.dataStore[itemIndex][LATITUDE] = latitude.toString();
+        dataChanged = true;
+      }
+      if (this.dataStore[itemIndex][GEO_INFO] !== geoPositionInfo) {
+        this.dataStore[itemIndex][GEO_INFO] = geoPositionInfo;
+        dataChanged = true;
+      }
     }
-    if (dataItem && dataItem[LATITUDE] !== latitude.toString()) {
-      dataItem[LATITUDE] = latitude.toString();
-      dataChanged = true;
-    }
-    if (dataItem && dataItem[GEO_INFO] !== geoPositionInfo) {
-      dataItem[GEO_INFO] = geoPositionInfo;
-      dataChanged = true;
-    }
+    this.isPristine = !dataChanged;
     return dataChanged;
   }
 
-  public getById(id: string): StoreData | undefined {
+  public findById(id: string): StoreData | undefined {
     return this.dataStore.find((data) => data[UNIQUE_ID] === id);
   }
 
@@ -443,19 +435,24 @@ export class DataStoreService {
             storeData = this.getByAddr(`${street} ${houseNumber} ${city}`);
             if (!storeData) {
               errorMessage = `Looking for ${query} but found address "${street} ${houseNumber}, ${city}, ${postcode}". Please verify address in the excel sheet.`;
+              storeData = this.getByAddr(query);
+              if (!storeData) {
+                // try without postcode
+                storeData = this.getByAddr(
+                  query
+                    .replace(/[1-9][0-9]{3} ?(?!sa|sd|ss)[a-z]{2}$/i, '')
+                    .trim()
+                );
+              }
             }
           } else {
             errorMessage = `Please fix City in "${street} ${houseNumber}, ${city}" and change ${storeData[CITY]} to ${city} in your excel sheet.`;
-            storeData[CITY] = city;
-            storeData[HOUSE_NUMBER] = houseNumber;
           }
         } else {
           errorMessage = `Please fix house number in "${street} ${houseNumber}, ${city}" and change ${storeData[HOUSE_NUMBER]} to ${houseNumber} in your excel sheet.`;
-          storeData[HOUSE_NUMBER] = houseNumber;
         }
       } else {
         errorMessage = `Please fix postcode in "${street} ${houseNumber}, ${city}" and change ${storeData[POSTCODE]} to ${postcode} in your excel sheet.`;
-        storeData[POSTCODE] = postcode;
       }
     }
     console.log('street map found', postcode, houseNumber, city, street, query);

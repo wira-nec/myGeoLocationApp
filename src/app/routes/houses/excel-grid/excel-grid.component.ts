@@ -103,7 +103,8 @@ export class ExcelGridComponent {
     this.gridApi = params.api;
     const gridRendererSubscription = this.watchOnFirstGridRender();
     const editModeSubscription = this.watchEditMode();
-    const dataStoreServiceSubscription = this.watchDataUpdates();
+    const dataStoreServiceSubscription =
+      this.watchDataUpdatesToUpdateGridContent();
     this.destroyRef.onDestroy(() => {
       gridRendererSubscription.unsubscribe();
       editModeSubscription.unsubscribe();
@@ -123,13 +124,35 @@ export class ExcelGridComponent {
       });
   }
 
-  private watchDataUpdates() {
+  private watchDataUpdatesToUpdateGridContent() {
     return this.dataStoreService.dataStore$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(async (data) => {
-        if (data.length) {
+      .subscribe((data) => {
+        if (data.length > 1) {
           this.createGridData();
           this.loadDataInGrid();
+        } else if (data.length === 1) {
+          // Only 1 update, so it's assumed this is due to a single data update
+          let newRowData = this.rowData.find(
+            (row) => row[UNIQUE_ID] === data[0][UNIQUE_ID]
+          );
+          if (newRowData) {
+            newRowData = {
+              ...newRowData,
+              ...this.convertToGridRowData(data[0]),
+            };
+            newRowData = {
+              ...newRowData,
+              ...this.convertPictureNamesToBlob(newRowData),
+            };
+            // Doing the update for the data in the grid in this way is preferred
+            // above updating this.rowData because this way the grid is re-rendered
+            this.gridApi.forEachNode((rowNode) => {
+              if (newRowData && rowNode.id === newRowData['id']) {
+                rowNode.setData(newRowData);
+              }
+            });
+          }
         }
       });
   }
@@ -258,20 +281,26 @@ export class ExcelGridComponent {
     };
   }
 
+  private convertPictureNamesToBlob(row: StoreData): StoreData {
+    const convertedRow = this.colDefs
+      .filter((colDef) => colDef.cellClass === CLASS_FOR_PICTURE_CELL)
+      .map(
+        (col) =>
+          ({
+            [col.headerName as string]: this.pictureService.getPicture(
+              (row[col.headerName as string] || '').toLowerCase()
+            ),
+          } as StoreData)
+      );
+    return Object.assign({}, ...convertedRow);
+  }
+
   private createRowData() {
     const rowData = this.getRowDataForGrid();
     this.createColDefs(rowData);
-    const pictureColumns = (row: StoreData) =>
-      this.colDefs
-        .filter((colDef) => colDef.cellClass === CLASS_FOR_PICTURE_CELL)
-        .map((col) => ({
-          [col.headerName as string]: this.pictureService.getPicture(
-            (row[col.headerName as string] || '').toLowerCase()
-          ),
-        }));
     this.rowData = rowData.map((row) => ({
       ...row,
-      ...Object.assign({}, ...pictureColumns(row)),
+      ...this.convertPictureNamesToBlob(row),
     }));
   }
 
@@ -307,15 +336,10 @@ export class ExcelGridComponent {
   }
 
   onCellValueChanged(event: CellValueChangedEvent<StoreData>): void {
-    const updatedData = event.data;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { zoomIn, ...updatedData } = event.data;
     // Update the data store with the modified data
-    this.dataStoreService.changeDataBySelectedData(updatedData);
-    // If in edit mode, update the rowData to reflect changes
-    if (this.inEditMode) {
-      this.rowData = this.dataStoreService.getStore().map((data) => {
-        return this.convertToGridRowData(data);
-      });
-    }
+    this.dataStoreService.storeGridData(updatedData);
   }
 
   onRowSelected(event: RowSelectedEvent<StoreData, ColDef>): void {

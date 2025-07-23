@@ -1,4 +1,3 @@
-<section *ngIf="progress">
-  <mat-progress-bar [mode]="'determinate'" [value]="progress">
-  </mat-progress-bar>
+<section *ngIf="progress || mode === 'indeterminate'">
+  <mat-progress-bar [mode]="mode" [value]="progress"> </mat-progress-bar>
 </section>

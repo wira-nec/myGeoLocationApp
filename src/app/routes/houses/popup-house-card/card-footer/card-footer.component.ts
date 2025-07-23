@@ -119,7 +119,7 @@ export class CardFooterComponent {
     const input = document.querySelector('#uploadPicture') as HTMLInputElement;
     if (input.files && filename.length) {
       await this.pictureService.loadPictureAsync(input.files[0], filename);
-      this.dataStoreService.changeDataByAddress({
+      this.dataStoreService.changeStoreData({
         ...details,
         [pictureColName]: filename,
       });

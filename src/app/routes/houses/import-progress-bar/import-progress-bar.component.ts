@@ -1,5 +1,8 @@
 import { Component, DestroyRef, inject, Input, OnInit } from '@angular/core';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
+import {
+  MatProgressBarModule,
+  ProgressBarMode,
+} from '@angular/material/progress-bar';
 import { ProgressService } from '../../../core/services/progress.service';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -15,6 +18,7 @@ import { filter } from 'rxjs';
 export class ImportProgressBarComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   progress = 0;
+  mode: ProgressBarMode = 'determinate';
   @Input() progressId!: string;
 
   constructor(readonly progressService: ProgressService) {}
@@ -37,6 +41,7 @@ export class ImportProgressBarComponent implements OnInit {
             progress[this.progressId]
           );
           this.progress = progress[this.progressId].value;
+          this.mode = progress[this.progressId].mode;
         });
       this.destroyRef.onDestroy(() => {
         progressServiceSubscription.unsubscribe();

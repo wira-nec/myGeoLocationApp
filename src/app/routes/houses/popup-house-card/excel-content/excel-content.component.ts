@@ -7,6 +7,7 @@ import {
   LONGITUDE,
   SHEET_NAME,
   StoreData,
+  UNIQUE_ID,
   getDataStoreKeys,
   imagesFilter,
 } from '../../../../core/services/data-store.service';
@@ -41,6 +42,7 @@ export class ExcelContentComponent {
         .filter(
           (entry) =>
             ![
+              UNIQUE_ID,
               address,
               city,
               houseNumber,
