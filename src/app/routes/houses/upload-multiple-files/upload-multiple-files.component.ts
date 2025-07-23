@@ -25,6 +25,10 @@ export class UploadMultipleFilesComponent {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async uploadFiles(e: any) {
     const files = Array.from(e.target.files as FileList);
+    this.progressService.setProgressMode(
+      PICTURES_IMPORT_PROGRESS_ID,
+      'determinate'
+    );
     this.progressService.setMaxCount(PICTURES_IMPORT_PROGRESS_ID, files.length);
     await this.pictureService.loadPictures(files, this.progressService);
   }
