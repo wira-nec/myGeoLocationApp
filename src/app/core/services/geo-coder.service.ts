@@ -27,6 +27,7 @@ import { filter, fromEvent } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Coordinate } from 'ol/coordinate';
 import { getAddress as getFullAddress } from '../../core/helpers/dataManipulations';
+import { BinarySemaphoreService } from './binary-semaphore.service';
 
 interface FeatureCollection {
   type: string;
@@ -74,7 +75,8 @@ export class GeoCoderService {
     private readonly dataStoreService: DataStoreService,
     private readonly toaster: ToasterService,
     private readonly progressService: ProgressService,
-    private readonly markers: Markers
+    private readonly markers: Markers,
+    private readonly semaphore: BinarySemaphoreService
   ) {
     this.photonProvider = photonProviderFactory();
     this.keyboardInput$.subscribe(() =>
@@ -116,9 +118,6 @@ export class GeoCoderService {
           [],
           300000
         );
-        if (this.progressCallback !== undefined) {
-          await this.progressCallback();
-        }
       } else {
         const { postcode, street, housenumber, city, query } =
           evt.address.original.details;
@@ -149,11 +148,12 @@ export class GeoCoderService {
             this.map.getView()
           );
         }
-        if (this.progressCallback !== undefined) {
-          await this.progressCallback();
-        }
         console.log('responses', responses);
       }
+      if (this.progressCallback !== undefined) {
+        await this.progressCallback();
+      }
+      this.semaphore.release();
     };
   }
 
@@ -175,12 +175,12 @@ export class GeoCoderService {
           evt.address.original.details;
         const coords = [evt.place.lon, evt.place.lat];
         if (
-          !this.dataStoreService.get({
+          this.dataStoreService.get({
             [STREET]: street,
             [HOUSE_NUMBER]: housenumber,
             [CITY]: city,
-          }) &&
-          !this.dataStoreService.getByAddr(`${street} ${housenumber} ${city}`)
+          }) ||
+          this.dataStoreService.getByAddr(`${street} ${housenumber} ${city}`)
         ) {
           this.markers.addMarker(
             SEARCH_FOR_MARKER_ID,
@@ -189,8 +189,8 @@ export class GeoCoderService {
               street?.length ? street + ' ' : ''
             }${housenumber} ${city}, ${postcode}`
           );
+          this.zoomInOnCoordinates(coords);
         }
-        this.zoomInOnCoordinates(coords);
       }
     };
   }
@@ -238,29 +238,26 @@ export class GeoCoderService {
     this.geoCoder.on(ADDRESS_CHOSEN, this.activeAddressHandler);
   }
 
-  requestLocationAsync(data: StoreData) {
-    return new Promise<void>((resolve, reject) => {
-      const textInput = document.querySelector(
-        '.gcd-txt-input'
-      ) as HTMLInputElement;
-      const sendTextInput = document.querySelector(
-        '.gcd-txt-search'
-      ) as HTMLButtonElement;
-      if (textInput && sendTextInput) {
-        const [street, houseNumber, city, postcode] = getAddress(data);
-        textInput.value = `${street ?? ''} ${houseNumber}, ${city}, ${postcode}`
-          .replaceAll(',,', ',')
-          .replaceAll('  ', ' ');
-        console.log('search street map for', textInput.value);
-        try {
-          sendTextInput.click();
-          resolve();
-        } catch (e: unknown) {
-          reject(e instanceof Error ? e.message : String(e));
-        }
-        return;
+  async requestLocationAsync(data: StoreData) {
+    const textInput = document.querySelector(
+      '.gcd-txt-input'
+    ) as HTMLInputElement;
+    const sendTextInput = document.querySelector(
+      '.gcd-txt-search'
+    ) as HTMLButtonElement;
+    if (textInput && sendTextInput) {
+      const [street, houseNumber, city, postcode] = getAddress(data);
+      textInput.value = `${street ?? ''} ${houseNumber}, ${city}, ${postcode}`
+        .replaceAll(',,', ',')
+        .replaceAll('  ', ' ');
+      console.log('search street map for', textInput.value);
+      try {
+        await this.semaphore.acquire();
+        sendTextInput.click();
+      } catch (e: unknown) {
+        this.semaphore.release();
       }
-      reject('No input element found');
-    });
+      return;
+    }
   }
 }
