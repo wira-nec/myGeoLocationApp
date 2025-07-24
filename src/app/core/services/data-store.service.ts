@@ -3,6 +3,7 @@ import { Subject } from 'rxjs';
 import { blobsFilter, mergeStoreData } from '../helpers/dataManipulations';
 import { isEqual } from 'lodash';
 import { PictureStore } from './load-picture.service';
+import { makeAddressComparable } from '../helpers/string-manipulations';
 
 export type StoreData = Record<string, string>;
 
@@ -373,6 +374,47 @@ export class DataStoreService {
     return undefined;
   }
 
+  private getByPostcodeHouseNumberCity(
+    lookupPostcode: string,
+    lookupHouseNumber: string,
+    lookupCity: string
+  ): StoreData | undefined {
+    return this.dataStore.find((data) => {
+      let found = false;
+      const addressKey = ADDRESS_KEYS.find((key) =>
+        Object.keys(data).includes(key)
+      );
+      const postcodeKey = POSTCODE_KEYS.find((key) =>
+        Object.keys(data).includes(key)
+      );
+      if (addressKey && postcodeKey) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const [street, houseNumber, city] = data[addressKey]
+          .replaceAll(',', '')
+          .split(HOUSE_NUMBER_REGEX);
+        found =
+          lookupPostcode.toLowerCase() === data[postcodeKey].toLowerCase() &&
+          lookupCity.toLowerCase() === city.toLowerCase() &&
+          lookupHouseNumber.toLowerCase() === houseNumber.toLowerCase();
+        if (!found) {
+          found =
+            lookupPostcode.toLowerCase() === data[postcodeKey].toLowerCase() &&
+            lookupCity.toLowerCase() === city.toLowerCase() &&
+            lookupHouseNumber.toLowerCase().replace(/[-\s]*/g, '') ===
+              houseNumber.toLowerCase().replace(/[-\s]*/g, '');
+        }
+        if (!found) {
+          found =
+            lookupPostcode.toLowerCase() === data[postcodeKey].toLowerCase() &&
+            lookupCity.toLowerCase() === city.toLowerCase() &&
+            lookupHouseNumber.toLowerCase().replace(/[^0-9]*/g, '') ===
+              houseNumber.toLowerCase().replace(/[^0-9]*/g, '');
+        }
+      }
+      return found;
+    });
+  }
+
   public getByAddr(address: string): StoreData | undefined {
     const foundData = this.findDataByAddress(address);
     if (foundData) {
@@ -382,16 +424,23 @@ export class DataStoreService {
   }
 
   private findDataByAddress(address: string) {
+    const lookupAddress = makeAddressComparable(address);
+    console.log('Lookup Address', address, lookupAddress);
     return this.dataStore.find((data) => {
       const addressKey = ADDRESS_KEYS.find((key) =>
         Object.keys(data).includes(key)
       );
-      return (
-        addressKey &&
-        // compare address without commas, spaces and dashes
-        (data[addressKey] + '').replaceAll(/(,|-|\s)/g, '').toLowerCase() ===
-          address.replaceAll(/(,|-|\s)/g, '').toLowerCase()
-      );
+      if (addressKey) {
+        const dataStoreAddress = makeAddressComparable(data[addressKey]);
+        if (lookupAddress === 'françoisvalentijnstraat39almere') {
+          console.log('StoreData Address', data[addressKey], dataStoreAddress);
+        }
+        return (
+          // compare address without commas, spaces and dashes
+          dataStoreAddress === lookupAddress
+        );
+      }
+      return false;
     });
   }
 
@@ -404,57 +453,73 @@ export class DataStoreService {
   ): [StoreData | undefined, string] {
     let errorMessage = '';
     let storeData = this.get({
-      [POSTCODE]: postcode,
-      [HOUSE_NUMBER]: houseNumber,
       [CITY]: city,
+      [HOUSE_NUMBER]: houseNumber,
+      [POSTCODE]: postcode,
     });
     if (!storeData) {
-      // try to get it by street name, city and house number
-      storeData = this.get({
-        [STREET]: street,
-        [HOUSE_NUMBER]: houseNumber,
-        [CITY]: city,
-      });
+      storeData = this.getByPostcodeHouseNumberCity(
+        postcode,
+        houseNumber,
+        city
+      );
       if (!storeData) {
-        // try to get it by city, street name and partial house number
+        // try to get it by street name, city and house number
         storeData = this.get({
           [STREET]: street,
-          // filter house number with for non numbers
-          [HOUSE_NUMBER]: houseNumber.replace(/[^0-9,\s].*/g, ''),
+          [HOUSE_NUMBER]: houseNumber,
           [CITY]: city,
         });
         if (!storeData) {
-          // try to get it by postcode, street name, partial house number.
+          // try to get it by city, street name and partial house number
           storeData = this.get({
-            [POSTCODE]: postcode,
             [STREET]: street,
-            [HOUSE_NUMBER]: houseNumber.replace(/[^0-9].*/g, ''),
+            // filter house number with for non numbers
+            [HOUSE_NUMBER]: houseNumber.replace(/[^0-9,\s].*/g, ''),
+            [CITY]: city,
           });
           if (!storeData) {
-            // try to get it by address.
-            storeData = this.getByAddr(`${street} ${houseNumber} ${city}`);
+            // try to get it by postcode, street name, partial house number.
+            storeData = this.get({
+              [POSTCODE]: postcode,
+              [STREET]: street,
+              [HOUSE_NUMBER]: houseNumber.replace(/[^0-9].*/g, ''),
+            });
             if (!storeData) {
-              errorMessage = `Looking for ${query} but found address "${street} ${houseNumber}, ${city}, ${postcode}". Please verify address in the excel sheet.`;
-              storeData = this.getByAddr(query);
+              // try to get it by postcode, partial house number, city
+              storeData = this.get({
+                [POSTCODE]: postcode,
+                [CITY]: city,
+                [HOUSE_NUMBER]: houseNumber.replace(/[^0-9].*/g, ''),
+              });
               if (!storeData) {
-                // try without postcode
-                storeData = this.getByAddr(
-                  query
-                    .replace(/[1-9][0-9]{3} ?(?!sa|sd|ss)[a-z]{2}$/i, '')
-                    .trim()
-                );
+                // try to get it by address.
+                storeData = this.getByAddr(`${street} ${houseNumber} ${city}`);
+                if (!storeData) {
+                  errorMessage = `Looking for ${query} but found address "${street} ${houseNumber}, ${city}, ${postcode}". Please verify address in the excel sheet.`;
+                  storeData = this.getByAddr(query);
+                  if (!storeData) {
+                    // try without postcode
+                    storeData = this.getByAddr(
+                      query
+                        .replace(/[1-9][0-9]{3} ?(?!sa|sd|ss)[a-z]{2}$/i, '')
+                        .trim()
+                    );
+                  }
+                }
+              } else {
+                errorMessage = `Please fix City in "${street} ${houseNumber}, ${city}" and change ${storeData[CITY]} to ${city} in your excel sheet.`;
               }
             }
           } else {
-            errorMessage = `Please fix City in "${street} ${houseNumber}, ${city}" and change ${storeData[CITY]} to ${city} in your excel sheet.`;
+            errorMessage = `Please fix house number in "${street} ${houseNumber}, ${city}" and change ${storeData[HOUSE_NUMBER]} to ${houseNumber} in your excel sheet.`;
           }
         } else {
-          errorMessage = `Please fix house number in "${street} ${houseNumber}, ${city}" and change ${storeData[HOUSE_NUMBER]} to ${houseNumber} in your excel sheet.`;
+          errorMessage = `Please fix postcode in "${street} ${houseNumber}, ${city}" and change ${storeData[POSTCODE]} to ${postcode} in your excel sheet.`;
         }
-      } else {
-        errorMessage = `Please fix postcode in "${street} ${houseNumber}, ${city}" and change ${storeData[POSTCODE]} to ${postcode} in your excel sheet.`;
       }
     }
+
     console.log('street map found', postcode, houseNumber, city, street, query);
     return [storeData, errorMessage];
   }

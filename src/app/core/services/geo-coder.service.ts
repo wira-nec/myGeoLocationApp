@@ -239,25 +239,58 @@ export class GeoCoderService {
   }
 
   async requestLocationAsync(data: StoreData) {
+    const node = document.querySelector('.gcd-txt-result');
     const textInput = document.querySelector(
       '.gcd-txt-input'
     ) as HTMLInputElement;
     const sendTextInput = document.querySelector(
       '.gcd-txt-search'
     ) as HTMLButtonElement;
-    if (textInput && sendTextInput) {
-      const [street, houseNumber, city, postcode] = getAddress(data);
-      textInput.value = `${street ?? ''} ${houseNumber}, ${city}, ${postcode}`
-        .replaceAll(',,', ',')
-        .replaceAll('  ', ' ');
-      console.log('search street map for', textInput.value);
+    if (node && textInput && sendTextInput) {
       try {
+        const observer = this.observeSearchInputForErrors(textInput);
+
+        const [street, houseNumber, city, postcode] = getAddress(data);
+        textInput.value = `${street ?? ''} ${houseNumber}, ${city}, ${postcode}`
+          .replaceAll(',,', ',')
+          .replaceAll('  ', ' ');
+        console.log('search street map for', textInput.value);
         await this.semaphore.acquire();
         sendTextInput.click();
-      } catch (e: unknown) {
-        this.semaphore.release();
+        observer.disconnect();
+      } catch (e) {
+        this.searchForErrorHandler((e as Error).message);
       }
       return;
     }
+  }
+  private observeSearchInputForErrors(textInput: HTMLInputElement) {
+    const searchForText = textInput.value;
+    const node = document.querySelector('.gcd-txt-result');
+    if (node) {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach(async (mutation) => {
+          if (mutation.target.textContent?.startsWith('Error')) {
+            await this.searchForErrorHandler(
+              `${mutation.target.textContent}, while searching for "${searchForText}". Refresh page and start over!`
+            );
+          }
+        });
+      });
+
+      observer.observe(node, {
+        attributes: true,
+        childList: true,
+        characterData: true,
+      });
+      return observer;
+    }
+    throw new Error('Something went wrong, please refresh page!');
+  }
+
+  private async searchForErrorHandler(errorMessage: string) {
+    this.toaster.show('error', errorMessage, [], 300000);
+    await this.progressService.increaseProgressByStep(XSL_IMPORT_PROGRESS_ID);
+    this.semaphore.release();
   }
 }
