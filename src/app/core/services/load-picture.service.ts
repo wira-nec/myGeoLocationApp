@@ -4,6 +4,10 @@ import {
   PICTURES_IMPORT_PROGRESS_ID,
   ProgressService,
 } from './progress.service';
+import {
+  convertYearFilename,
+  getPathWithoutFilename,
+} from '../helpers/string-manipulations';
 
 export type PictureStore = Record<string, string | ArrayBuffer>;
 
@@ -48,8 +52,9 @@ export class LoadPictureService {
         const reader = new FileReader();
         reader.onload = (e: ProgressEvent<FileReader>) => {
           if (e.target?.result) {
+            const filename = convertYearFilename(file.name);
             Object.assign(pictures, {
-              [file.name.toLowerCase()]: e.target?.result as string,
+              [filename.toLowerCase()]: e.target?.result as string,
             });
           }
           resolve();
