@@ -261,19 +261,20 @@ export class DataStoreService {
     pictures: PictureStore,
     dataStore: StoreData[]
   ) {
-    dataStore.forEach((data) => {
+    dataStore.forEach((data, index) => {
       const dataSnapShot = {
         ...data,
       };
-      this.updateDataStoreWithPicture(data, pictures);
+      this.updateDataStoreWithPicture(index, pictures);
       this.isPristine = this.isPristine && isEqual(dataSnapShot, data);
     });
   }
 
   private updateDataStoreWithPicture(
-    dataStore: StoreData,
+    dataStoreIndex: number,
     pictures: PictureStore
   ) {
+    const dataStore = this.dataStore[dataStoreIndex];
     // Set default column name for picture column incase non exists
     let pictureColumnName = VOORAANZICHT;
     // lookup columns in dataStore that have pictures
@@ -285,18 +286,16 @@ export class DataStoreService {
     if (pictureColumnNames.length > 0) {
       pictureColumnName = pictureColumnNames[0];
     }
-    Object.keys(pictures).forEach((filename) => {
-      // remove .jpg or .jpeg from filename to get the address
-      const address = filename.replace(/\.jpg|.jpeg$/, '').toLocaleLowerCase();
-      if (
-        addressColumnName &&
-        dataStore[addressColumnName].toLowerCase() === address
-      ) {
-        dataStore[pictureColumnName] = filename;
+    if (addressColumnName) {
+      const filename = dataStore[addressColumnName].toLowerCase();
+      if (Object.keys(pictures).includes(filename + '.jpg')) {
+        dataStore[pictureColumnName] = filename + '.jpg';
+      } else if (Object.keys(pictures).includes(filename + '.jpeg')) {
+        dataStore[pictureColumnName] = filename + '.jpeg';
       } else {
         dataStore[pictureColumnName] = dataStore[pictureColumnName] || '';
       }
-    });
+    }
   }
 
   public storeGridData(gridData: StoreData) {
