@@ -4,10 +4,7 @@ import {
   PICTURES_IMPORT_PROGRESS_ID,
   ProgressService,
 } from './progress.service';
-import {
-  convertYearFilename,
-  getPathWithoutFilename,
-} from '../helpers/string-manipulations';
+import { convertYearFilename } from '../helpers/string-manipulations';
 
 export type PictureStore = Record<string, string | ArrayBuffer>;
 

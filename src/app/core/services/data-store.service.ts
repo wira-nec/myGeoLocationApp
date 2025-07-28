@@ -57,6 +57,7 @@ const HOUSE_NUMBER_KEYS: string[] = [
 ];
 
 const HOUSE_NUMBER_REGEX = /(\s\d+[\s,-]?\d*[A-Za-z]?[,]?)+\s/;
+const IMAGE_EXTENSION_REGEX = /\.(gif|jpe?g|tiff?|png|webp|bmp)$/i;
 
 function getKey(
   item: StoreData,
@@ -69,7 +70,7 @@ function getKey(
 }
 
 export const imagesFilter = (value: string): boolean => {
-  return /\.(gif|jpe?g|tiff?|png|webp|bmp)$/i.test(value);
+  return IMAGE_EXTENSION_REGEX.test(value);
 };
 
 /**
@@ -432,9 +433,6 @@ export class DataStoreService {
       );
       if (addressKey) {
         const dataStoreAddress = makeAddressComparable(data[addressKey]);
-        if (lookupAddress === 'françoisvalentijnstraat39almere') {
-          console.log('StoreData Address', data[addressKey], dataStoreAddress);
-        }
         return (
           // compare address without commas, spaces and dashes
           dataStoreAddress === lookupAddress

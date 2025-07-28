@@ -175,12 +175,12 @@ export class GeoCoderService {
           evt.address.original.details;
         const coords = [evt.place.lon, evt.place.lat];
         if (
-          this.dataStoreService.get({
+          !this.dataStoreService.get({
             [STREET]: street,
             [HOUSE_NUMBER]: housenumber,
             [CITY]: city,
-          }) ||
-          this.dataStoreService.getByAddr(`${street} ${housenumber} ${city}`)
+          }) &&
+          !this.dataStoreService.getByAddr(`${street} ${housenumber} ${city}`)
         ) {
           this.markers.addMarker(
             SEARCH_FOR_MARKER_ID,
@@ -189,8 +189,8 @@ export class GeoCoderService {
               street?.length ? street + ' ' : ''
             }${housenumber} ${city}, ${postcode}`
           );
-          this.zoomInOnCoordinates(coords);
         }
+        this.zoomInOnCoordinates(coords);
       }
     };
   }

@@ -39,6 +39,7 @@ interface ExtendedImageRange extends Excel.ImageRange {
 
 const LOCATION_SHEET_NAME = 'LocationInfo';
 
+const DEFAULT_ROW_HEIGHT = 50;
 @Injectable({
   providedIn: 'root',
 })
@@ -105,22 +106,33 @@ export class ExcelService {
     workbook.eachSheet((worksheet) => {
       if (!worksheet.getRow(1).cellCount) return;
 
-      const sheetData = this.readDataFromWorkSheet(
+      const { storeData, imageHeaderCols } = this.readDataFromWorkSheet(
         worksheet,
         allImagesInWorkBook,
         pictureService
       );
 
       // Get the headers from the newSheetData
-      const hasRequiredHeaders = this.validateHeaders(sheetData);
+      const hasRequiredHeaders = this.validateHeaders(storeData);
       if (hasRequiredHeaders) {
-        // Add the sheetName as key in excelData
-        sheetData.forEach((item) => {
+        // Add the sheetName as key in excelData and add image column if required
+        storeData.forEach((item) => {
           if (worksheet.name !== 'LocationInfo') {
             item[SHEET_NAME] = worksheet.name; // Add sheetName to each item
           }
+          // Check if image column is missing and if so add column with address as picture name or empty string
+          let addedHeader = false;
+          imageHeaderCols.forEach((imageHeader) => {
+            if (!Object.keys(item).includes(imageHeader) && !addedHeader) {
+              item[imageHeader] = getImageName(item) || '';
+              // Only only image column shall have address image name, for now we only support 1 image column
+              if (item[imageHeader].length) {
+                addedHeader = true;
+              }
+            }
+          });
         });
-        excelData = mergeStoreData(sheetData, excelData);
+        excelData = mergeStoreData(storeData, excelData);
       } // Else skip sheet
     });
     return excelData;
@@ -190,6 +202,7 @@ export class ExcelService {
     pictureService: LoadPictureService
   ) {
     const storeData: StoreData[] = [];
+    const imageHeaderCols: string[] = [];
     const header = worksheet.getRow(1);
     const headers: string[] = [];
     header.eachCell((cell) => {
@@ -213,7 +226,12 @@ export class ExcelService {
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber == 1) return;
       const obj = { [UNIQUE_ID]: rowNumber.toString() } as StoreData;
+      let headersIndex = 0;
       row.eachCell((cell, colNumber) => {
+        // empty cell are exclude in loop eachCell, so we need to add empty string to obj for the missing column cell
+        while (colNumber - 1 > headersIndex) {
+          obj[headers[headersIndex++]] = '';
+        }
         const cellText = cell.text;
         let imageData = undefined;
         let filename = 'image corrupted?';
@@ -228,16 +246,20 @@ export class ExcelService {
               (t) => t.font?.color?.argb === 'FFFFFFFF'
             ))
         ) {
+          // Cell found with image object
           if (sheetImages.length) {
+            // the worksheet has images
+            // search in workBook images for the imageId based on row/col number found in workSheet images
             const rowImage = sheetImages.find(
               (image) =>
                 image.nativeRow === rowNumber - 1 &&
                 image.nativeCol === colNumber - 1
             );
             if (rowImage && addressIndex >= 0) {
+              // get the image data from workBook images based on row/col number found in workSheet images
               imageData = allImagesInWorkBook[Number(rowImage.imageId)];
             } else if (addressIndex >= 0) {
-              // search for imageId in allImagesInWorkBook that is not present in sheetImages
+              // no image found in the workSheet images, so search in workBook images for image based on image id found in workSheet images
               const imageId = allImagesInWorkBook.findIndex(
                 (_image, index) =>
                   !sheetImages.some((img) => img.imageId === index.toString())
@@ -255,23 +277,28 @@ export class ExcelService {
                     image.imageId = (Number(image.imageId) - 1).toString();
                   }
                 });
-              }
+              } // Else no image found, so handle it as normal data (= imageId is undefined)
             }
           } else {
+            // workSheet does not have images so get one from WorkBook images
             imageData = allImagesInWorkBook.pop();
           }
         }
         if (imageData) {
+          // Found image column, create filename for image and store it
           filename = row.getCell(addressIndex + 1) + '.jpg';
           pictureService.storePicture(imageData, filename);
-          obj[headers[colNumber - 1]] = filename;
+          if (!imageHeaderCols.includes(headers[headersIndex])) {
+            imageHeaderCols.push(headers[headersIndex]);
+          }
+          obj[headers[headersIndex++]] = filename;
         } else {
-          obj[headers[colNumber - 1]] = cellText;
+          obj[headers[headersIndex++]] = cellText;
         }
       });
       storeData.push(obj);
     });
-    return storeData;
+    return { storeData, imageHeaderCols };
   }
 
   private validateHeaders(sheetData: StoreData[]) {
@@ -328,7 +355,7 @@ export class ExcelService {
       };
       Object.keys(excelRow).forEach((key) => {
         const cellValueIsNumber = !isNaN(Number(row[key]));
-        if (cellValueIsNumber) {
+        if (cellValueIsNumber && row[key].length) {
           excelRow[key] = Number(row[key]);
         }
       });
@@ -454,38 +481,46 @@ export class ExcelService {
 
     storeData.forEach((data, rowNumber) => {
       const imageName = getImageName(data);
+      // Function to hide the image name in the cell
+      const hideCellText = (colNum: number) => {
+        const pictureCell = worksheet.getCell(rowNumber + 2, colNum + 1);
+        pictureCell.value = {
+          richText: [
+            {
+              text: imageName ?? '',
+              font: { size: 1, color: { argb: 'FFFFFFFF' } },
+            },
+          ],
+        };
+        pictureCell.style = {
+          ...pictureCell.style,
+          numFmt: ';;;',
+        };
+      };
+
       if (imageName) {
-        const colNum = Object.keys(data).findIndex(
+        const imgColIndex = Object.keys(data).findIndex(
           (key) => data[key]?.toLowerCase() === imageName
         );
         const imageId = imageIds.find(
           (image) => Object.keys(image)[0] === imageName
         );
-        if (imageId && colNum >= 0) {
+        if (imageId && imgColIndex >= 0) {
           const imageInfo = Object.values(imageId)[0];
-          const pictureCell = worksheet.getCell(rowNumber + 2, colNum + 1);
-          pictureCell.value = {
-            richText: [
-              {
-                text: imageName,
-                font: { size: 1, color: { argb: 'FFFFFFFF' } },
-              },
-            ],
-          };
-          pictureCell.style = {
-            ...pictureCell.style,
-            numFmt: ';;;', // Hide the cell content
-          };
+          hideCellText(imgColIndex);
           worksheet.addImage(imageInfo.imageId, {
-            tl: { col: colNum, row: rowNumber + 1 },
+            tl: { col: imgColIndex, row: rowNumber + 1 },
             ext: {
-              width:
-                worksheet.properties.defaultRowHeight *
-                (imageInfo.width / imageInfo.height),
-              height: worksheet.properties.defaultRowHeight,
+              width: DEFAULT_ROW_HEIGHT * (imageInfo.width / imageInfo.height),
+              height: DEFAULT_ROW_HEIGHT,
             },
             editAs: undefined,
           });
+          worksheet.getColumn(imgColIndex + 1).width =
+            DEFAULT_ROW_HEIGHT * (imageInfo.width / imageInfo.height);
+          worksheet.getRow(rowNumber + 2).height = DEFAULT_ROW_HEIGHT;
+        } else if (imgColIndex >= 0) {
+          hideCellText(imgColIndex);
         }
       }
     });
@@ -521,7 +556,7 @@ export class ExcelService {
     workbook.creator = this.workbook_creator;
     workbook.lastModifiedBy = this.workbook_lastModifiedBy;
     workbook.created = this.workbook_created;
-    workbook.modified = this.workbook_modified;
+    workbook.modified = new Date();
     workbook.lastPrinted = this.workbook_lastPrinted;
     workbook.properties.date1904 = this.workbook_properties_date1904;
     workbook.views = [

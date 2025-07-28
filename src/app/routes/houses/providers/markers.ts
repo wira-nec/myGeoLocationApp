@@ -161,7 +161,7 @@ export class Markers {
     const address = JSON.parse(geoInformation);
     return [
       address.street || '',
-      address.houseNumber || '',
+      address.housenumber || '',
       address.city || '',
       address.postcode || '',
     ];
