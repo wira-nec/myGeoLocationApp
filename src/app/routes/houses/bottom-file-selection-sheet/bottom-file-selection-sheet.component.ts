@@ -31,7 +31,7 @@ import { LoadPictureService } from '../../../core/services/load-picture.service'
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { filter, takeWhile } from 'rxjs';
+import { filter } from 'rxjs';
 import {
   GeoCoderService,
   NIJKERK_COORDINATES,
@@ -66,6 +66,7 @@ export class BottomFileSelectionSheetComponent
 
   private isDataStoreLoaded: boolean | undefined = undefined;
   private arePicturesLoaded: boolean | undefined = undefined;
+  private importFile = '';
   private readonly destroyRef = inject(DestroyRef);
 
   constructor(
@@ -130,23 +131,18 @@ export class BottomFileSelectionSheetComponent
     const progressFinishedSubscription = this.progressService
       .getProgress()
       .pipe(
-        takeWhile(
-          (progress) =>
-            !progress[XSL_IMPORT_PROGRESS_ID] ||
-            progress[XSL_IMPORT_PROGRESS_ID].value !== 100,
-          true
-        ),
         filter(
           (progress) =>
             Object.keys(progress).length > 0 &&
-            !!progress[XSL_IMPORT_PROGRESS_ID]
+            !!progress[XSL_IMPORT_PROGRESS_ID] &&
+            progress[XSL_IMPORT_PROGRESS_ID].value === 100 &&
+            this.progressService.isProgressRunning(XSL_IMPORT_PROGRESS_ID)
         )
       )
-      .subscribe((progress) => {
-        if (progress[XSL_IMPORT_PROGRESS_ID].value === 100) {
-          this.dataStoreService.commit();
-          this.geoCoderService.delayedZoomInOnCoordinates(NIJKERK_COORDINATES);
-        }
+      .subscribe(() => {
+        this.dataStoreService.commit();
+        this.geoCoderService.delayedZoomInOnCoordinates(NIJKERK_COORDINATES);
+        this.toaster.show('success', `Uploaded file: ${this.importFile}`);
       });
     this.destroyRef.onDestroy(() => {
       progressFinishedSubscription.unsubscribe();
@@ -232,6 +228,7 @@ export class BottomFileSelectionSheetComponent
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onFileChange(event: any) {
     const file = event.target.files[0];
+    this.importFile = file.name;
     this.progressService.setProgressMode(
       XSL_IMPORT_PROGRESS_ID,
       'indeterminate'

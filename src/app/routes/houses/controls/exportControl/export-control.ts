@@ -7,14 +7,16 @@ import { ExcelService } from '../../../../core/services/excel.service';
 import { JsonCreator } from '../../../../core/providers/json-creator';
 import { LoadPictureService } from '../../../../core/services/load-picture.service';
 import { inject } from '@angular/core';
+import { GeoCoderService } from '../../../../core/services/geo-coder.service';
 
 const EXPORTED_FILENAME = 'exportedMap';
 
 export class ExportControl extends Control {
-  private dataStoreService!: DataStoreService;
-  private excelService!: ExcelService;
-  private jsonCreatorService!: JsonCreator;
-  private loadPictureService!: LoadPictureService;
+  private readonly dataStoreService!: DataStoreService;
+  private readonly excelService!: ExcelService;
+  private readonly jsonCreatorService!: JsonCreator;
+  private readonly loadPictureService!: LoadPictureService;
+  private readonly geoCoderService: GeoCoderService;
 
   /**
    * @param {Object} [opt_options] Control options.
@@ -38,8 +40,10 @@ export class ExportControl extends Control {
     this.excelService = inject(ExcelService);
     this.jsonCreatorService = inject(JsonCreator);
     this.loadPictureService = inject(LoadPictureService);
+    this.geoCoderService = inject(GeoCoderService);
 
     const exportFiles = async (): Promise<void> => {
+      this.geoCoderService.showLoadingSpinner(true);
       const dataStore = this.dataStoreService.getStore();
       if (dataStore.length > 0) {
         const sheet = dataStore.map((data) => {
@@ -73,6 +77,7 @@ export class ExportControl extends Control {
           EXPORTED_FILENAME + '.json'
         );
       }
+      this.geoCoderService.showLoadingSpinner(false);
     };
 
     button.addEventListener('click', exportFiles.bind(this), false);

@@ -87,7 +87,6 @@ export class ProgressService {
       100
     );
     console.log('Increase progress', progressId, newValue, progress.count + 1);
-    this.isRunning[progressId] = newValue < 100;
     this.progressSubject.next({
       ...current,
       [progressId]: {
@@ -97,5 +96,6 @@ export class ProgressService {
         mode,
       },
     });
+    this.isRunning[progressId] = newValue < 100;
   }
 }
