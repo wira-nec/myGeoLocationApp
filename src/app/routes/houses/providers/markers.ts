@@ -1,5 +1,4 @@
 import Feature from 'ol/Feature';
-import { StyleLike } from 'ol/style/Style';
 import { Fill, Icon, Text, Stroke, Style } from 'ol/style';
 import CircleStyle from 'ol/style/Circle';
 import { Geometry, Point } from 'ol/geom';
@@ -8,11 +7,17 @@ import { fromLonLat } from 'ol/proj';
 import { Injectable } from '@angular/core';
 import { debounceTime, Subject } from 'rxjs';
 import { ObjectEvent } from 'ol/Object';
-import Map from 'ol/Map';
+import Map, { FrameState } from 'ol/Map';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import VectorLayer from 'ol/layer/Vector';
 import Vector from 'ol/source/Vector';
 import { Coordinate } from 'ol/coordinate';
+import TileLayer from 'ol/layer/Tile';
+import { OSM } from 'ol/source';
+import { unByKey } from 'ol/Observable';
+import { getVectorContext } from 'ol/render';
+import { easeOut } from 'ol/easing.js';
+import RenderEvent from 'ol/render/Event';
 
 export const SEARCH_FOR_MARKER_ID = 'searchedFor';
 export const STORE_DATA_ID_PROPERTY = 'StoreDataId';
@@ -33,17 +38,19 @@ const style = (
   feature.setProperties({ Address: labelText });
 };
 
-const getHouseStyle = (labelText: string): StyleLike | undefined => {
+const houseImage = new Icon({
+  src: 'assets/icons8-house-48.png',
+  size: [48, 48],
+  anchor: [0.5, 48],
+  anchorXUnits: 'fraction',
+  anchorYUnits: 'pixels',
+  opacity: 0.7,
+  scale: 0.5,
+});
+
+const getHouseStyle = (labelText: string) => {
   return new Style({
-    image: new Icon({
-      src: 'assets/icons8-house-48.png',
-      size: [48, 48],
-      anchor: [0.5, 48],
-      anchorXUnits: 'fraction',
-      anchorYUnits: 'pixels',
-      opacity: 0.7,
-      scale: 0.5,
-    }),
+    image: houseImage,
     text: new Text({
       text: labelText,
       font: 'bold 12px Calibri,sans-serif',
@@ -59,30 +66,38 @@ const getHouseStyle = (labelText: string): StyleLike | undefined => {
   });
 };
 
-const getDotStyle = (radius: number, isRed: boolean): StyleLike | undefined => {
-  return new Style({
-    image: new CircleStyle({
-      radius: radius,
-      fill: new Fill({ color: isRed ? 'red' : 'black' }),
-      stroke: new Stroke({
-        color: 'white',
-        width: 2,
-      }),
+const dotImage = (radius: number, isRed: boolean) => {
+  return new CircleStyle({
+    radius: radius,
+    fill: new Fill({ color: isRed ? 'red' : 'black' }),
+    stroke: new Stroke({
+      color: 'white',
+      width: 2,
     }),
   });
 };
 
-const getLocatorStyle = (labelText: string): StyleLike | undefined => {
+const getDotStyle = (radius: number, isRed: boolean) => {
   return new Style({
-    image: new Icon({
-      src: 'assets/icons8-marker-50.png',
-      size: [50, 50],
-      anchor: [0.5, 50],
-      anchorXUnits: 'fraction',
-      anchorYUnits: 'pixels',
-      opacity: 0.7,
-      scale: 0.5,
-    }),
+    image: dotImage(radius, isRed),
+  });
+};
+
+const positionImage = (color: string | undefined = undefined) =>
+  new Icon({
+    src: 'assets/icons8-marker-50.png',
+    size: [50, 50],
+    anchor: [0.5, 50],
+    anchorXUnits: 'fraction',
+    anchorYUnits: 'pixels',
+    opacity: 0.7,
+    scale: 0.5,
+    color: color,
+  });
+
+const getLocatorStyle = (labelText: string) => {
+  return new Style({
+    image: positionImage(),
     text: new Text({
       text: labelText,
       font: 'bold 12px Calibri,sans-serif',
@@ -109,6 +124,10 @@ export class Markers {
     Vector<Feature<Geometry>>,
     Feature<Geometry>
   >();
+  private tileLayer = new TileLayer({
+    source: new OSM(),
+  });
+
   private map!: Map;
 
   constructor() {
@@ -148,11 +167,8 @@ export class Markers {
   ) {
     if (geoInformation) {
       // Assuming geoInformation is a JSON string with address information
-      const [street, houseNumber, city, postcode] =
-        this.getAddress(geoInformation);
-      return `${
-        street?.length ? street + ' ' : ''
-      }${houseNumber} ${city}, ${postcode}`;
+      const [street, houseNumber, city] = this.getAddress(geoInformation);
+      return `${street?.length ? street + ' ' : ''}${houseNumber} ${city}`;
     }
     return defaultText;
   }
@@ -212,6 +228,7 @@ export class Markers {
 
   public initializeMarkers(map: Map) {
     this.map = map;
+    map.addLayer(this.tileLayer);
     this.markersVectorLayer = new VectorLayer({
       source: new Vector({ features: Object.values(this.markers) }),
     });
@@ -221,5 +238,45 @@ export class Markers {
     map.getView().on('change:resolution', (e) => {
       this.zoomInput.next(e);
     });
+  }
+
+  public flash(id: string) {
+    const duration = 5000;
+    const feature = this.markers[id];
+    if (feature !== undefined) {
+      const start = Date.now();
+      const flashGeom = feature.getGeometry()?.clone();
+      if (flashGeom) {
+        const animate = (event: RenderEvent) => {
+          const frameState = event.frameState as FrameState;
+          const elapsed = frameState.time - start;
+          if (elapsed >= duration) {
+            unByKey(listenerKey);
+            return;
+          }
+          const vectorContext = getVectorContext(event);
+          const elapsedRatio = elapsed / duration;
+          // radius will be 5 at start and 30 at end.
+          const radius = easeOut(elapsedRatio) * 25 + 5;
+          const opacity = easeOut(1 - elapsedRatio);
+
+          const style = new Style({
+            image: new CircleStyle({
+              radius: radius,
+              stroke: new Stroke({
+                color: 'rgba(255, 0, 0, ' + opacity + ')',
+                width: 0.25 + opacity,
+              }),
+            }),
+          });
+
+          vectorContext.setStyle(style);
+          vectorContext.drawGeometry(flashGeom);
+          // tell OpenLayers to continue postrender animation
+          this.map.render();
+        };
+        const listenerKey = this.tileLayer.on('postrender', animate);
+      }
+    }
   }
 }

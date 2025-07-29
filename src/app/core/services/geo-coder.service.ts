@@ -174,14 +174,14 @@ export class GeoCoderService {
         const { postcode, street, housenumber, city } =
           evt.address.original.details;
         const coords = [evt.place.lon, evt.place.lat];
-        if (
-          !this.dataStoreService.get({
+        const storeData =
+          this.dataStoreService.getByAddr(`${street} ${housenumber} ${city}`) ||
+          this.dataStoreService.get({
             [STREET]: street,
             [HOUSE_NUMBER]: housenumber,
             [CITY]: city,
-          }) &&
-          !this.dataStoreService.getByAddr(`${street} ${housenumber} ${city}`)
-        ) {
+          });
+        if (!storeData) {
           this.markers.addMarker(
             SEARCH_FOR_MARKER_ID,
             coords,
@@ -189,8 +189,14 @@ export class GeoCoderService {
               street?.length ? street + ' ' : ''
             }${housenumber} ${city}, ${postcode}`
           );
+          this.zoomInOnCoordinates(coords, 16, () =>
+            this.markers.flash(SEARCH_FOR_MARKER_ID)
+          );
+        } else {
+          this.zoomInOnCoordinates(coords, 16, () =>
+            this.markers.flash(storeData[UNIQUE_ID])
+          );
         }
-        this.zoomInOnCoordinates(coords);
       }
     };
   }
@@ -212,11 +218,25 @@ export class GeoCoderService {
     }, 1000);
   }
 
-  zoomInOnCoordinates(coords: Coordinate) {
-    this.map.getView().animate({
-      center: fromLonLat(coords),
-      zoom: 15,
-    });
+  zoomInOnCoordinates(
+    coords: Coordinate,
+    zoom = 15,
+    callback?: (arg0: boolean) => void
+  ) {
+    if (callback !== undefined) {
+      this.map.getView().animate(
+        {
+          center: fromLonLat(coords),
+          zoom,
+        },
+        callback
+      );
+    } else {
+      this.map.getView().animate({
+        center: fromLonLat(coords),
+        zoom,
+      });
+    }
   }
 
   getView() {
