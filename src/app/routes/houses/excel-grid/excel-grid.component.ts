@@ -130,7 +130,6 @@ export class ExcelGridComponent {
       .subscribe((data) => {
         if (data.length > 1) {
           this.createGridData();
-          this.loadDataInGrid();
         } else if (data.length === 1) {
           // Only 1 update, so it's assumed this is due to a single data update
           let newRowData = this.rowData.find(
