@@ -21,7 +21,16 @@ import {
 } from 'ag-grid-community';
 import {
   DataStoreService,
+  ERROR,
+  GEO_INFO,
   getAllHeaderInfo,
+  getComparableAddress,
+  getImageName,
+  getPictureColumnName,
+  hasPictures,
+  LATITUDE,
+  LONGITUDE,
+  SHEET_NAME,
   StoreData,
   UNIQUE_ID,
 } from '../../../core/services/data-store.service';
@@ -36,6 +45,8 @@ import { ImageCellRendererComponent } from './image-cell-renderer/image-cell-ren
 import { LoadPictureService } from '../../../core/services/load-picture.service';
 import { ZoomInButtonCellRendererComponent } from './zoom-in-button-cell-renderer/zoom-in-button-cell-renderer.component';
 import { GeoCoderService } from '../../../core/services/geo-coder.service';
+import { ToasterService } from '../../../core/services/toaster.service';
+import { blobsFilter } from '../../../core/helpers/dataManipulations';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -43,6 +54,8 @@ const CLASS_FOR_PICTURE_CELL = 'picture-cell';
 const COLUMN_CLASS = 'column-class';
 
 export const ZOOM_IN_COLUMN_NAME = 'zoomIn';
+
+const nonGridColumnNames = [GEO_INFO, LONGITUDE, LATITUDE, SHEET_NAME, ERROR];
 
 @Component({
   selector: 'app-excel-grid',
@@ -88,7 +101,8 @@ export class ExcelGridComponent {
   constructor(
     private readonly pictureService: LoadPictureService,
     private readonly dataStoreService: DataStoreService,
-    private readonly geoDecoderService: GeoCoderService,
+    private readonly geoCoderService: GeoCoderService,
+    private readonly toaster: ToasterService,
     private eRef: ElementRef,
     private doms: DomSanitizer
   ) {}
@@ -131,19 +145,46 @@ export class ExcelGridComponent {
         if (data.length > 1) {
           this.createGridData();
         } else if (data.length === 1) {
-          // Only 1 update, so it's assumed this is due to a single data update
+          // Only 1 update, so it's assumed this is due to an single row update in the excel grid
           let newRowData = this.rowData.find(
             (row) => row[UNIQUE_ID] === data[0][UNIQUE_ID]
           );
           if (newRowData) {
+            // If there exists new columns in the received data, then add these columns also to the rowData
+            const dataColumns = Object.keys(data[0]);
+            const rowDataColumns = this.colDefs.map((colDef) => colDef.field);
+            const newColumns = dataColumns.filter(
+              (colName) =>
+                !rowDataColumns.includes(colName) &&
+                !nonGridColumnNames.includes(colName)
+            );
+            newColumns.forEach((colName) => {
+              // Add column to rowData
+              newRowData = {
+                ...newRowData,
+                [colName]: data[0][colName],
+              };
+              // Add column to colDefs
+              // Note: the only columns that can be added are picture columns
+              this.colDefs.push(
+                this.createPictureColDef([colName, true /* Don't care */])
+              );
+            });
             newRowData = {
               ...newRowData,
               ...this.convertToGridRowData(data[0]),
             };
+            // check if new column is added, could be the case as first picture is added in popup!!!!
             newRowData = {
               ...newRowData,
               ...this.convertPictureNamesToBlob(newRowData),
             };
+            // Update the columns in the grid
+            if (newColumns.length) {
+              this.gridApi.updateGridOptions({
+                columnDefs: this.colDefs,
+              });
+            }
             // Doing the update for the data in the grid in this way is preferred
             // above updating this.rowData because this way the grid is re-rendered
             this.gridApi.forEachNode((rowNode) => {
@@ -185,7 +226,7 @@ export class ExcelGridComponent {
       columnDefs: this.colDefs,
       rowData: this.rowData,
       context: {
-        geoDecoderService: this.geoDecoderService,
+        geoDecoderService: this.geoCoderService,
         dataStoreService: this.dataStoreService,
       },
     });
@@ -282,7 +323,11 @@ export class ExcelGridComponent {
 
   private convertPictureNamesToBlob(row: StoreData): StoreData {
     const convertedRow = this.colDefs
-      .filter((colDef) => colDef.cellClass === CLASS_FOR_PICTURE_CELL)
+      .filter(
+        (colDef) =>
+          colDef.cellClass === CLASS_FOR_PICTURE_CELL &&
+          !blobsFilter(row[colDef.headerName as string] || '')
+      )
       .map(
         (col) =>
           ({
@@ -334,11 +379,106 @@ export class ExcelGridComponent {
     return params.data[UNIQUE_ID] as string;
   }
 
+  private storePictureNameInData(newPictureName: string, data: StoreData) {
+    const pictureColumnName = getPictureColumnName(data);
+    data[pictureColumnName] = newPictureName;
+    this.dataStoreService.updateStoreData(data);
+  }
+
   onCellValueChanged(event: CellValueChangedEvent<StoreData>): void {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { zoomIn, ...updatedData } = event.data;
+    const { zoomIn, ...gridData } = event.data;
     // Update the data store with the modified data
-    this.dataStoreService.storeGridData(updatedData);
+    const result = this.dataStoreService.storeGridData(gridData);
+    if (result?.storeData && result?.originalData) {
+      const gridAddress = getComparableAddress(result.originalData);
+      const storeAddress = getComparableAddress(result.storeData);
+      // check if address is changed and if so add a copy of the current picture under new name in pictureStore
+      if (gridAddress !== storeAddress) {
+        // We need to request the location again since address is changed
+        this.gridApi.setGridOption('loading', true);
+        this.geoCoderService.requestLocationAsync(result.storeData).then(
+          () => {
+            // onfulfilled commit data store again with latest data store data
+            const updatedDataAfterLocationRequest =
+              this.dataStoreService.findById(result.storeData[UNIQUE_ID]);
+            if (updatedDataAfterLocationRequest) {
+              const newPictureName =
+                getImageName(updatedDataAfterLocationRequest) || '';
+              if (hasPictures(result.originalData)) {
+                // when location is not changed, update key to related related picture
+                if (!this.pictureService.getPicture(newPictureName)) {
+                  if (
+                    updatedDataAfterLocationRequest[LONGITUDE] ===
+                      result.originalData[LONGITUDE] &&
+                    updatedDataAfterLocationRequest[LATITUDE] ===
+                      result.originalData[LATITUDE]
+                  ) {
+                    // location is not changed, only the address has changed
+                    // lets check if there is a picture blob for it or not.
+                    // In that case rename key for original blob
+                    const originalPictureName = getImageName(
+                      result.originalData
+                    );
+                    if (originalPictureName) {
+                      this.pictureService.changePictureKey(
+                        originalPictureName,
+                        newPictureName
+                      );
+                      this.dataStoreService.updateDataStoreWithPicture(
+                        Number(updatedDataAfterLocationRequest[UNIQUE_ID]),
+                        [newPictureName]
+                      );
+                    }
+                  } else {
+                    // location is changed and there is no picture for it
+                    // remove picture data from data store
+                    this.storePictureNameInData(
+                      '',
+                      updatedDataAfterLocationRequest
+                    );
+                  }
+                } else {
+                  // There is a picture, so put it back in the store data
+                  this.storePictureNameInData(
+                    newPictureName,
+                    updatedDataAfterLocationRequest
+                  );
+                }
+              } else if (this.pictureService.getPicture(newPictureName)) {
+                // There is a picture for the updated store data, so update data store with picture name
+                this.storePictureNameInData(
+                  newPictureName,
+                  updatedDataAfterLocationRequest
+                );
+              }
+              this.dataStoreService.commit([updatedDataAfterLocationRequest]);
+              this.gridApi.setGridOption('loading', false);
+            } else {
+              this.gridApi.setGridOption('loading', false);
+              this.errorOnCellValueChanged('Failed to update the data', result);
+            }
+          },
+          (err) => {
+            // something went wrong, restore to original data
+            this.gridApi.setGridOption('loading', false);
+            this.errorOnCellValueChanged(err.message, result);
+          }
+        );
+      } else {
+        this.dataStoreService.commit([result.storeData]);
+      }
+    } else {
+      this.toaster.show('error', 'Failed to update the data');
+    }
+  }
+
+  private errorOnCellValueChanged(
+    err: string,
+    result: { storeData: StoreData; originalData: StoreData }
+  ) {
+    this.dataStoreService.changeStoreData(result.originalData);
+    this.toaster.show('error', err);
   }
 
   onRowSelected(event: RowSelectedEvent<StoreData, ColDef>): void {

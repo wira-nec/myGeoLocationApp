@@ -14,9 +14,7 @@ export function getAddress(item: StoreData): string {
       return item[addressKey];
     }
   } else {
-    return (
-      item[cityKey] + item[postcodeKey] + item[streetKey] + item[houseNumberKey]
-    );
+    return item[cityKey] + item[streetKey] + item[houseNumberKey];
   }
 }
 

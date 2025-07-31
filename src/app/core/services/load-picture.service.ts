@@ -74,20 +74,24 @@ export class LoadPictureService {
     if (Object.keys(this.pictureStore).includes(key)) {
       return this.pictureStore[key] as string;
     }
-    return key;
+    return '';
+  }
+
+  public changePictureKey(oldKey: string, newKey: string) {
+    delete Object.assign(this.pictureStore, {
+      [newKey]: this.pictureStore[oldKey],
+    })[oldKey];
   }
 
   public getPictureName(blob: string) {
     // find the key in the pictureStore that matches the blob
-    const key = Object.keys(this.pictureStore).find(
+    return Object.keys(this.pictureStore).find(
       (k) => this.pictureStore[k] === blob
     );
-    return key;
   }
 
   public hasNoBlobs(key: string): boolean {
-    const images = this.getPicture(key);
-    return images === key;
+    return !!this.getPicture(key);
   }
 
   public getPicturesStore() {

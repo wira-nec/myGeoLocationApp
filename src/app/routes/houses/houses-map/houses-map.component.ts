@@ -1,11 +1,4 @@
-import {
-  Component,
-  OnInit,
-  inject,
-  DestroyRef,
-  Renderer2,
-  effect,
-} from '@angular/core';
+import { Component, OnInit, Renderer2, effect } from '@angular/core';
 import Map from 'ol/Map';
 import { OlMapComponent } from '../../../shared/map/map.component';
 import { View } from 'ol';
@@ -40,7 +33,6 @@ import { MapEventHandlers } from '../providers/mapEventHandlers';
 export class HousesMapComponent implements OnInit {
   map!: Map;
 
-  private readonly destroyRef: DestroyRef;
   private readonly fileImportControl = new ImportFilesControl();
   private readonly exportFileControl = new ExportControl();
   private readonly centerControl = new CenterControl();
@@ -59,7 +51,6 @@ export class HousesMapComponent implements OnInit {
     private readonly markers: Markers,
     private readonly geoCoderService: GeoCoderService
   ) {
-    this.destroyRef = inject(DestroyRef);
     effect(() => {
       this.renderer.addClass(
         document.getElementsByClassName('ol-geocoder')[0],

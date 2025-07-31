@@ -73,7 +73,9 @@ export class UserInfoComponent implements OnInit {
     if (this.isUrlItem(item.value)) {
       const pictureName = item.value.replace(/^.*[\\/]/, '');
       const picture = this.pictureService.getPicture(pictureName);
-      return `<img src='${picture}' height="50px" width="50px" alt="'${item.value}' not found">`;
+      return `<img src='${
+        picture ?? pictureName
+      }' height="50px" width="50px" alt="'${item.value}' not found">`;
     } else {
       return item.value;
     }

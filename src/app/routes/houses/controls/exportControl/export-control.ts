@@ -52,7 +52,7 @@ export class ExportControl extends Control {
           if (pictureNames.length > 0) {
             pictureNames.forEach((name) => {
               const blob = this.loadPictureService.getPicture(name);
-              if (blob !== name) {
+              if (blob) {
                 pictureBlobs = {
                   ...pictureBlobs,
                   [name]: blob,

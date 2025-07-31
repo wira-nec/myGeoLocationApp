@@ -37,11 +37,8 @@ export class PicturesContentComponent implements OnInit {
           // eslint-disable-next-line no-useless-escape
           imageName.replace(/^.*[\\\/]/, '')
         );
-        if (!blobs.includes(blob)) {
-          blobs.push(
-            // eslint-disable-next-line no-useless-escape
-            this.pictureService.getPicture(imageName.replace(/^.*[\\\/]/, ''))
-          );
+        if (blob && !blobs.includes(blob)) {
+          blobs.push(blob);
         }
       });
       return blobs;

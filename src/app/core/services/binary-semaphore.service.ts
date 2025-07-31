@@ -6,7 +6,7 @@ type Waiter = (value: void | PromiseLike<void>) => void;
   providedIn: 'root',
 })
 export class BinarySemaphoreService {
-  private locked = false;
+  private locked = true; // Always start waiting
   private waiters: Waiter[] = [];
 
   async acquire(): Promise<void> {

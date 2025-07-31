@@ -46,7 +46,7 @@ interface FeatureCollection {
   };
 }
 
-type ProgressCallbackFunction = () => Promise<void> | undefined;
+type ProgressCallbackFunction = (() => Promise<void>) | undefined;
 
 export const ADDRESS_CHOSEN = 'addresschosen';
 export const NIJKERK_COORDINATES = [5.4808, 52.2211] as Coordinate;
@@ -275,8 +275,14 @@ export class GeoCoderService {
           .replaceAll(',,', ',')
           .replaceAll('  ', ' ');
         console.log('search street map for', textInput.value);
+        // Create click event that does not bubble up, required to prevent excel grid to be closed when open.
+        const event = new MouseEvent('click', {
+          view: window,
+          bubbles: false,
+          cancelable: false,
+        });
+        sendTextInput.dispatchEvent(event);
         await this.semaphore.acquire();
-        sendTextInput.click();
         observer.disconnect();
       } catch (e) {
         this.searchForErrorHandler((e as Error).message);

@@ -35,7 +35,6 @@ const style = (
   } else {
     feature.setStyle(getDotStyle(4, labelText === 'Unknown'));
   }
-  feature.setProperties({ Address: labelText });
 };
 
 const houseImage = new Icon({
@@ -202,6 +201,7 @@ export class Markers {
     });
     const coords = [longitude, latitude];
     this.markers[id].setGeometry(new Point(fromLonLat(coords)));
+    this.markers[id].setStyle();
     style(
       this.markers[id],
       this.getAddressLabel(geoInformation, labelText),
@@ -217,6 +217,10 @@ export class Markers {
     this.markers[id].setGeometry(new Point(fromLonLat(coords)));
     this.markers[id].setStyle(getLocatorStyle(address));
     this.refreshVectorLayer();
+  }
+
+  public deleteMarker(id: string) {
+    delete this.markers[id];
   }
 
   private onViewChanged(map: Map) {

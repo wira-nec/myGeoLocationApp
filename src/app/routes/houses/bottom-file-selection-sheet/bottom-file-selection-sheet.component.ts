@@ -141,6 +141,7 @@ export class BottomFileSelectionSheetComponent
       )
       .subscribe(() => {
         this.dataStoreService.commit();
+        this.geoCoderService.setProgressCallback(undefined);
         this.geoCoderService.delayedZoomInOnCoordinates(NIJKERK_COORDINATES);
         this.toaster.show('success', `Uploaded file: ${this.importFile}`);
       });

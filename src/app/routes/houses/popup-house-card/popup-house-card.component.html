@@ -12,10 +12,7 @@
   <mat-card-content class="card-content">
     <div class="columnsContainer">
       <app-excel-content [details]="details" />
-      <app-pictures-content
-        *ngIf="checkIfItHasPictures()"
-        [details]="details"
-      />
+      <app-pictures-content *ngIf="showPicture" [details]="details" />
     </div>
   </mat-card-content>
   <mat-card-footer>

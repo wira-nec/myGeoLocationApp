@@ -118,6 +118,16 @@ export const getAddress = (data: StoreData) => {
   }
 };
 
+export const getComparableAddress = (data: StoreData) => {
+  const addressKey = ADDRESS_KEYS.find((key) =>
+    Object.keys(data).includes(key)
+  );
+  if (addressKey) {
+    return makeAddressComparable(data[addressKey]);
+  }
+  return '';
+};
+
 export const getImageName = (details: StoreData) => {
   const addressKey = getKey(details, ADDRESS_KEYS, '');
   if (details[addressKey]) {
@@ -142,11 +152,27 @@ export const getBlobs = (details: StoreData) => {
 
 export function hasPictures(details: StoreData) {
   if (details) {
-    if (getBlobs(details).length > 0 || getImageNames(details).length > 0) {
+    if (
+      getBlobs(details).length > 0 ||
+      Object.values(details).filter((value) => imagesFilter(value)).length > 0
+    ) {
       return true;
     }
   }
   return false;
+}
+
+export function getPictureColumnName(dataStore: StoreData) {
+  // Set default column name for picture column in case non exists
+  let pictureColumnName = VOORAANZICHT;
+  const pictureColumnNames = Object.keys(dataStore).filter(
+    (key) => blobsFilter(dataStore[key]) || imagesFilter(dataStore[key])
+  );
+  // Currently only one picture column is supported
+  if (pictureColumnNames.length > 0) {
+    pictureColumnName = pictureColumnNames[0];
+  }
+  return pictureColumnName;
 }
 
 export const getAllHeaderInfo = (data: StoreData[]) => {
@@ -231,12 +257,19 @@ export class DataStoreService {
     console.log('Merged data added', mergedData);
     this.dataStore = mergedData;
     this.isPristine = newData.length === 0;
-    this.syncDataStoreWithPictures(pictures, newData);
+    // sync picture data only if there exists a column with pictures
+    if (getAllHeaderInfo(newData).some((info) => info[1])) {
+      this.syncDataStoreWithPictures(pictures, newData);
+    }
   }
 
-  public commit() {
+  public commit(storeData?: StoreData[]) {
     if (!this.isPristine) {
-      this.dataStore$.next(this.dataStore);
+      if (storeData) {
+        this.dataStore$.next(storeData);
+      } else {
+        this.dataStore$.next(this.dataStore);
+      }
     }
   }
 
@@ -265,32 +298,24 @@ export class DataStoreService {
       const dataSnapShot = {
         ...data,
       };
-      this.updateDataStoreWithPicture(index, pictures);
+      this.updateDataStoreWithPicture(index, Object.keys(pictures));
       this.isPristine = this.isPristine && isEqual(dataSnapShot, data);
     });
   }
 
-  private updateDataStoreWithPicture(
+  public updateDataStoreWithPicture(
     dataStoreIndex: number,
-    pictures: PictureStore
+    pictureKeys: string[]
   ) {
     const dataStore = this.dataStore[dataStoreIndex];
-    // Set default column name for picture column incase non exists
-    let pictureColumnName = VOORAANZICHT;
     // lookup columns in dataStore that have pictures
     const addressColumnName = getKey(dataStore, ADDRESS_KEYS, '');
-    const pictureColumnNames = Object.keys(dataStore).filter(
-      (key) => blobsFilter(dataStore[key]) || imagesFilter(dataStore[key])
-    );
-    // Currently only one picture column is supported
-    if (pictureColumnNames.length > 0) {
-      pictureColumnName = pictureColumnNames[0];
-    }
+    const pictureColumnName = getPictureColumnName(dataStore);
     if (addressColumnName) {
       const filename = dataStore[addressColumnName].toLowerCase();
-      if (Object.keys(pictures).includes(filename + '.jpg')) {
+      if (pictureKeys.includes(filename + '.jpg')) {
         dataStore[pictureColumnName] = filename + '.jpg';
-      } else if (Object.keys(pictures).includes(filename + '.jpeg')) {
+      } else if (pictureKeys.includes(filename + '.jpeg')) {
         dataStore[pictureColumnName] = filename + '.jpeg';
       } else {
         dataStore[pictureColumnName] = dataStore[pictureColumnName] || '';
@@ -298,14 +323,8 @@ export class DataStoreService {
     }
   }
 
-  public storeGridData(gridData: StoreData) {
-    const { id, ...storeData } = gridData;
-    const pictureColumnNames = Object.keys(storeData).filter((key) =>
-      blobsFilter(storeData[key])
-    );
-    pictureColumnNames.forEach((colName) => {
-      storeData[colName] = getImageName(storeData) ?? 'unknown picture.jpg';
-    });
+  public updateStoreData(newData: StoreData) {
+    const { id, ...storeData } = newData;
     const itemIndex = this.dataStore.findIndex(
       (data) => data[UNIQUE_ID] === id
     );
@@ -315,10 +334,32 @@ export class DataStoreService {
         ...storeData,
       };
       this.isPristine = false;
-      this.dataStore$.next([this.dataStore[itemIndex]]);
-      return;
+    } else {
+      console.error('updateStoreData failed');
+    }
+  }
+
+  public storeGridData(gridData: StoreData) {
+    const { id, ...storeData } = gridData;
+    const itemIndex = this.dataStore.findIndex(
+      (data) => data[UNIQUE_ID] === id
+    );
+    if (itemIndex >= 0) {
+      const originalData: StoreData = {
+        ...this.dataStore[itemIndex],
+      };
+      this.dataStore[itemIndex] = {
+        ...this.dataStore[itemIndex],
+        ...storeData,
+      };
+      this.isPristine = false;
+      return {
+        storeData: this.dataStore[itemIndex],
+        originalData,
+      };
     }
     console.error('storeGridData failed');
+    return undefined;
   }
 
   public updateGeoPosition(
@@ -415,6 +456,7 @@ export class DataStoreService {
     });
   }
 
+  // Note to myself, check if this can be replaced by findDataByAddress
   public getByAddr(address: string): StoreData | undefined {
     const foundData = this.findDataByAddress(address);
     if (foundData) {
@@ -449,11 +491,15 @@ export class DataStoreService {
     query: string
   ): [StoreData | undefined, string] {
     let errorMessage = '';
-    let storeData = this.get({
-      [CITY]: city,
-      [HOUSE_NUMBER]: houseNumber,
-      [POSTCODE]: postcode,
-    });
+    let storeData = this.findDataByAddress(`${street} ${houseNumber} ${city}`);
+    if (storeData) {
+      const postcodeKey = POSTCODE_KEYS.find((key) =>
+        Object.keys(storeData as StoreData).includes(key)
+      );
+      if (postcodeKey && storeData[postcodeKey] !== postcode) {
+        errorMessage = `Found address '${street} ${houseNumber}, ${city}, ${postcode}', but mismatches postcode '${storeData[postcodeKey]}'. Please verify!`;
+      }
+    }
     if (!storeData) {
       storeData = this.getByPostcodeHouseNumberCity(
         postcode,
@@ -493,7 +539,7 @@ export class DataStoreService {
                 // try to get it by address.
                 storeData = this.getByAddr(`${street} ${houseNumber} ${city}`);
                 if (!storeData) {
-                  errorMessage = `Looking for ${query} but found address "${street} ${houseNumber}, ${city}, ${postcode}". Please verify address in the excel sheet.`;
+                  errorMessage = `Looking for ${query} but found address '${street} ${houseNumber}, ${city}, ${postcode}'. Please verify!`;
                   storeData = this.getByAddr(query);
                   if (!storeData) {
                     // try without postcode
@@ -505,14 +551,14 @@ export class DataStoreService {
                   }
                 }
               } else {
-                errorMessage = `Please fix City in "${street} ${houseNumber}, ${city}" and change ${storeData[CITY]} to ${city} in your excel sheet.`;
+                errorMessage = `Found address '${street} ${houseNumber}, ${city}', but mismatches with city '${storeData[CITY]}'. Please verify!`;
               }
             }
           } else {
-            errorMessage = `Please fix house number in "${street} ${houseNumber}, ${city}" and change ${storeData[HOUSE_NUMBER]} to ${houseNumber} in your excel sheet.`;
+            errorMessage = `Found address '${street} ${houseNumber}, ${city}', but mismatches with house number '${storeData[HOUSE_NUMBER]}'. Please verify!`;
           }
         } else {
-          errorMessage = `Please fix postcode in "${street} ${houseNumber}, ${city}" and change ${storeData[POSTCODE]} to ${postcode} in your excel sheet.`;
+          errorMessage = `Found address '${street} ${houseNumber}, ${city}, ${postcode}', but mismatches with postcode ${storeData[POSTCODE]}. Please verify!`;
         }
       }
     }
