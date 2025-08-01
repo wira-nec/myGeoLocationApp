@@ -1,10 +1,4 @@
-import {
-  Component,
-  DestroyRef,
-  ElementRef,
-  HostListener,
-  inject,
-} from '@angular/core';
+import { Component, DestroyRef, ElementRef, inject } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
   CellValueChangedEvent,
@@ -46,6 +40,7 @@ import { ZoomInButtonCellRendererComponent } from './zoom-in-button-cell-rendere
 import { GeoCoderService } from '../../../core/services/geo-coder.service';
 import { ToasterService } from '../../../core/services/toaster.service';
 import { blobsFilter } from '../../../core/helpers/dataManipulations';
+import { ResizeElementDirective } from '../../../directives/resize-element.directive';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -62,6 +57,7 @@ const nonGridColumnNames = [GEO_INFO, LONGITUDE, LATITUDE, SHEET_NAME, ERROR];
   imports: [
     AgGridAngular,
     OverflowPaneDirective,
+    ResizeElementDirective,
     CommonModule,
     TopButtonsComponent,
   ],
@@ -69,15 +65,6 @@ const nonGridColumnNames = [GEO_INFO, LONGITUDE, LATITUDE, SHEET_NAME, ERROR];
   styleUrl: './excel-grid.component.scss',
 })
 export class ExcelGridComponent {
-  @HostListener('document:click', ['$event'])
-  clickout(event: Event) {
-    if (this.eRef.nativeElement.contains(event.target)) {
-      // clicked inside
-    } else {
-      // clicked outside
-      this.dataStoreService.setEditMode(false);
-    }
-  }
   private readonly destroyRef = inject(DestroyRef);
 
   defaultColDef: ColDef = {
