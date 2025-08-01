@@ -223,6 +223,11 @@ export class Markers {
     delete this.markers[id];
   }
 
+  public resetMarkers() {
+    this.markers = {};
+    this.refreshVectorLayer();
+  }
+
   private onViewChanged(map: Map) {
     const view = map.getView();
     this.zoomLevelSingleMarker = view?.getZoom() || 11;

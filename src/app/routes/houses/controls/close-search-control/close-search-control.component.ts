@@ -11,7 +11,8 @@ export class CloseSearchControlComponent extends Control {
 
     super(opt_options);
 
-    controlButton.addEventListener('click', () => {
+    controlButton.addEventListener('click', (evt) => {
+      evt.stopPropagation();
       const textInput = document.querySelector(
         '.gcd-txt-input'
       ) as HTMLInputElement;

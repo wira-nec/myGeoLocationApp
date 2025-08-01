@@ -37,10 +37,10 @@ export class HousesMapComponent implements OnInit {
   private readonly exportFileControl = new ExportControl();
   private readonly centerControl = new CenterControl();
   private readonly searchControl = new SearchControl({
-    callback: () => this.showSearchControl(),
+    callback: (evt: Event) => this.showSearchControl(evt),
   });
   private readonly editExcelControl = new EditExcelControl({
-    callback: (evt: Event) => this.showExcelGrid(evt),
+    callback: () => this.showExcelGrid(),
   });
 
   constructor(
@@ -63,7 +63,8 @@ export class HousesMapComponent implements OnInit {
     this.initializeMap();
   }
 
-  private showSearchControl() {
+  private showSearchControl(evt: Event) {
+    evt.stopPropagation();
     this.searchInputService.toggleVisibility();
     const inputElement = document.getElementById(
       'gcd-input-query'
@@ -73,8 +74,7 @@ export class HousesMapComponent implements OnInit {
     }
   }
 
-  private showExcelGrid(evt: Event) {
-    evt.stopPropagation();
+  private showExcelGrid() {
     this.dataStoreService.setSelectedData(undefined);
     this.dataStoreService.setEditMode(true);
     this.mapEventHandlers.closePopup();

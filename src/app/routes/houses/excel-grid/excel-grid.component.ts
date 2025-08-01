@@ -10,7 +10,6 @@ import {
   CellValueChangedEvent,
   ColDef,
   Context,
-  FirstDataRenderedEvent,
   GetRowIdParams,
   GridApi,
   GridReadyEvent,
@@ -93,7 +92,7 @@ export class ExcelGridComponent {
     type: 'fitCellContents',
   };
   gridApi!: GridApi<StoreData>;
-  firstDataRendered$ = new Subject<FirstDataRenderedEvent<StoreData, ColDef>>();
+  firstDataRendered$ = new Subject<void>();
   hostStyle: SafeStyle = '';
 
   private dataStore: StoreData[] = [];
@@ -144,6 +143,8 @@ export class ExcelGridComponent {
       .subscribe((data) => {
         if (data.length > 1) {
           this.createGridData();
+          // this will reset top buttons
+          this.firstDataRendered$.next();
         } else if (data.length === 1) {
           // Only 1 update, so it's assumed this is due to an single row update in the excel grid
           let newRowData = this.rowData.find(
@@ -370,8 +371,8 @@ export class ExcelGridComponent {
     return this.dataStore.map((data) => this.convertToGridRowData(data));
   }
 
-  onFirstDataRendered($event: FirstDataRenderedEvent<StoreData, ColDef>) {
-    this.firstDataRendered$.next($event);
+  onFirstDataRendered() {
+    this.firstDataRendered$.next();
   }
 
   onGetRowId(params: GetRowIdParams<StoreData, Context>): string {

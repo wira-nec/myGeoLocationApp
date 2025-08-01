@@ -70,6 +70,10 @@ export class LoadPictureService {
     this.pictureStore$.next({ [filename.toLowerCase()]: blob });
   }
 
+  public clearPictureStore() {
+    this.pictureStore = {};
+  }
+
   public getPicture(key: string) {
     if (Object.keys(this.pictureStore).includes(key)) {
       return this.pictureStore[key] as string;

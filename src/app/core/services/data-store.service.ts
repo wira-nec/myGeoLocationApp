@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
-import { blobsFilter, mergeStoreData } from '../helpers/dataManipulations';
+import { blobsFilter } from '../helpers/dataManipulations';
 import { isEqual } from 'lodash';
 import { PictureStore } from './load-picture.service';
 import { makeAddressComparable } from '../helpers/string-manipulations';
@@ -237,6 +237,7 @@ export class DataStoreService {
     return [...this.dataStore];
   }
 
+  /*
   private getMergedDataAndNewUniqueData(
     newData: StoreData[]
   ): [StoreData[], StoreData[]] {
@@ -250,12 +251,18 @@ export class DataStoreService {
       ),
     ];
   }
+  */
 
   public store(data: StoreData[], pictures: PictureStore) {
+    /* merge not supported anymore
     const [mergedData, newData] = this.getMergedDataAndNewUniqueData(data);
     console.log('New data added', newData);
     console.log('Merged data added', mergedData);
     this.dataStore = mergedData;
+    */
+    const newData = data;
+    this.dataStore = data;
+    //----------------------------------------------------------
     this.isPristine = newData.length === 0;
     // sync picture data only if there exists a column with pictures
     if (getAllHeaderInfo(newData).some((info) => info[1])) {

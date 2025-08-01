@@ -1,6 +1,6 @@
-import { Control } from 'ol/control';
+import { CloseSearchControlComponent } from '../close-search-control/close-search-control.component';
 
-export class EditExcelControl extends Control {
+export class EditExcelControl extends CloseSearchControlComponent {
   /**
    * @param {Object} [opt_options] Control options.
    */
@@ -9,12 +9,12 @@ export class EditExcelControl extends Control {
     const button = document.createElement('button');
     button.innerHTML =
       '<img style="height: 20px;" src="assets/table_edit_24dp.png" alt="v" title="Edit excel" />';
-    const centerElement = document.createElement('div');
-    centerElement.className = 'edit-excel ol-unselectable ol-control';
-    centerElement.appendChild(button);
+    const editElement = document.createElement('div');
+    editElement.className = 'edit-excel ol-unselectable ol-control';
+    editElement.appendChild(button);
 
     super({
-      element: centerElement,
+      element: editElement,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       target: (options as any).target,
     });

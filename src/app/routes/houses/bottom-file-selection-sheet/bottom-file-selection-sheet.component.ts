@@ -230,6 +230,8 @@ export class BottomFileSelectionSheetComponent
   onFileChange(event: any) {
     const file = event.target.files[0];
     this.importFile = file.name;
+    this.markers.resetMarkers();
+    this.pictureService.clearPictureStore();
     this.progressService.setProgressMode(
       XSL_IMPORT_PROGRESS_ID,
       'indeterminate'

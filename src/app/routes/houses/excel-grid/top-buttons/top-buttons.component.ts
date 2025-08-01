@@ -14,10 +14,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import {
   CellValueChangedEvent,
-  ColDef,
   ColumnMovedEvent,
   FilterChangedEvent,
-  FirstDataRenderedEvent,
   GridApi,
   SortChangedEvent,
 } from 'ag-grid-community';
@@ -45,9 +43,7 @@ import { ZOOM_IN_COLUMN_NAME } from '../excel-grid.component';
 export class TopButtonsComponent implements OnInit {
   @Input() gridApi!: GridApi<StoreData>;
   @Input() cellValueChangedEvent$!: Subject<CellValueChangedEvent<StoreData>>;
-  @Input() firstDataRendered$!: Subject<
-    FirstDataRenderedEvent<StoreData, ColDef>
-  >;
+  @Input() firstDataRendered$!: Subject<void>;
   @Output() gridStyleChange = new EventEmitter<string>();
 
   private readonly destroyRef = inject(DestroyRef);
