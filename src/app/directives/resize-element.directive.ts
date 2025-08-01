@@ -6,6 +6,8 @@ import {
   OnInit,
 } from '@angular/core';
 
+const GRABBER_ID = 'grabber';
+
 @Directive({
   selector: '[appResizeElement]',
 })
@@ -18,14 +20,20 @@ export class ResizeElementDirective implements OnInit, OnDestroy {
     this.resize(event.movementX);
   }
 
-  @HostListener('document:mouseup', ['$event'])
-  onMouseUp() {
-    this.grabber = false;
+  @HostListener('mouseup', ['$event'])
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onMouseUp(event: any) {
+    if (event.target.id && event.target.id === GRABBER_ID) {
+      this.grabber = false;
+    }
   }
 
-  @HostListener('document:mousedown', ['$event'])
-  onMouseDown() {
-    this.grabber = true;
+  @HostListener('mousedown', ['$event'])
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onMouseDown(event: any) {
+    if (event.target.id && event.target.id === GRABBER_ID) {
+      this.grabber = true;
+    }
   }
 
   private grabber = false;
@@ -56,6 +64,7 @@ export class ResizeElementDirective implements OnInit, OnDestroy {
     if (entries[0].isIntersecting === true) {
       this.width = this.element.clientWidth;
       const grabber = document.createElement('div');
+      grabber.id = GRABBER_ID;
       grabber.style.position = 'absolute';
       grabber.style.top = '0px';
       grabber.style.right = '0px';
