@@ -138,6 +138,7 @@ export class TopButtonsComponent implements OnInit {
   }
   onCheckAllPages() {
     this.checkedAllPages = !this.checkedAllPages;
+    this.showPaging();
   }
 
   onBtnExport() {
@@ -205,17 +206,8 @@ export class TopButtonsComponent implements OnInit {
   private currentSelectedPage: number | undefined;
 
   private setPrinterFriendly() {
-    this.currentSelectedPage = this.gridApi.paginationGetCurrentPage();
     this.gridApi.setColumnsVisible([ZOOM_IN_COLUMN_NAME], false);
-    if (this.checkedAllPages) {
-      this.gridApi.updateGridOptions({ pagination: false });
-    } else {
-      this.gridApi.updateGridOptions({
-        paginationAutoPageSize: false,
-        paginationPageSize: this.gridApi.paginationGetPageSize(),
-      });
-      this.gridApi.paginationGoToPage(this.currentSelectedPage);
-    }
+    this.showPaging();
     this.isPrinting = true;
     const cssText = `
       display: table !important;
@@ -243,15 +235,33 @@ export class TopButtonsComponent implements OnInit {
       this.gridApi.updateGridOptions({ domLayout: 'print' });
     }, 100);
   }
+  private showPaging() {
+    this.currentSelectedPage = this.gridApi.paginationGetCurrentPage();
+    if (this.checkedAllPages) {
+      this.gridApi.updateGridOptions({ pagination: false });
+    } else {
+      this.gridApi.updateGridOptions({
+        pagination: true,
+        paginationAutoPageSize: false,
+        paginationPageSize: this.gridApi.paginationGetPageSize(),
+      });
+      this.gridApi.paginationGoToPage(this.currentSelectedPage);
+    }
+  }
+
   private setNormal() {
     this.gridStyleChange.emit('');
     this.gridApi.setColumnsVisible([ZOOM_IN_COLUMN_NAME], true);
-    this.gridApi.updateGridOptions({
-      pagination: true,
-      paginationAutoPageSize: true,
-    });
-    if (this.currentSelectedPage) {
-      this.gridApi.paginationGoToPage(this.currentSelectedPage);
+    if (this.checkedAllPages) {
+      this.gridApi.updateGridOptions({ pagination: false });
+    } else {
+      this.gridApi.updateGridOptions({
+        pagination: true,
+        paginationAutoPageSize: true,
+      });
+      if (this.currentSelectedPage) {
+        this.gridApi.paginationGoToPage(this.currentSelectedPage);
+      }
     }
     setTimeout(() => {
       // Ensure the grid is fully rendered before resetting styles

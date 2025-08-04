@@ -32,6 +32,7 @@ export class ResizeElementDirective implements OnInit, OnDestroy {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onMouseDown(event: any) {
     if (event.target.id && event.target.id === GRABBER_ID) {
+      this.width = this.element.clientWidth;
       this.grabber = true;
     }
   }
