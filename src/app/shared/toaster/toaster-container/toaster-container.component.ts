@@ -3,10 +3,11 @@ import { Toast, ToasterService } from '../../../core/services/toaster.service';
 import { ToasterComponent } from '../toaster.component';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
   selector: 'app-toaster-container',
-  imports: [ToasterComponent, CommonModule],
+  imports: [ToasterComponent, CommonModule, MatIcon],
   templateUrl: './toaster-container.component.html',
   styleUrl: './toaster-container.component.scss',
 })
@@ -24,5 +25,9 @@ export class ToasterContainerComponent {
 
   remove(index: number) {
     this.toasts = this.toasts.filter((v, i) => i !== index);
+  }
+
+  removeAll() {
+    this.toasts = [];
   }
 }

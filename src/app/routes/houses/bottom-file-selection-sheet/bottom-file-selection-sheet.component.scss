@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   flex: 1 1 100%;
+  font-size: x-small;
 }
 
 .content {
@@ -9,7 +10,7 @@
   flex: 1 1 100%;
   flex-direction: column;
   align-items: center;
-  padding-top: 8px;
+  padding-top: 4px;
 
   .import-button {
     width: auto;
@@ -31,6 +32,7 @@
 
     & input[type="file"]::-webkit-file-upload-button {
       cursor: pointer;
+      font-size: xx-small;
     }
   }
 }
