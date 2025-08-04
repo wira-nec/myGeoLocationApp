@@ -7,12 +7,17 @@ export class OverflowPaneDirective {
   @Input() show = false;
   @Input() position: 'left' | 'right' = 'left';
   @Input() offset = '10';
+  @Input() overflow: string | undefined;
   @HostBinding('class')
   className = 'overflow-pane-css-class';
   // change the display attribute of the class to 'none' or 'unset' based on the show property
   @HostBinding('style.display')
   get displayStyle(): string {
     return this.show ? 'unset' : 'none';
+  }
+  @HostBinding('style.overflow')
+  get overflowStyle(): string {
+    return this.overflow ? `${this.overflow} !important` : 'auto';
   }
   @HostBinding('style.left')
   get leftStyle(): string {
