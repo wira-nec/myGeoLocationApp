@@ -18,6 +18,7 @@ import { unByKey } from 'ol/Observable';
 import { getVectorContext } from 'ol/render';
 import { easeOut } from 'ol/easing.js';
 import RenderEvent from 'ol/render/Event';
+import { GeoBoxSelectionService } from '../../../core/services/geo-box-selection.service';
 
 export const SEARCH_FOR_MARKER_ID = 'searchedFor';
 export const STORE_DATA_ID_PROPERTY = 'StoreDataId';
@@ -129,7 +130,7 @@ export class Markers {
 
   private map!: Map;
 
-  constructor() {
+  constructor(private readonly geoBoxSelectionService: GeoBoxSelectionService) {
     this.zoomInput
       .pipe(takeUntilDestroyed())
       .pipe(debounceTime(300))
@@ -247,6 +248,10 @@ export class Markers {
     map.getView().on('change:resolution', (e) => {
       this.zoomInput.next(e);
     });
+    this.geoBoxSelectionService.setupBoxSelection(
+      map,
+      this.markersVectorLayer
+    );
   }
 
   public flash(id: string) {

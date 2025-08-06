@@ -41,6 +41,8 @@ import { GeoCoderService } from '../../../core/services/geo-coder.service';
 import { ToasterService } from '../../../core/services/toaster.service';
 import { blobsFilter } from '../../../core/helpers/dataManipulations';
 import { ResizeElementDirective } from '../../../directives/resize-element.directive';
+import { GeoBoxSelectionService } from '../../../core/services/geo-box-selection.service';
+import { STORE_DATA_ID_PROPERTY } from '../providers/markers';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -89,6 +91,7 @@ export class ExcelGridComponent {
     private readonly dataStoreService: DataStoreService,
     private readonly geoCoderService: GeoCoderService,
     private readonly toaster: ToasterService,
+    private readonly geoBoxSelectionService: GeoBoxSelectionService,
     private eRef: ElementRef,
     private doms: DomSanitizer
   ) {}
@@ -105,11 +108,36 @@ export class ExcelGridComponent {
     const editModeSubscription = this.watchEditMode();
     const dataStoreServiceSubscription =
       this.watchDataUpdatesToUpdateGridContent();
+    const boxSelectionSubscription = this.watchOnBoxSelection();
     this.destroyRef.onDestroy(() => {
       gridRendererSubscription.unsubscribe();
       editModeSubscription.unsubscribe();
       dataStoreServiceSubscription.unsubscribe();
+      boxSelectionSubscription.unsubscribe();
     });
+  }
+
+  private watchOnBoxSelection() {
+    return this.geoBoxSelectionService.featureSelection$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((features) => {
+        const selectedData: StoreData[] = [];
+        features.forEach((feature) => {
+          const data = this.dataStoreService.findById(
+            feature.get(STORE_DATA_ID_PROPERTY) as string
+          );
+          if (data) {
+            selectedData.push(data);
+          }
+        });
+        if (selectedData.length) {
+          this.createGridData(selectedData);
+        } else {
+          this.createGridData(this.dataStoreService.getStore());
+        }
+        // this will reset top buttons
+        this.firstDataRendered$.next();
+      });
   }
 
   private watchOnFirstGridRender() {
@@ -129,7 +157,7 @@ export class ExcelGridComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((data) => {
         if (data.length > 1) {
-          this.createGridData();
+          this.createGridData(this.dataStoreService.getStore());
           // this will reset top buttons
           this.firstDataRendered$.next();
         } else if (data.length === 1) {
@@ -201,8 +229,8 @@ export class ExcelGridComponent {
       });
   }
 
-  private createGridData() {
-    this.dataStore = this.dataStoreService.getStore();
+  private createGridData(data: StoreData[]) {
+    this.dataStore = data;
     // Row Data: The data to be displayed.
     this.createRowData();
     // Load grid with new data.
