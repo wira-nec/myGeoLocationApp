@@ -204,6 +204,7 @@ export class TopButtonsComponent implements OnInit {
 
   private originalStyle: string | undefined;
   private currentSelectedPage: number | undefined;
+  private originalPageSize = 0;
 
   private setPrinterFriendly() {
     this.gridApi.setColumnsVisible([ZOOM_IN_COLUMN_NAME], false);
@@ -238,12 +239,13 @@ export class TopButtonsComponent implements OnInit {
   private showPaging() {
     this.currentSelectedPage = this.gridApi.paginationGetCurrentPage();
     if (this.checkedAllPages) {
+      this.originalPageSize = this.gridApi.paginationGetPageSize();
       this.gridApi.updateGridOptions({ pagination: false });
     } else {
       this.gridApi.updateGridOptions({
         pagination: true,
         paginationAutoPageSize: false,
-        paginationPageSize: this.gridApi.paginationGetPageSize(),
+        paginationPageSize: this.originalPageSize,
       });
       this.gridApi.paginationGoToPage(this.currentSelectedPage);
     }

@@ -134,7 +134,9 @@ export class ExcelGridComponent {
           this.createGridData(selectedData);
         } else {
           this.createGridData(this.dataStoreService.getStore());
+          this.dataStoreService.setEditMode(false);
         }
+        this.autoSizeColumnsAndPaging(0);
         // this will reset top buttons
         this.firstDataRendered$.next();
       });
